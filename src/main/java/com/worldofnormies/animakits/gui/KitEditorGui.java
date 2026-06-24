@@ -39,11 +39,13 @@ public class KitEditorGui implements Listener {
     private static final int         INV_SIZE   = 54;
     private static final int         ITEMS_AREA = 45;  // slots 0-44
 
+    // Top bar slot assignments (for controls)
+    private static final int SLOT_NAME_TAG      = 2;
+    private static final int SLOT_CHEST         = 4;
+    private static final int SLOT_BOOK          = 6;
+
     // Bottom bar slot assignments
     private static final int SLOT_RED_BUNDLE    = 45;
-    private static final int SLOT_NAME_TAG      = 48;
-    private static final int SLOT_CHEST         = 49;
-    private static final int SLOT_BOOK          = 50;
     private static final int SLOT_PREV_PAGE     = 52;
     private static final int SLOT_NEXT_OR_APPLY = 53;
 
@@ -82,28 +84,13 @@ public class KitEditorGui implements Listener {
     private void populate() {
         for (int i = 0; i < INV_SIZE; i++) inventory.setItem(i, null);
 
-        // Item area – slots 0-44
-        List<ItemStack> allItems = kit.getItems();
-        int from = page * ITEMS_AREA;
-        for (int i = 0; i < ITEMS_AREA; i++) {
-            int idx = from + i;
-            if (idx < allItems.size() && allItems.get(idx) != null) {
-                inventory.setItem(i, allItems.get(idx).clone());
-            }
+        // Fill top row with fillers initially
+        ItemStack black = makePaneBlack();
+        for (int i = 0; i < 9; i++) {
+            inventory.setItem(i, black);
         }
 
-        // Filler panes
-        ItemStack black = makePaneBlack();
-        for (int s : new int[]{46, 47, 51}) inventory.setItem(s, black);
-
-        // Slot 45 – Red Bundle → Cancel / return to browser
-        inventory.setItem(SLOT_RED_BUNDLE, makeBundle(
-                Material.RED_BUNDLE,
-                MM.deserialize("<red><bold>✘ Cancel / Return to Kits Menu</bold></red>"),
-                List.of(MM.deserialize("<gray>Return to the Kits Main Menu.</gray>"),
-                        MM.deserialize("<gray>Page changes will be saved.</gray>"))));
-
-        // Slot 48 – Name Tag → Rename
+        // Slot 2 – Name Tag → Rename
         inventory.setItem(SLOT_NAME_TAG, GuiItem.make(
                 Material.NAME_TAG,
                 MM.deserialize("<yellow><bold>✎ Rename Kit</bold></yellow>"),
@@ -113,7 +100,7 @@ public class KitEditorGui implements Listener {
                         MM.deserialize("<gray>Click to rename this kit.</gray>"),
                         MM.deserialize("<gray>A chat prompt will guide you.</gray>"))));
 
-        // Slot 49 – Kit icon (shows the actual current icon material)
+        // Slot 4 – Kit icon (shows the actual current icon material)
         Material iconMat = kit.getIconMaterial();
         inventory.setItem(SLOT_CHEST, GuiItem.make(
                 iconMat,
@@ -124,7 +111,7 @@ public class KitEditorGui implements Listener {
                         Component.empty(),
                         MM.deserialize("<gray>Current icon: <white>" + iconMat.name() + "</white></gray>"))));
 
-        // Slot 50 – Book & Quill → Add lore line
+        // Slot 6 – Book & Quill → Add lore line
         inventory.setItem(SLOT_BOOK, GuiItem.make(
                 Material.WRITABLE_BOOK,
                 MM.deserialize("<light_purple><bold>✎ Add Lore Line</bold></light_purple>"),
@@ -133,6 +120,26 @@ public class KitEditorGui implements Listener {
                         MM.deserialize("<gray>Supports gradient & hex colours.</gray>"),
                         Component.empty(),
                         MM.deserialize("<gray>Current lore lines: <white>" + kit.getLore().size() + "</white></gray>"))));
+
+        // Item area – slots 9-44
+        List<ItemStack> allItems = kit.getItems();
+        int from = page * (ITEMS_AREA - 9); // now 36 items per page because top row is used
+        for (int i = 0; i < (ITEMS_AREA - 9); i++) {
+            int idx = from + i;
+            if (idx < allItems.size() && allItems.get(idx) != null) {
+                inventory.setItem(9 + i, allItems.get(idx).clone());
+            }
+        }
+
+        // Filler panes (bottom row)
+        for (int s = 46; s < 52; s++) inventory.setItem(s, black);
+
+        // Slot 45 – Red Bundle → Cancel / return to browser
+        inventory.setItem(SLOT_RED_BUNDLE, makeBundle(
+                Material.RED_BUNDLE,
+                MM.deserialize("<red><bold>✘ Cancel / Return to Kits Menu</bold></red>"),
+                List.of(MM.deserialize("<gray>Return to the Kits Main Menu.</gray>"),
+                        MM.deserialize("<gray>Page changes will be saved.</gray>"))));
 
         // Slot 52 – Prev page (black pane on page 0)
         if (page > 0) {
@@ -168,14 +175,22 @@ public class KitEditorGui implements Listener {
 
         int slot = event.getRawSlot();
 
-        // Allow free drag-and-drop in the item area (slots 0-44)
-        if (slot >= 0 && slot < ITEMS_AREA) {
+        // Allow free drag-and-drop in the item area (slots 9-44)
+        if (slot >= 9 && slot < ITEMS_AREA) {
             return; // let vanilla handle it
         }
 
         event.setCancelled(true);
 
         if (slot == SLOT_RED_BUNDLE) {
+            // Check for right click to delete
+            if (event.isRightClick()) {
+                saveCurrentPage();
+                closing = true;
+                HandlerList.unregisterAll(this);
+                Bukkit.getScheduler().runTask(plugin, () -> new ConfirmDeleteGui(plugin, player, kit).open());
+                return;
+            }
             // Save + return to browser
             saveCurrentPage();
             plugin.getKitManager().saveKits();
@@ -284,13 +299,14 @@ public class KitEditorGui implements Listener {
 
     private void saveCurrentPage() {
         List<ItemStack> allItems = new ArrayList<>(kit.getItems());
-        int from = page * ITEMS_AREA;
+        int itemsPerPage = ITEMS_AREA - 9;
+        int from = page * itemsPerPage;
 
         // Expand to fit this page
-        while (allItems.size() < from + ITEMS_AREA) allItems.add(null);
+        while (allItems.size() < from + itemsPerPage) allItems.add(null);
 
-        for (int i = 0; i < ITEMS_AREA; i++) {
-            ItemStack item = inventory.getItem(i);
+        for (int i = 0; i < itemsPerPage; i++) {
+            ItemStack item = inventory.getItem(9 + i);
             if (item != null && item.getType() != Material.AIR) {
                 allItems.set(from + i, item.clone());
             } else {
@@ -305,7 +321,26 @@ public class KitEditorGui implements Listener {
 
         kit.clearItems();
         for (ItemStack is : allItems) {
-            kit.addItem(is != null ? is : new ItemStack(Material.AIR));
+            if (is != null && is.getType() != Material.AIR) {
+                kit.addItem(is);
+            } else {
+                // If we want to preserve gaps, we should add AIR or keep them as null.
+                // User said: "i dont think there is a difference , so yeah i guess but if player has full inventory ensure to drop items on ground at players position"
+                // This suggests compressing is fine.
+                // To preserve gaps in GUI, we should probably store AIR and skip it when giving.
+                kit.addItem(new ItemStack(Material.AIR));
+            }
+        }
+
+        // Final trim of AIR from the end of the list
+        List<ItemStack> kitItems = kit.getItems();
+        while (!kitItems.isEmpty() && kitItems.get(kitItems.size() - 1).getType() == Material.AIR) {
+            kit.clearItems(); // Not efficient but Kit.java doesn't have removeLast
+            // Re-adding everything except last
+            List<ItemStack> temp = new ArrayList<>(kitItems);
+            temp.remove(temp.size() - 1);
+            for (ItemStack ts : temp) kit.addItem(ts);
+            kitItems = kit.getItems();
         }
     }
 
@@ -317,8 +352,9 @@ public class KitEditorGui implements Listener {
      */
     private int totalPages() {
         int size = kit.getItems().size();
+        int itemsPerPage = ITEMS_AREA - 9;
         if (size == 0) return 1;
-        return (int) Math.ceil(size / (double) ITEMS_AREA);
+        return (int) Math.ceil(size / (double) itemsPerPage);
     }
 
     private ItemStack makePaneBlack() {

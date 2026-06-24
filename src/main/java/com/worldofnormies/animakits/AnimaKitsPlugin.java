@@ -4,6 +4,7 @@ import com.worldofnormies.animakits.commands.AnimaKitsCommand;
 import com.worldofnormies.animakits.commands.AnimaKitsTabCompleter;
 import com.worldofnormies.animakits.manager.KitManager;
 import com.worldofnormies.animakits.manager.PermissionManager;
+import com.worldofnormies.animakits.manager.PlayerManager;
 import com.worldofnormies.animakits.util.MessageUtil;
 import net.kyori.adventure.platform.bukkit.BukkitAudiences;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -16,6 +17,7 @@ public final class AnimaKitsPlugin extends JavaPlugin {
     private BukkitAudiences adventure;
     private KitManager kitManager;
     private PermissionManager permissionManager;
+    private PlayerManager playerManager;
 
     @Override
     public void onEnable() {
@@ -28,9 +30,11 @@ public final class AnimaKitsPlugin extends JavaPlugin {
         // Managers
         this.kitManager = new KitManager(this);
         this.permissionManager = new PermissionManager(this);
+        this.playerManager = new PlayerManager(this);
 
         kitManager.loadKits();
         permissionManager.load();
+        playerManager.load();
 
         // Utilities
         MessageUtil.init(this);
@@ -63,9 +67,11 @@ public final class AnimaKitsPlugin extends JavaPlugin {
         MessageUtil.reload(this);
         kitManager.loadKits();
         permissionManager.load();
+        playerManager.load();
     }
 
     public BukkitAudiences adventure() { return adventure; }
     public KitManager getKitManager() { return kitManager; }
     public PermissionManager getPermissionManager() { return permissionManager; }
+    public PlayerManager getPlayerManager() { return playerManager; }
 }

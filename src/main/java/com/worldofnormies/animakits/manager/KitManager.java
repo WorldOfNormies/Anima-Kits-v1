@@ -4,6 +4,7 @@ import com.worldofnormies.animakits.AnimaKitsPlugin;
 import com.worldofnormies.animakits.gui.KitBrowserGui;
 import com.worldofnormies.animakits.kit.Kit;
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -59,6 +60,10 @@ public class KitManager {
             String rawName = ks.getString("name", "Unnamed Kit");
             Kit kit = new Kit(id, rawName);
 
+            kit.setIconMaterial(Material.getMaterial(ks.getString("icon", "CHEST")));
+            kit.setCooldown(ks.getLong("cooldown", 0));
+            kit.setSingleClaim(ks.getBoolean("single-claim", false));
+
             List<String> lore = ks.getStringList("lore");
             kit.setLore(lore);
 
@@ -80,6 +85,9 @@ public class KitManager {
         for (Kit kit : kits.values()) {
             String path = "kits." + kit.getId().toString();
             kitsConfig.set(path + ".name", kit.getRawName());
+            kitsConfig.set(path + ".icon", kit.getIconMaterial().name());
+            kitsConfig.set(path + ".cooldown", kit.getCooldown());
+            kitsConfig.set(path + ".single-claim", kit.isSingleClaim());
             kitsConfig.set(path + ".lore", kit.getLore());
             kitsConfig.set(path + ".items", kit.getItems());
         }
@@ -172,6 +180,18 @@ public class KitManager {
 
     public Collection<Kit> getAllKits() {
         return Collections.unmodifiableCollection(kits.values());
+    }
+
+    public List<String> getKitIds() {
+        List<String> ids = new ArrayList<>();
+        for (Kit k : kits.values()) {
+            ids.add(k.getPlainName());
+        }
+        return ids;
+    }
+
+    public Kit getKitByName(String name) {
+        return getKitByPlainName(name);
     }
 
     // ── GUI Refresh ────────────────────────────────────────────────

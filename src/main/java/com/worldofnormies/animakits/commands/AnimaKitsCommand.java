@@ -74,17 +74,21 @@ public class AnimaKitsCommand implements CommandExecutor {
 
         String sub = args[1].toLowerCase();
         return switch (sub) {
-            case "display"    -> handleDisplay(sender, args);
-            case "edit"       -> handleEdit(sender, args);
-            case "lore"       -> handleLore(sender, args);
-            case "open"       -> handleOpen(sender, args);
-            case "clonekit"   -> handleClone(sender, args);
-            case "give"       -> handleGive(sender, args);
-            case "giveall"    -> handleGiveAll(sender, args);
-            case "reload"     -> handleReload(sender);
-            case "help"       -> handleHelp(sender);
-            case "permission" -> handlePermission(sender, args);
-            default           -> { showMainUsage(sender); yield true; }
+            case "display"       -> handleDisplay(sender, args);
+            case "edit"          -> handleEdit(sender, args);
+            case "lore"          -> handleLore(sender, args);
+            case "open"          -> handleOpen(sender, args);
+            case "clonekit"      -> handleClone(sender, args);
+            case "give"          -> handleGive(sender, args);
+            case "giveall"       -> handleGiveAll(sender, args);
+            case "reload"        -> handleReload(sender);
+            case "help"          -> handleHelp(sender);
+            case "permission"    -> handlePermission(sender, args);
+            case "claim"         -> handleClaim(sender, args);
+            case "list"          -> handleList(sender);
+            case "setcooldown"   -> handleSetCooldown(sender, args);
+            case "singleclaim"   -> handleSingleClaim(sender, args);
+            default              -> { showMainUsage(sender); yield true; }
         };
     }
 
@@ -130,15 +134,12 @@ public class AnimaKitsCommand implements CommandExecutor {
 
     private boolean handleEditAdd(CommandSender sender, String[] args) {
         if (!requirePerm(sender, "anima.kits.edit.add")) return true;
+        String rawName;
         if (args.length < 4) {
-            // Show the full name-prompt guidance
-            String prompt = plugin.getConfig().getString("messages.name-prompt",
-                    "<yellow>Type the kit name in chat then press Enter.\nType <red>cancel</red> to abort.</yellow>");
-            MessageUtil.send(sender, MM.deserialize(prompt));
-            usage(sender, "/anima kits edit add <name>");
-            return true;
+            rawName = "anima new kit";
+        } else {
+            rawName = joinArgs(args, 3);
         }
-        String rawName = joinArgs(args, 3);
         if (rawName.isEmpty()) { MessageUtil.sendMsg(sender, "name-empty"); return true; }
         if (rawName.length() > 64) { MessageUtil.sendMsg(sender, "name-too-long"); return true; }
         if (plugin.getKitManager().kitExists(rawName)) {
@@ -254,7 +255,7 @@ public class AnimaKitsCommand implements CommandExecutor {
         if (args.length < 3) { usage(sender, "/anima kits open <kit>"); return true; }
         Kit kit = requireKit(sender, args[2]);
         if (kit == null) return true;
-        new KitEditorGui(plugin, (Player) sender, kit).open();
+        new KitEditorGui(plugin, (Player) sender, kit, 0).open();
         return true;
     }
 
@@ -503,10 +504,90 @@ public class AnimaKitsCommand implements CommandExecutor {
     private void giveKit(Player player, Kit kit, int times) {
         for (int t = 0; t < times; t++) {
             for (ItemStack item : kit.getItems()) {
-                if (item != null) {
-                    player.getInventory().addItem(item.clone());
+                if (item != null && item.getType() != org.bukkit.Material.AIR) {
+                    HashMap<Integer, ItemStack> remaining = player.getInventory().addItem(item.clone());
+                    if (!remaining.isEmpty()) {
+                        for (ItemStack left : remaining.values()) {
+                            player.getWorld().dropItemNaturally(player.getLocation(), left);
+                        }
+                    }
                 }
             }
         }
+    }
+
+    private boolean handleClaim(CommandSender sender, String[] args) {
+        if (!requirePlayer(sender)) return true;
+        if (args.length < 3) { usage(sender, "/anima kits claim <kit>"); return true; }
+        Player player = (Player) sender;
+        Kit kit = requireKit(sender, args[2]);
+        if (kit == null) return true;
+
+        if (!requirePerm(sender, "anima.kits.claim." + kit.getPlainName())) return true;
+
+        UUID uuid = player.getUniqueId();
+        if (kit.isSingleClaim() && plugin.getPlayerManager().hasClaimed(uuid, kit.getId())) {
+            MessageUtil.err(sender, "You have already claimed this kit once!");
+            return true;
+        }
+
+        long cooldown = plugin.getPlayerManager().getRemainingCooldown(uuid, kit.getId());
+        if (cooldown > 0) {
+            MessageUtil.err(sender, "You must wait " + cooldown + " more seconds before claiming this kit again.");
+            return true;
+        }
+
+        giveKit(player, kit, 1);
+        plugin.getPlayerManager().markClaimed(uuid, kit.getId());
+        if (kit.getCooldown() > 0) {
+            plugin.getPlayerManager().setCooldown(uuid, kit.getId(), kit.getCooldown());
+        }
+        MessageUtil.sendMsg(player, "kit-received", Map.of("kit", kit.getPlainName(), "amount", "1"));
+        return true;
+    }
+
+    private boolean handleList(CommandSender sender) {
+        if (!requirePerm(sender, "anima.kits.list")) return true;
+        Collection<Kit> kits = plugin.getKitManager().getAllKits();
+        if (kits.isEmpty()) {
+            MessageUtil.send(sender, MM.deserialize("<red>No kits have been created yet.</red>"));
+            return true;
+        }
+        MessageUtil.send(sender, MM.deserialize("<gradient:#54DAF4:#545EB6><bold>━━━━━━━ Available Kits ━━━━━━━</bold></gradient>"));
+        for (Kit kit : kits) {
+            String info = " <gray>• </gray>" + kit.getRawName() + " <gray>(ID: " + kit.getPlainName() + ")</gray>";
+            if (kit.getCooldown() > 0) info += " <aqua>[" + kit.getCooldown() + "s CD]</aqua>";
+            if (kit.isSingleClaim()) info += " <red>[Once]</red>";
+            MessageUtil.send(sender, MM.deserialize(info));
+        }
+        return true;
+    }
+
+    private boolean handleSetCooldown(CommandSender sender, String[] args) {
+        if (!requirePerm(sender, "anima.kits.setcooldown")) return true;
+        if (args.length < 4) { usage(sender, "/anima kits setcooldown <kit> <time_seconds>"); return true; }
+        Kit kit = requireKit(sender, args[2]);
+        if (kit == null) return true;
+        try {
+            long time = Long.parseLong(args[3]);
+            kit.setCooldown(time);
+            plugin.getKitManager().saveKits();
+            MessageUtil.send(sender, MM.deserialize("<green>Cooldown for kit <white>" + kit.getPlainName() + "</white> set to <white>" + time + "</white> seconds.</green>"));
+        } catch (NumberFormatException e) {
+            MessageUtil.err(sender, "Cooldown must be a number (seconds).");
+        }
+        return true;
+    }
+
+    private boolean handleSingleClaim(CommandSender sender, String[] args) {
+        if (!requirePerm(sender, "anima.kits.singleclaim")) return true;
+        if (args.length < 4) { usage(sender, "/anima kits singleclaim <kit> <true|false>"); return true; }
+        Kit kit = requireKit(sender, args[2]);
+        if (kit == null) return true;
+        boolean val = Boolean.parseBoolean(args[3]);
+        kit.setSingleClaim(val);
+        plugin.getKitManager().saveKits();
+        MessageUtil.send(sender, MM.deserialize("<green>Single claim for kit <white>" + kit.getPlainName() + "</white> set to <white>" + val + "</white>.</green>"));
+        return true;
     }
 }
