@@ -5,6 +5,7 @@ import com.worldofnormies.animakits.kit.Kit;
 import com.worldofnormies.animakits.util.ColorUtil;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -45,8 +46,8 @@ public class KitDisplayGui implements Listener {
     }
 
     private void build() {
-        // Displays kit's original color name entirely forced to bold
-        Component title = ColorUtil.parse(kit.getRawName()).toBuilder().bold(true).build();
+        // FIXED: Using decorate(TextDecoration.BOLD) instead of toBuilder()
+        Component title = ColorUtil.parse(kit.getRawName()).decorate(TextDecoration.BOLD);
         inventory = Bukkit.createInventory(null, INV_SIZE, title);
         populate();
     }
@@ -135,7 +136,7 @@ public class KitDisplayGui implements Listener {
     @EventHandler
     public void onClick(InventoryClickEvent event) {
         if (!event.getInventory().equals(inventory)) return;
-        event.setCancelled(true); // Keep view strictly read-only
+        event.setCancelled(true); 
         if (!(event.getWhoClicked() instanceof Player clicker)) return;
 
         int slot = event.getRawSlot();
@@ -166,7 +167,6 @@ public class KitDisplayGui implements Listener {
             return;
         }
         
-        // Claim Kit Click Event Execution
         if (slot == 53) {
             handleClaim();
         }
@@ -189,7 +189,8 @@ public class KitDisplayGui implements Listener {
         }
 
         Component prefix = MM.deserialize("<gradient:#301934:#8A2BE2:#FFFFE0><bold>You have claimed the </bold></gradient>");
-        Component kitName = ColorUtil.parse(kit.getRawName()).toBuilder().bold(true).build();
+        // FIXED: Using decorate(TextDecoration.BOLD) instead of toBuilder()
+        Component kitName = ColorUtil.parse(kit.getRawName()).decorate(TextDecoration.BOLD);
         Component suffix = MM.deserialize("<gradient:#301934:#8A2BE2:#FFFFE0><bold> kit!</bold></gradient>");
         player.sendMessage(prefix.append(kitName).append(suffix));
     }
