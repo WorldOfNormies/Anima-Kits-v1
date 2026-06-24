@@ -1,0 +1,57 @@
+plugins {
+    id 'java'
+    id 'com.gradleup.shadow' version '8.3.3'
+}
+
+group = 'com.worldofnormies'
+version = '1.0.1'
+description = 'AnimaKits - Advanced Kits Maker Plugin by WorldOfNormies'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+repositories {
+    mavenCentral()
+    maven { url = 'https://hub.spigotmc.org/nexus/content/repositories/snapshots/' }
+    maven { url = 'https://oss.sonatype.org/content/repositories/snapshots' }
+    maven { url = 'https://repo.papermc.io/repository/maven-public/' }
+    maven { url = 'https://repo.extendedclip.com/content/repositories/placeholderapi/' }
+    maven { url = 'https://repo.codemc.io/repository/maven-public/' }
+}
+
+dependencies {
+    // Paper API (cross-platform, supports 1.21.x+)
+    compileOnly 'io.papermc.paper:paper-api:1.21.4-R0.1-SNAPSHOT'
+
+    // PlaceholderAPI (optional)
+    compileOnly 'me.clip:placeholderapi:2.11.6'
+
+    // NBT API for NBT tag editing
+    implementation 'de.tr7zw:item-nbt-api:2.13.2'
+
+    // Adventure (bundled with Paper, compile-only)
+    compileOnly 'net.kyori:adventure-api:4.17.0'
+    compileOnly 'net.kyori:adventure-text-minimessage:4.17.0'
+}
+
+processResources {
+    def props = [version: version, description: description]
+    inputs.properties props
+    filteringCharset 'UTF-8'
+    filesMatching('plugin.yml') {
+        expand props
+    }
+}
+
+shadowJar {
+    archiveClassifier.set('')
+    relocate 'de.tr7zw.changeme.nbtapi', 'com.worldofnormies.animaeditor.nbtapi'
+    minimize()
+}
+
+build.dependsOn shadowJar
+
+compileJava.options.encoding = 'UTF-8'
