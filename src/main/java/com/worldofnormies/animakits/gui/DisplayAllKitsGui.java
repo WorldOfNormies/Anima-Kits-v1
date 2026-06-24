@@ -52,7 +52,7 @@ public class DisplayAllKitsGui implements Listener {
 
     private void populate() {
         inventory.clear();
-        List<Kit> kits = new ArrayList<>(plugin.getKitManager().getKits());
+        List<Kit> kits = new ArrayList<>(plugin.getKitManager().getAllKits());
 
         ItemStack blackPane = GuiItem.border(Material.BLACK_STAINED_GLASS_PANE);
         ItemStack whitePane = GuiItem.border(Material.WHITE_STAINED_GLASS_PANE);
@@ -118,7 +118,7 @@ public class DisplayAllKitsGui implements Listener {
         }
 
         if (slot == 51) {
-            if ((page + 1) * kitSlots.length < plugin.getKitManager().getKits().size()) {
+            if ((page + 1) * kitSlots.length < plugin.getKitManager().getAllKits().size()) {
                 page++;
                 populate();
             }
@@ -135,7 +135,7 @@ public class DisplayAllKitsGui implements Listener {
 
         if (slotIndex != -1) {
             int kitIndex = (page * kitSlots.length) + slotIndex;
-            List<Kit> kits = new ArrayList<>(plugin.getKitManager().getKits());
+            List<Kit> kits = new ArrayList<>(plugin.getKitManager().getAllKits());
             if (kitIndex >= kits.size()) return;
 
             Kit kit = kits.get(kitIndex);
