@@ -55,9 +55,17 @@ public final class ColorUtil {
 
     public static String strip(String input) {
         if (input == null) return "";
-        String s = ChatColor.stripColor(input);
-        s = HEX_PATTERN.matcher(s).replaceAll("");
-        s = s.replaceAll("<[^>]*>", "");
+        String s = input;
+        // Strip legacy & and § codes (more aggressive to catch things like &u if they are intended as codes)
+        s = s.replaceAll("(?i)[&§][a-z0-9]", "");
+        // Strip hex &#RRGGBB
+        s = s.replaceAll("(?i)&#[A-F0-9]{6}", "");
+        // Strip hex §x§r§r§g§g§b§b
+        s = s.replaceAll("(?i)§x(§[A-F0-9]){6}", "");
+        // Strip MiniMessage
+        s = s.replaceAll("(?i)<[^>]*>", "");
+        // Also remove brackets if they are being used for naming artifacts
+        s = s.replace("[", "").replace("]", "");
         return s.trim();
     }
 

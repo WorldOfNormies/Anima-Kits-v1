@@ -48,29 +48,45 @@ public class ConfirmDeleteGui implements Listener {
     }
 
     public void open() {
-        Component title = MM.deserialize(
-                "<red><bold>Delete kit: </bold></red><white>" + kit.getPlainName() + "</white><red><bold>?</bold></red>");
-        inventory = Bukkit.createInventory(null, 9, title);
+        Component title = MM.deserialize("[Delete Kit]");
+        inventory = Bukkit.createInventory(null, 27, title);
         populate();
         Bukkit.getPluginManager().registerEvents(this, plugin);
         player.openInventory(inventory);
     }
 
     private void populate() {
-        ItemStack black = pane(Material.BLACK_STAINED_GLASS_PANE,
-                MM.deserialize("<dark_gray> </dark_gray>"));
-        ItemStack red   = pane(Material.RED_STAINED_GLASS_PANE,
-                MM.deserialize("<red><bold>✘ Cancel</bold></red>"),
-                List.of(MM.deserialize("<gray>Go back – keep the kit.</gray>")));
-        ItemStack lime  = pane(Material.LIME_STAINED_GLASS_PANE,
-                MM.deserialize("<green><bold>✔ Confirm Delete</bold></green>"),
-                List.of(MM.deserialize("<red>This action cannot be undone!</red>")));
+        ItemStack black = pane(Material.BLACK_STAINED_GLASS_PANE, MM.deserialize("<dark_gray> </dark_gray>"));
+        ItemStack white = pane(Material.WHITE_STAINED_GLASS_PANE, MM.deserialize("<white> </white>"));
+        ItemStack red   = pane(Material.RED_STAINED_GLASS_PANE, MM.deserialize("<red><bold>NO</bold></red>"));
+        ItemStack lime  = pane(Material.LIME_STAINED_GLASS_PANE, MM.deserialize("<green><bold>YES</bold></green>"));
+        ItemStack tnt   = pane(Material.TNT,
+            MM.deserialize("<dark_red><bold>Erase Kitt? " + kit.getPlainName() + "</bold></dark_red>"),
+            List.of(MM.deserialize("<gray>You Are About To Erase A Kit</gray>"),
+                    MM.deserialize("<gray>Once Remove It's Gone Forever</gray>")));
 
-        for (int i : new int[]{0, 1, 2, 4, 6, 7, 8}) {
-            inventory.setItem(i, black);
-        }
-        inventory.setItem(CANCEL_SLOT,  red);
-        inventory.setItem(CONFIRM_SLOT, lime);
+        // Decoration: Black [1, 5, 10, 14, 19, 23] -> Index: 0, 4, 9, 13, 18, 22
+        // Decoration: White [0, 18] -> Index: 17 (Wait, Slot 0 is Index 0. Slot 18 is Index 17)
+        // Correction: Black Slot 1 -> Index 0. Black Slot 5 -> Index 4. Black Slot 10 -> Index 9...
+        for (int i : new int[]{0, 4, 9, 13, 18, 22}) { inventory.setItem(i, black); }
+        for (int i : new int[]{17}) { inventory.setItem(i, white); } // Slot 18 is Index 17. Slot 0 was given as Index 0 above.
+        inventory.setItem(0, white); // Slot 0 is Index 0.
+
+        // TNT Slot 9 -> Index 8
+        inventory.setItem(8, tnt);
+
+        // Black [2, 3, 4, 11, 13, 20, 21, 22] -> Index: 1, 2, 3, 10, 12, 19, 20, 21
+        for (int i : new int[]{1, 2, 3, 10, 12, 19, 20, 21}) { inventory.setItem(i, black); }
+
+        // Red Slot 12 -> Index 11
+        inventory.setItem(11, red);
+
+        // Green [6, 7, 8, 15, 17, 24, 25, 26] -> Index: 5, 6, 7, 14, 16, 23, 24, 25
+        ItemStack green = pane(Material.GREEN_STAINED_GLASS_PANE, Component.space());
+        for (int i : new int[]{5, 6, 7, 14, 16, 23, 24, 25}) { inventory.setItem(i, green); }
+
+        // Lime Slot 16 -> Index 15
+        inventory.setItem(15, lime);
     }
 
     @EventHandler
@@ -80,12 +96,12 @@ public class ConfirmDeleteGui implements Listener {
         event.setCancelled(true);
 
         int slot = event.getRawSlot();
-        if (slot == CANCEL_SLOT) {
+        if (slot == 11) { // NO
             // Reopen the editor for this kit
             HandlerList.unregisterAll(this);
             Bukkit.getScheduler().runTask(plugin, () ->
                     new KitEditorGui(plugin, player, kit, 0).open());
-        } else if (slot == CONFIRM_SLOT) {
+        } else if (slot == 15) { // YES
             plugin.getKitManager().deleteKit(kit.getPlainName());
             HandlerList.unregisterAll(this);
             Bukkit.getScheduler().runTask(plugin, () ->

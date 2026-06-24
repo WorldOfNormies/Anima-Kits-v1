@@ -22,6 +22,9 @@ public class PermissionManager {
     /** playerUUID → permNode → expiryEpochSecond (-1 = permanent) */
     private final Map<UUID, Map<String, Long>> data = new HashMap<>();
 
+    /** Global permissions for @a (persists for new players) */
+    private final Map<String, Long> globalData = new HashMap<>();
+
     public PermissionManager(AnimaKitsPlugin plugin) {
         this.plugin = plugin;
         this.file = new File(plugin.getDataFolder(), "permissions.yml");
@@ -29,13 +32,23 @@ public class PermissionManager {
 
     public void load() {
         data.clear();
+        globalData.clear();
         if (!file.exists()) return;
         config = YamlConfiguration.loadConfiguration(file);
-        for (String uuidStr : config.getKeys(false)) {
+        for (String key : config.getKeys(false)) {
+            if (key.equalsIgnoreCase("global")) {
+                var section = config.getConfigurationSection(key);
+                if (section != null) {
+                    for (String perm : section.getKeys(false)) {
+                        globalData.put(perm, section.getLong(perm));
+                    }
+                }
+                continue;
+            }
             try {
-                UUID uuid = UUID.fromString(uuidStr);
+                UUID uuid = UUID.fromString(key);
                 Map<String, Long> perms = new HashMap<>();
-                var section = config.getConfigurationSection(uuidStr);
+                var section = config.getConfigurationSection(key);
                 if (section != null) {
                     for (String perm : section.getKeys(false)) {
                         perms.put(perm, section.getLong(perm));
@@ -53,6 +66,9 @@ public class PermissionManager {
                 config.set(entry.getKey() + "." + permEntry.getKey(), permEntry.getValue());
             }
         }
+        for (var entry : globalData.entrySet()) {
+            config.set("global." + entry.getKey(), entry.getValue());
+        }
         try { config.save(file); } catch (IOException e) {
             plugin.getLogger().severe("Could not save permissions.yml: " + e.getMessage());
         }
@@ -64,6 +80,12 @@ public class PermissionManager {
         save();
     }
 
+    public void grantGlobal(String perm, long durationSeconds) {
+        long expiry = durationSeconds == -1 ? -1 : Instant.now().getEpochSecond() + durationSeconds;
+        globalData.put(perm, expiry);
+        save();
+    }
+
     public boolean revoke(UUID player, String perm) {
         Map<String, Long> perms = data.get(player);
         if (perms == null || !perms.containsKey(perm)) return false;
@@ -72,7 +94,24 @@ public class PermissionManager {
         return true;
     }
 
+    public boolean revokeGlobal(String perm) {
+        if (!globalData.containsKey(perm)) return false;
+        globalData.remove(perm);
+        save();
+        return true;
+    }
+
     public boolean has(UUID player, String perm) {
+        // Check global first
+        Long globalExpiry = globalData.get(perm);
+        if (globalExpiry != null) {
+            if (globalExpiry == -1 || Instant.now().getEpochSecond() <= globalExpiry) return true;
+            else {
+                globalData.remove(perm);
+                save();
+            }
+        }
+
         Map<String, Long> perms = data.get(player);
         if (perms == null) return false;
         Long expiry = perms.get(perm);
