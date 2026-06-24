@@ -40,6 +40,10 @@ permissions:
       anima.kits.permission.add: true
       anima.kits.permission.remove: true
       anima.kits.permission.show: true
+      anima.kits.claim.*: true
+      anima.kits.list: true
+      anima.kits.setcooldown: true
+      anima.kits.singleclaim: true
 
   anima.kits.use:
     description: "Open the main Kits GUI menu."
@@ -107,4 +111,20 @@ permissions:
 
   anima.kits.permission.show:
     description: "Show all AnimaKits permissions assigned to a player."
+    default: op
+
+  anima.kits.claim.*:
+    description: "Claim any kit if user has the permission."
+    default: op
+
+  anima.kits.list:
+    description: "List all kits."
+    default: op
+
+  anima.kits.setcooldown:
+    description: "Set a kit's cooldown."
+    default: op
+
+  anima.kits.singleclaim:
+    description: "Set a kit's singleclaim status."
     default: op

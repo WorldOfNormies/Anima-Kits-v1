@@ -1,6 +1,7 @@
 package com.worldofnormies.animakits.kit;
 
 import com.worldofnormies.animakits.util.ColorUtil;
+import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.ArrayList;
@@ -17,12 +18,18 @@ public class Kit {
     private String rawName;   // stored exactly as typed (MiniMessage / &codes)
     private List<String> lore;
     private List<ItemStack> items;
+    private Material iconMaterial;
+    private long cooldown; // in seconds
+    private boolean singleClaim;
 
     public Kit(UUID id, String rawName) {
         this.id = id;
         this.rawName = rawName;
         this.lore = new ArrayList<>();
         this.items = new ArrayList<>();
+        this.iconMaterial = Material.CHEST;
+        this.cooldown = 0;
+        this.singleClaim = false;
     }
 
     // ── Identity ───────────────────────────────────────────────────
@@ -49,4 +56,17 @@ public class Kit {
     public void            setItems(List<ItemStack> items) { this.items = new ArrayList<>(items); }
     public void            addItem(ItemStack item)  { items.add(item); }
     public void            clearItems()             { items.clear(); }
+
+    // ── Icon ───────────────────────────────────────────────────────
+
+    public Material getIconMaterial() { return iconMaterial; }
+    public void     setIconMaterial(Material m) { this.iconMaterial = (m == null || m == Material.AIR) ? Material.CHEST : m; }
+
+    // ── Settings ───────────────────────────────────────────────────
+
+    public long    getCooldown() { return cooldown; }
+    public void    setCooldown(long cooldown) { this.cooldown = cooldown; }
+
+    public boolean isSingleClaim() { return singleClaim; }
+    public void    setSingleClaim(boolean singleClaim) { this.singleClaim = singleClaim; }
 }

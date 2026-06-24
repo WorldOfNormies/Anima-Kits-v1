@@ -40,7 +40,8 @@ public class AnimaKitsTabCompleter implements TabCompleter {
 
     private static final List<String> SUB2 = List.of(
             "display", "edit", "lore", "open", "clonekit",
-            "give", "giveall", "reload", "help", "permission");
+            "give", "giveall", "reload", "help", "permission",
+            "claim", "list", "setcooldown", "singleclaim");
 
     private static final List<String> EDIT_ACTIONS   = List.of("add", "remove", "rename");
     private static final List<String> LORE_ACTIONS   = List.of("add", "edit", "remove");
@@ -78,15 +79,18 @@ public class AnimaKitsTabCompleter implements TabCompleter {
 
         String sub2 = args[1].toLowerCase();
         return switch (sub2) {
-            case "display"    -> completeDisplay(args);
-            case "edit"       -> completeEdit(args);
-            case "lore"       -> completeLore(args);
-            case "open"       -> args.length == 3 ? kitNames(args[2]) : List.of();
-            case "clonekit"   -> completeCloneKit(args);
-            case "give"       -> completeGive(args);
-            case "giveall"    -> completeGiveAll(args);
-            case "permission" -> completePermission(args);
-            default           -> List.of();
+            case "display"     -> completeDisplay(args);
+            case "edit"        -> completeEdit(args);
+            case "lore"        -> completeLore(args);
+            case "open"        -> args.length == 3 ? kitNames(args[2]) : List.of();
+            case "clonekit"    -> completeCloneKit(args);
+            case "give"        -> completeGive(args);
+            case "giveall"     -> completeGiveAll(args);
+            case "permission"  -> completePermission(args);
+            case "claim"       -> args.length == 3 ? kitNames(args[2]) : List.of();
+            case "setcooldown" -> args.length == 3 ? kitNames(args[2]) : List.of();
+            case "singleclaim" -> completeSingleClaim(args);
+            default            -> List.of();
         };
     }
 
@@ -136,6 +140,13 @@ public class AnimaKitsTabCompleter implements TabCompleter {
     private List<String> completeGiveAll(String[] args) {
         if (args.length == 3) return kitNames(args[2]);
         if (args.length == 4) return filter(args[3], AMOUNTS);
+        return List.of();
+    }
+
+    /** /anima kits singleclaim <kit> <true|false> */
+    private List<String> completeSingleClaim(String[] args) {
+        if (args.length == 3) return kitNames(args[2]);
+        if (args.length == 4) return filter(args[3], List.of("true", "false"));
         return List.of();
     }
 

@@ -85,7 +85,7 @@ public class KitBrowserGui implements Listener {
             lore.add(Component.empty());
             lore.add(MM.deserialize("<yellow>Left-click</yellow> <gray>→ view kit</gray>"));
             lore.add(MM.deserialize("<yellow>Right-click</yellow> <gray>→ open editor</gray>"));
-            ItemStack icon = GuiItem.make(Material.CHEST, name, lore);
+            ItemStack icon = GuiItem.make(kit.getIconMaterial(), name, lore);
             inventory.setItem(i, icon);
         }
 
@@ -96,19 +96,23 @@ public class KitBrowserGui implements Listener {
             inventory.setItem(i, GuiItem.border(borderMat));
         }
 
-        // Pagination buttons
+        // Layout from image: 45: Red Bundle, 47: Red Pane, 49: Ender Chest, 51: Lime Pane, 53: Green Bundle
+
+        inventory.setItem(45, GuiItem.make(Material.RED_BUNDLE, MM.deserialize("<red><bold>✘ Close</bold></red>")));
+
         if (page > 0) {
-            inventory.setItem(PREV_SLOT, GuiItem.make(Material.ARROW,
-                    MM.deserialize(plugin.getConfig().getString("gui.prev-page-name", "<gray>« Previous</gray>"))));
-        }
-        if (to < allKits.size()) {
-            inventory.setItem(NEXT_SLOT, GuiItem.make(Material.ARROW,
-                    MM.deserialize(plugin.getConfig().getString("gui.next-page-name", "<gray>Next »</gray>"))));
+            inventory.setItem(47, GuiItem.make(Material.RED_STAINED_GLASS_PANE, MM.deserialize("<red>« Previous Page</red>")));
         }
 
-        // Page indicator
-        inventory.setItem(49, GuiItem.make(Material.PAPER,
-                MM.deserialize("<gray>Page <white>" + (page + 1) + "</white> / <white>" + totalPages + "</white></gray>")));
+        inventory.setItem(49, GuiItem.make(Material.ENDER_CHEST, MM.deserialize("<light_purple><bold>Kit Statistics</bold></light_purple>"),
+                List.of(MM.deserialize("<gray>Total Kits: <white>" + allKits.size() + "</white></gray>"),
+                        MM.deserialize("<gray>Page: <white>" + (page + 1) + "/" + totalPages + "</white></gray>"))));
+
+        if (to < allKits.size()) {
+            inventory.setItem(51, GuiItem.make(Material.LIME_STAINED_GLASS_PANE, MM.deserialize("<green>Next Page »</green>")));
+        }
+
+        inventory.setItem(53, GuiItem.make(Material.LIME_BUNDLE, MM.deserialize("<green><bold>Refresh</bold></green>")));
     }
 
     // ── Events ─────────────────────────────────────────────────────
@@ -123,9 +127,17 @@ public class KitBrowserGui implements Listener {
         int slot = event.getRawSlot();
         if (slot < 0 || slot >= INV_SIZE) return;
 
-        // Pagination
-        if (slot == PREV_SLOT && page > 0) { page--; refresh(); return; }
-        if (slot == NEXT_SLOT) { page++; refresh(); return; }
+        // Pagination & Actions
+        if (slot == 45) { player.closeInventory(); return; }
+        if (slot == 47 && page > 0) { page--; refresh(); return; }
+        if (slot == 51) {
+            List<Kit> allKits = new ArrayList<>(plugin.getKitManager().getAllKits());
+            if ((page + 1) * KITS_PER_PAGE < allKits.size()) {
+                page++; refresh();
+            }
+            return;
+        }
+        if (slot == 53) { refresh(); return; }
 
         // Kit click
         if (slot < KITS_PER_PAGE) {
@@ -137,7 +149,7 @@ public class KitBrowserGui implements Listener {
             boolean rightClick = event.isRightClick();
             if (rightClick && player.hasPermission("anima.kits.open")) {
                 // Open editor
-                KitEditorGui editor = new KitEditorGui(plugin, player, kit);
+                KitEditorGui editor = new KitEditorGui(plugin, player, kit, 0);
                 editor.open();
             } else if (player.hasPermission("anima.kits.display")) {
                 // Open display (read-only)
