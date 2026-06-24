@@ -350,14 +350,31 @@ public class AnimaKitsCommand implements CommandExecutor {
                 <yellow>/anima kits giveall <kit> <n></yellow>      <gray>Give kit to all online</gray>
                 <yellow>/anima kits permission ...</yellow>         <gray>Manage timed perms</gray>
                 <yellow>/anima kits reload</yellow>                 <gray>Reload config</gray>
-                <gradient:#54DAF4:#545EB6><bold>━━━━ Colour & Gradient Guide ━━━━</bold></gradient>
+                <gradient:#54DAF4:#545EB6><bold></bold></gradient>
+                <gradient:#54DAF4:#545EB6><bold>━━━━━━━  Gradient Font Guide  ━━━━━━━</bold></gradient>
+                                                
+                <gradient:#54DAF4:#545EB6><bold>Start by typing <white>"<"gradient #HEX:#HEX">"</white> without → "".</bold></gradient>
+                <gradient:#54DAF4:#545EB6><bold>"The Perfered Kit Name".<white></bold></gradient>
+                <gradient:#54DAF4:#545EB6><bold>and end with <white>"<"/gradient">"<white> without → "".</bold></gradient>
+                                                
+                <gradient:#54DAF4:#545EB6><bold>━━━━━━━  Colour & Style Guide  ━━━━━━</bold></gradient>
+                                                
                 <gray>Legacy codes:  <white>&a Green  &c Red  &b Aqua  &6 Gold  &l Bold  &o Italic</white></gray>
+                <gradient:#54DAF4:#545EB6><bold>You can also typed them as "<"red"> MSG <"/red"> without → ""</bold></gradient> 
+                <gradient:#54DAF4:#545EB6><bold>same as Bold|Italic|Underline as "<"Bold" > without → "" </"Bold">"</bold></gradient> 
+                                                
+                <gradient:#54DAF4:#545EB6><bold>━━━━━━━━━━━━━  Examples  ━━━━━━━━━━━━</bold></gradient>
+                                                
                 <gray>Hex colour:    <white>&#FF5500MyText</white>  → <color:#FF5500>MyText</color></gray>
-                <gray>MiniMessage:   <white><red>Red</red>  <bold>Bold</bold>  <italic>Italic</italic></white></gray>
-                <gray>Gradient:      <white><gradient:#54DAF4:#545EB6>My Kit Name</gradient></white></gray>
-                <gray>Rainbow:       <white><rainbow>Rainbow Kit</rainbow></white></gray>
+                                                
+                <gradient:#54DAF4:#545EB6><bold>━━━━ Color Bold Italic Underline ━━━━</bold></gradient>
+                                                
+                <gray>MiniMessage:   <white><red>Red</red>  <bold>Bold</bold>  <italic>Italic</italic></white></gray>                               
+                <gray>Gradient:      <white><gradient:#54DAF4:#545EB6>My Kit Name</gradient></white></gray>                                             
+                <gray><"Rainbow">:       <white><rainbow>Rainbow Kit</rainbow></white></gray>                                
                 <gray>Example kit name: <white><gradient:#FF6B6B:#FFE66D>Fire Kit</gradient></white></gray>
                 <gray>Example lore:     <white><italic><gray>A blazing hot kit!</gray></italic></white></gray>
+                                                
                 <gradient:#54DAF4:#545EB6><bold>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</bold></gradient>
                 """));
         return true;
