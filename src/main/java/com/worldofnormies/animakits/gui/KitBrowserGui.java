@@ -33,10 +33,7 @@ public class KitBrowserGui implements Listener {
     private int page = 0;
     private Inventory inventory;
 
-    private static final int KITS_PER_PAGE = 45;
     private static final int INV_SIZE = 54;
-    private static final int PREV_SLOT = 48;
-    private static final int NEXT_SLOT = 50;
 
     public KitBrowserGui(AnimaKitsPlugin plugin, Player player) {
         this.plugin = plugin;
@@ -60,7 +57,8 @@ public class KitBrowserGui implements Listener {
     // ── Build ──────────────────────────────────────────────────────
 
     private void build() {
-        Component title = MM.deserialize("[All Kits Menu]");
+        // Red (#FF0000) -> Light Gray (#D3D3D3) -> Blue (#0000FF) bold title
+        Component title = MM.deserialize("<gradient:#FF0000:#D3D3D3:#0000FF><bold>Anima Kits</bold></gradient>");
         inventory = Bukkit.createInventory(null, INV_SIZE, title);
         populate();
     }
@@ -69,8 +67,9 @@ public class KitBrowserGui implements Listener {
         inventory.clear();
         List<Kit> allKits = new ArrayList<>(plugin.getKitManager().getAllKits());
 
+        // Available slots within inside grid layout (rows 1-4, skipping side borders)
         int[] kitSlots = {
-            10, 11, 12, 14, 15, 16,
+            10, 11, 12, 13, 14, 15, 16,
             19, 20, 21, 22, 23, 24, 25,
             28, 29, 30, 31, 32, 33, 34,
             37, 38, 39, 40, 41, 42, 43
@@ -83,69 +82,84 @@ public class KitBrowserGui implements Listener {
         int to   = Math.min(from + kitSlots.length, allKits.size());
         List<Kit> pageKits = allKits.subList(from, to);
 
-        // Decoration panes
+        // --- BACKGROUND DECORATION ---
         ItemStack blackPane = GuiItem.border(Material.BLACK_STAINED_GLASS_PANE);
-        // Slot = [0, 1, 2, 3, 5, 6, 7, 8, 46, 48, 49, 51, 52] -> Index: 0,1,2,3,5,6,7,45,47,48,50,51
-        for (int s : new int[]{0,1,2,3, 5,6,7, 45,47,48,50,51}) {
+        ItemStack whitePane = GuiItem.border(Material.WHITE_STAINED_GLASS_PANE);
+
+        // Top Row (0-8, except slot 4 which holds the Ender Chest)
+        for (int s : new int[]{0, 1, 2, 3, 5, 6, 7, 8}) {
             inventory.setItem(s, blackPane);
         }
 
-        ItemStack whitePane = GuiItem.border(Material.WHITE_STAINED_GLASS_PANE);
-        // Slot = [9, 17, 18, 26, 27, 35, 36, 44] -> Index: 8,16,17,25,26,34,35,43
-        for (int s : new int[]{8,16,17,25,26,34,35,43}) {
+        // Side Borders (White Glass)
+        for (int s : new int[]{9, 18, 27, 36, 17, 26, 35, 44}) {
             inventory.setItem(s, whitePane);
         }
 
-        // Kit icons
+        // Bottom Row Fillers
+        for (int s : new int[]{46, 48, 49, 50, 52}) {
+            inventory.setItem(s, blackPane);
+        }
+
+        // --- KIT ICONS POPULATION ---
         for (int i = 0; i < pageKits.size(); i++) {
             Kit kit = pageKits.get(i);
             Component name = ColorUtil.parse(kit.getRawName());
             List<Component> lore = new ArrayList<>();
-            lore.add(MM.deserialize("<yellow>Left Click</yellow> <gray>→ Open</gray>"));
-            lore.add(MM.deserialize("<yellow>Shift Left Click</yellow> <gray>→ Edit Kit</gray>"));
-            lore.add(MM.deserialize("<yellow>Right Click</yellow> <gray>→ Give (Self)</gray>"));
-            lore.add(MM.deserialize("<yellow>Shift Right Click</yellow> <gray>→ Clone Kit</gray>"));
-            lore.add(MM.deserialize("<yellow>Middle Mouse</yellow> <gray>→ Delete This Kit</gray>"));
-            lore.add(MM.deserialize("<yellow>Shift Middle Mouse</yellow> <gray>→ Give or Giveall</gray>"));
+
+            // Group 1: Open / Edit
+            lore.add(MM.deserialize("<gradient:#301934:#8A2BE2:#FFFFE0><bold>Left Click</bold></gradient> <gray><bold>→</bold> Open</gray>"));
+            lore.add(MM.deserialize("<gradient:#301934:#8A2BE2:#FFFFE0><bold>Shift Left Click</bold></gradient> <gray><bold>→</bold> Edit Kit</gray>"));
+            
+            // Separation Break
+            lore.add(Component.empty());
+
+            // Group 2: Give / Clone
+            lore.add(MM.deserialize("<gradient:#301934:#8A2BE2:#FFFFE0><bold>Right Click</bold></gradient> <gray><bold>→</bold> Give (Self)</gray>"));
+            lore.add(MM.deserialize("<gradient:#301934:#8A2BE2:#FFFFE0><bold>Shift Right Click</bold></gradient> <gray><bold>→</bold> Clone Kit</gray>"));
+            
+            // Separation Break
+            lore.add(Component.empty());
+
+            // Group 3: Delete / Admin Give Actions
+            lore.add(MM.deserialize("<gradient:#301934:#8A2BE2:#FFFFE0><bold>Middle Mouse</bold></gradient> <gray><bold>→</bold> Delete This Kit</gray>"));
+            lore.add(MM.deserialize("<gradient:#301934:#8A2BE2:#FFFFE0><bold>Shift Middle Mouse</bold></gradient> <gray><bold>→</bold> Give or Giveall</gray>"));
 
             ItemStack icon = GuiItem.make(kit.getIconMaterial(), name, lore);
             inventory.setItem(kitSlots[i], icon);
         }
 
-        // Special items
-        // Ender Chest: Slot = [4] -> Index 3
-        inventory.setItem(3, GuiItem.make(Material.ENDER_CHEST, MM.deserialize("<light_purple><bold>Kit Statistics</bold></light_purple>"),
+        // --- INTERACTIVE BUTTONS & SPECIAL ITEMS ---
+
+        // Slot 4: Ender Chest (Kit Statistics)
+        inventory.setItem(4, GuiItem.make(Material.ENDER_CHEST, MM.deserialize("<light_purple><bold>Kit Statistics</bold></light_purple>"),
                 List.of(MM.deserialize("<gray>Total Kits: <white>" + allKits.size() + "</white></gray>"),
                         MM.deserialize("<gray>Page: <white>" + (page + 1) + "/" + totalPages + "</white></gray>"))));
 
-        // Light Gray glass pane (Empty kit slot example): Slot = [13] -> Index 12
+        // Empty Status Handling Slot
         if (allKits.isEmpty()) {
-            inventory.setItem(12, GuiItem.make(Material.LIGHT_GRAY_STAINED_GLASS_PANE, MM.deserialize("<gray>No Kits Created Yet</gray>")));
+            inventory.setItem(13, GuiItem.make(Material.LIGHT_GRAY_STAINED_GLASS_PANE, MM.deserialize("<gray>No Kits Created Yet</gray>")));
         }
 
-        // Red Bundle (Close/Exit): Slot = [45] -> Index 44
-        inventory.setItem(44, GuiItem.make(Material.RED_BUNDLE, MM.deserialize("<red><bold>✘ Close</bold></red>")));
+        // Slot 45: Return/Close Button (Dark blood red to red bold gradient)
+        inventory.setItem(45, GuiItem.make(Material.RED_BUNDLE, MM.deserialize("<gradient:#8B0000:#FF0000><bold>✘ Close</bold></gradient>")));
 
-        // Red glass pane: Slot = [47] -> Index 46
+        // Slot 47: Previous Page (Dark blood red to orange bold gradient)
         if (page > 0) {
-            inventory.setItem(46, GuiItem.make(Material.RED_STAINED_GLASS_PANE, MM.deserialize("<red>« Previous Page</red>")));
+            inventory.setItem(47, GuiItem.make(Material.RED_STAINED_GLASS_PANE, MM.deserialize("<gradient:#8B0000:#FF8C00><bold>« Previous Page</bold></gradient>")));
         } else {
-            inventory.setItem(46, blackPane);
+            inventory.setItem(47, blackPane);
         }
 
-        // Book and Quill (Manage/Info): Slot = [50] -> Index 49
-        inventory.setItem(49, GuiItem.make(Material.WRITABLE_BOOK, MM.deserialize("<aqua><bold>Manage Kits</bold></aqua>"),
-                List.of(MM.deserialize("<gray>Use this menu to manage your kits.</gray>"))));
-
-        // Lime glass pane: Slot = [53] -> Index 52
+        // Slot 51: Next Page (Lime green to yellowish-green bold gradient)
         if (to < allKits.size()) {
-            inventory.setItem(52, GuiItem.make(Material.LIME_STAINED_GLASS_PANE, MM.deserialize("<green>Next Page »</green>")));
+            inventory.setItem(51, GuiItem.make(Material.LIME_STAINED_GLASS_PANE, MM.deserialize("<gradient:#32CD32:#ADFF2F><bold>Next Page »</bold></gradient>")));
         } else {
-            inventory.setItem(52, blackPane);
+            inventory.setItem(51, blackPane);
         }
 
-        // Green Bundle (Next/Accept): Slot = [54] -> Index 53
-        inventory.setItem(53, GuiItem.make(Material.LIME_BUNDLE, MM.deserialize("<green><bold>Refresh</bold></green>")));
+        // Slot 53: Refresh Button (Replaced by Black Pane per instruction)
+        inventory.setItem(53, blackPane);
     }
 
     // ── Events ─────────────────────────────────────────────────────
@@ -161,20 +175,26 @@ public class KitBrowserGui implements Listener {
         if (slot < 0 || slot >= INV_SIZE) return;
 
         // Pagination & Actions
-        if (slot == 44) { player.closeInventory(); return; }
-        if (slot == 46 && page > 0) { page--; refresh(); return; }
-        if (slot == 52) {
+        if (slot == 45) { player.closeInventory(); return; }
+        if (slot == 47 && page > 0) { page--; refresh(); return; }
+        if (slot == 51) {
             List<Kit> allKits = new ArrayList<>(plugin.getKitManager().getAllKits());
-            if ((page + 1) * 27 < allKits.size()) { // 27 is current kitSlots.length
+            int[] kitSlots = {
+                10, 11, 12, 13, 14, 15, 16,
+                19, 20, 21, 22, 23, 24, 25,
+                28, 29, 30, 31, 32, 33, 34,
+                37, 38, 39, 40, 41, 42, 43
+            };
+            if ((page + 1) * kitSlots.length < allKits.size()) {
                 page++; refresh();
             }
             return;
         }
         if (slot == 53) { refresh(); return; }
 
-        // Kit click
+        // Kit grid detection map
         int[] kitSlots = {
-            10, 11, 12, 14, 15, 16,
+            10, 11, 12, 13, 14, 15, 16,
             19, 20, 21, 22, 23, 24, 25,
             28, 29, 30, 31, 32, 33, 34,
             37, 38, 39, 40, 41, 42, 43
@@ -192,29 +212,27 @@ public class KitBrowserGui implements Listener {
 
             if (event.isShiftClick()) {
                 if (event.isLeftClick()) {
-                    // Shift Left Click = Edit Kit
                     new KitEditorGui(plugin, player, kit, 0).open();
                 } else if (event.isRightClick()) {
-                    // Shift Right Click = Clone Kit
                     Kit cloned = plugin.getKitManager().cloneKit(kit.getPlainName(), kit.getPlainName() + " Copy");
                     player.sendMessage(MM.deserialize("<green>Kit cloned successfully!</green>"));
                     refresh();
                 }
             } else if (event.getClick().name().contains("MIDDLE")) {
                 if (event.isShiftClick()) {
-                    // Shift Middle Mouse = Trigger Give or Giveall
                     triggerGivePrompt(kit);
                 } else {
-                    // Middle Mouse = Trigger Delete This Kit
                     new ConfirmDeleteGui(plugin, player, kit).open();
                 }
             } else if (event.isLeftClick()) {
-                // Left Click = Open
                 new ViewingSpecificKitGui(plugin, player, kit).open();
             } else if (event.isRightClick()) {
-                // Right Click = Give (Self)
                 giveKit(player, kit);
-                player.sendMessage(MM.deserialize("<green>Kit " + kit.getPlainName() + " given to you.</green>"));
+                
+                Component prefix = MM.deserialize("<gradient:#301934:#8A2BE2:#FFFFE0><bold>Kit </bold></gradient>");
+                Component kitName = ColorUtil.parse(kit.getRawName()).toBuilder().bold(true).build();
+                Component suffix = MM.deserialize("<gradient:#301934:#8A2BE2:#FFFFE0><bold> given to you.</bold></gradient>");
+                player.sendMessage(prefix.append(kitName).append(suffix));
             }
         }
     }
@@ -249,12 +267,5 @@ public class KitBrowserGui implements Listener {
         if (!event.getPlayer().equals(player)) return;
         plugin.getKitManager().unregisterBrowser(player);
         HandlerList.unregisterAll(this);
-    }
-
-    // ── Helpers ────────────────────────────────────────────────────
-
-    private Material parseMaterial(String name) {
-        try { return Material.valueOf(name.toUpperCase()); }
-        catch (Exception e) { return Material.BLACK_STAINED_GLASS_PANE; }
     }
 }
