@@ -1,5 +1,5 @@
 name: AnimaKits
-version: '1.0.2'
+version: '1.0.5'
 main: com.worldofnormies.animakits.AnimaKitsPlugin
 api-version: '1.21'
 description: "A powerful, feature-rich kit management plugin with gradient support, multi-page GUIs, and Bedrock compatibility."

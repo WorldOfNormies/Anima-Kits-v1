@@ -62,6 +62,33 @@ public class ChatInputSession implements Listener {
     // Static helpers to send the instruction messages
     // ─────────────────────────────────────────────────────────────
 
+    /** Chat prompt shown when creating a kit. */
+    public static void sendCreatePrompt(AnimaKitsPlugin plugin, Player player) {
+        MiniMessage mm = MiniMessage.miniMessage();
+
+        player.sendMessage(mm.deserialize(
+                "<gradient:#54DAF4:#545EB6><bold>━━━━ AnimaKits – Create Kit ━━━━</bold></gradient>"));
+        player.sendMessage(mm.deserialize(
+                "<gray>How to type a <white>gradient</white> name:</gray>"));
+        player.sendMessage(mm.deserialize(
+                "<gray>  Legacy:     <white>&6&lGolden Kit</white>  → <gold><bold>Golden Kit</bold></gold></gray>"));
+        player.sendMessage(mm.deserialize(
+                "<gray>  Hex:        <white>&#FF5500Lava Kit</white>  → <color:#FF5500>Lava Kit</color></gray>"));
+        player.sendMessage(mm.deserialize(
+                "<gray>  Gradient:   <white><gradient:#54DAF4:#545EB6>My Kit Name</gradient></white></gray>"));
+        player.sendMessage(mm.deserialize(
+                "<gray>  Rainbow:    <white><rainbow>Rainbow Kit</rainbow></white></gray>"));
+        player.sendMessage(Component.empty());
+        player.sendMessage(mm.deserialize(
+                "<yellow>Enter new kit name in chat, then press <white>Enter</white>:</yellow>"));
+        player.sendMessage(Component.empty());
+
+        // Clickable cancel link
+        Component cancelLink = mm.deserialize("<red><bold>[Click here to cancel]</bold></red>")
+                .clickEvent(ClickEvent.runCommand("/animakits-cancel-input"));
+        player.sendMessage(cancelLink);
+    }
+
     /** Chat prompt shown when renaming a kit. */
     public static void sendRenamePrompt(AnimaKitsPlugin plugin, Player player) {
         MiniMessage mm = MiniMessage.miniMessage();

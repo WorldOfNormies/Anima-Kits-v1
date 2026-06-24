@@ -96,7 +96,7 @@ public class ConfirmDeleteGui implements Listener {
             player.closeInventory();
 
             // Perform underlying kit unregistration tasks
-            plugin.getKitManager().deleteKit(kit);
+            plugin.getKitManager().deleteKit(kit.getPlainName());
             plugin.getKitManager().saveKits();
             plugin.getKitManager().refreshAllBrowsersSafe();
 

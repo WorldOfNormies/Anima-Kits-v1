@@ -49,6 +49,8 @@
 |---|---|---|
 | `/anima kits` | Open the main kit browser GUI. | `anima.kits.use` |
 | `/anima kits display <kit>` | View a kit's contents (read-only). | `anima.kits.display` |
+| `/anima kits claim <kit>` | Claim a kit instantly. | `anima.kits.claim` |
+| `/anima kits claim list` | List all claimable kits. | `anima.kits.claim` |
 | `/anima kits edit add <name>` | Create a new kit. | `anima.kits.edit.add` |
 | `/anima kits edit remove <kit>` | Delete a kit. | `anima.kits.edit.remove` |
 | `/anima kits edit rename <kit> <new>` | Rename a kit. | `anima.kits.edit.rename` |
@@ -76,6 +78,8 @@
 | `anima.kits.*` | Grants access to **all** AnimaKits features. | `op` |
 | `anima.kits.use` | Open the main kit browser GUI. | `op` |
 | `anima.kits.display` | View kit contents (read-only). | `op` |
+| `anima.kits.claim` | Use the claim command and see claimable kits. | `op` |
+| `anima.kits.claim.KitName "kitname"` | Permission to claim a specific kit. | `op` |
 | `anima.kits.edit.add` | Create new kits. | `op` |
 | `anima.kits.edit.remove` | Delete kits. | `op` |
 | `anima.kits.edit.rename` | Rename kits. | `op` |

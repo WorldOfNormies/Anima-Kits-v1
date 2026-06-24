@@ -4,7 +4,7 @@ plugins {
 }
 
 group = 'com.worldofnormies'
-version = '1.0.3'
+version = '1.0.5'
 description = 'Anima Kits - Advanced Kits Maker Plugin by WorldOfNormies'
 
 java {
