@@ -13,111 +13,116 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.List;
 
+/**
+ * Confirmation menu displayed when a staff member attempts to permanently delete a kit.
+ */
 public class ConfirmDeleteGui implements Listener {
 
     private static final MiniMessage MM = MiniMessage.miniMessage();
+    private static final int INV_SIZE = 27;
 
     private final AnimaKitsPlugin plugin;
     private final Player player;
     private final Kit kit;
     private Inventory inventory;
-
-    // slots
-    private static final int CANCEL_SLOT  = 3;
-    private static final int CONFIRM_SLOT = 5;
+    private boolean actionTaken = false;
 
     public ConfirmDeleteGui(AnimaKitsPlugin plugin, Player player, Kit kit) {
         this.plugin = plugin;
         this.player = player;
-        this.kit    = kit;
+        this.kit = kit;
     }
 
     public void open() {
-        Component title = MM.deserialize("[Delete Kit]");
-        inventory = Bukkit.createInventory(null, 27, title);
+        Component title = MM.deserialize("<red><bold>Confirm Deletion</bold></red>");
+        inventory = Bukkit.createInventory(null, INV_SIZE, title);
         populate();
         Bukkit.getPluginManager().registerEvents(this, plugin);
         player.openInventory(inventory);
     }
 
     private void populate() {
-        // 1. Define the items
-        ItemStack brown = pane(Material.BROWN_STAINED_GLASS_PANE, MM.deserialize("<dark_gray> </dark_gray>"));
-        ItemStack black = pane(Material.BLACK_STAINED_GLASS_PANE, MM.deserialize("<dark_gray> </dark_gray>"));
-        ItemStack green = pane(Material.GREEN_STAINED_GLASS_PANE, Component.space());
-        
-        ItemStack red   = pane(Material.RED_STAINED_GLASS_PANE, MM.deserialize("<red><bold>NO</bold></red>"));
-        ItemStack lime  = pane(Material.LIME_STAINED_GLASS_PANE, MM.deserialize("<green><bold>YES</bold></green>"));
-        
-        ItemStack tnt   = pane(Material.TNT,
-            MM.deserialize("<dark_red><bold>Erase Kit?<white></white></dark_red> " <white>+ kit.getPlainName() + "</bold>"),
-            List.of(MM.deserialize("<gold>You Are About To Erase A Kit</gold>"),
-                    MM.deserialize("<gold>Once Removed It's Gone Forever</gold>")));
-    
-        // 2. Fill the Left Section (Brown backgrounds + Red button)
-        for (int i : new int[]{0, 1, 2, 9, 11, 18, 19, 20}) {
-            inventory.setItem(i, brown);
+        // Fill background with industrial glass panels
+        for (int i = 0; i < INV_SIZE; i++) {
+            inventory.setItem(i, GuiItem.border(Material.GRAY_STAINED_GLASS_PANE));
         }
-        inventory.setItem(10, red); // Red Button
-    
-        // 3. Fill the Middle Section (Black backgrounds + TNT)
-        for (int i : new int[]{3, 4, 5, 12, 14, 21, 22, 23}) {
-            inventory.setItem(i, black);
-        }
-        inventory.setItem(13, tnt); // TNT Info Block
-    
-        // 4. Fill the Right Section (Green backgrounds + Lime button)
-        for (int i : new int[]{6, 7, 8, 15, 17, 24, 25, 26}) {
-            inventory.setItem(i, green);
-        }
-        inventory.setItem(16, lime); // Lime Button
+
+        // Slot 11: Absolute confirmation (Destructive Action)
+        inventory.setItem(11, GuiItem.make(
+            Material.RED_TERRACOTTA,
+            MM.deserialize("<gradient:#8B0000:#FF0000><bold>✔ CONFIRM DELETION</bold></gradient>"),
+            List.of(
+                MM.deserialize("<gray>Permanently purges the kit data configuration.</gray>"),
+                MM.deserialize("<red><bold>Warning: This action cannot be undone!</bold></red>")
+            )
+        ));
+
+        // Slot 13: Core Target Display Info
+        // FIXED: Corrected string layout and tag placements to resolve compilation errors
+        inventory.setItem(13, GuiItem.make(
+            Material.TNT,
+            MM.deserialize("<dark_red><bold>Erase Kit?</bold></dark_red> <white><bold>" + kit.getPlainName() + "</bold></white>"),
+            List.of(
+                MM.deserialize("<gray>Target: <red>" + kit.getPlainName() + "</red></gray>"),
+                MM.deserialize("<gray>Clicking left or right items updates path variables.</gray>")
+            )
+        ));
+
+        // Slot 15: Safe fallback button (Return safely back to Editor)
+        inventory.setItem(15, GuiItem.make(
+            Material.GREEN_TERRACOTTA,
+            MM.deserialize("<gradient:#006400:#32CD32><bold>✘ CANCEL / GO BACK</bold></gradient>"),
+            List.of(
+                MM.deserialize("<gray>Aborts this destructive drop sequence and</gray>"),
+                MM.deserialize("<gray>returns you safely to the kit editing board.</gray>")
+            )
+        ));
     }
 
     @EventHandler
     public void onClick(InventoryClickEvent event) {
         if (!event.getInventory().equals(inventory)) return;
-        if (!event.getWhoClicked().equals(player))   return;
-        event.setCancelled(true);
+        if (!event.getWhoClicked().equals(player)) return;
 
+        event.setCancelled(true);
         int slot = event.getRawSlot();
-        if (slot == 11) { // NO
-            // Reopen the editor for this kit
+
+        if (slot == 11) { // Confirmed Delete Sequence
+            actionTaken = true;
             HandlerList.unregisterAll(this);
-            Bukkit.getScheduler().runTask(plugin, () ->
-                    new KitEditorGui(plugin, player, kit, 0).open());
-        } else if (slot == 15) { // YES
-            plugin.getKitManager().deleteKit(kit.getPlainName());
+            player.closeInventory();
+
+            // Perform underlying kit unregistration tasks
+            plugin.getKitManager().deleteKit(kit);
+            plugin.getKitManager().saveKits();
+            plugin.getKitManager().refreshAllBrowsersSafe();
+
+            player.sendMessage(MM.deserialize("<gradient:#8B0000:#FF0000><bold>Successfully purged kit data configurations permanently.</bold></gradient>"));
+            
+            // Send back to central system selection hub
+            Bukkit.getScheduler().runTask(plugin, () -> new KitBrowserGui(plugin, player).open());
+
+        } else if (slot == 15) { // Safe abort route
+            actionTaken = true;
             HandlerList.unregisterAll(this);
-            Bukkit.getScheduler().runTask(plugin, () ->
-                    new KitBrowserGui(plugin, player).open());
+            player.closeInventory();
+            
+            // Re-open editor session seamlessly safely
+            Bukkit.getScheduler().runTask(plugin, () -> new KitEditorGui(plugin, player, kit, 0).open());
         }
     }
 
     @EventHandler
     public void onClose(InventoryCloseEvent event) {
         if (!event.getInventory().equals(inventory)) return;
+        if (!event.getPlayer().equals(player)) return;
+        if (actionTaken) return;
+
+        // Standard interface escape pathing routes user safely back into the editor screen instead of trapping them
         HandlerList.unregisterAll(this);
-    }
-
-    // ── helpers ───────────────────────────────────────────────────
-
-    private ItemStack pane(Material mat, Component name) {
-        return pane(mat, name, List.of());
-    }
-
-    private ItemStack pane(Material mat, Component name, List<Component> lore) {
-        ItemStack item = new ItemStack(mat);
-        ItemMeta  meta = item.getItemMeta();
-        if (meta != null) {
-            meta.displayName(name);
-            if (!lore.isEmpty()) meta.lore(lore);
-            item.setItemMeta(meta);
-        }
-        return item;
+        Bukkit.getScheduler().runTask(plugin, () -> new KitEditorGui(plugin, player, kit, 0).open());
     }
 }
