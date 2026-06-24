@@ -112,7 +112,7 @@ public class DisplayAllKitsGui implements Listener {
         }
 
         // Bottom Row Fillers (Placing background items first)
-        for (int slot : new int[]{46, 48, 49, 50, 52}) {
+        for (int slot : new int[]{45, 46, 48, 49, 50, 52, 53}) {
             inventory.setItem(slot, blackPane);
         }
 
@@ -124,7 +124,7 @@ public class DisplayAllKitsGui implements Listener {
                         MM.deserialize("<gray>Page: <white>" + (page + 1) + "/" + totalPages + "</white></gray>"))));
 
         // Slot 45: Red Bundle (Return to main menu)
-        inventory.setItem(45, GuiItem.make(Material.RED_BUNDLE, MM.deserialize("<gradient:#8B0000:#FF0000><bold>✘ Return to Kits Menu</bold></gradient>")));
+        //inventory.setItem(45, GuiItem.make(Material.RED_BUNDLE, MM.deserialize("<gradient:#8B0000:#FF0000><bold>✘ Return to Kits Menu</bold></gradient>")));
 
         // Slot 47: Previous Page
         if (page > 0) {
@@ -140,8 +140,6 @@ public class DisplayAllKitsGui implements Listener {
             inventory.setItem(51, blackPane);
         }
 
-        // Slot 53: Green Bundle replaced by Black Stained Glass Pane
-        inventory.setItem(53, blackPane);
     }
 
     private ItemStack createKitIcon(Kit kit, boolean canClaim) {
