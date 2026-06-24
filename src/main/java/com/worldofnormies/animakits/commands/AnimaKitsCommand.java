@@ -473,13 +473,36 @@ public class AnimaKitsCommand implements CommandExecutor {
 
     private void showMainUsage(CommandSender sender) {
         MessageUtil.send(sender, MM.deserialize(
-                "<red>Usage: <white>/anima kits [display|edit|lore|open|clonekit|give|giveall|permission|reload|help]</white></red>"));
+                "<gradient:#54DAF4:#545EB6><bold>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</bold></gradient>/n" +
+                "<gradient:#54DAF4:#545EB6><bold>━━━━━━━  USE: /anima kits  ━━━━━━━</bold></gradient>/n" + 
+                "<gradient:#54DAF4:#545EB6><bold>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</bold></gradient>/n" +
+                "<gradient:#54DAF4:#545EB6><bold>━━━━━━━  display</bold></gradient>/n" + 
+                "<gradient:#54DAF4:#545EB6><bold>━━━━━━━  edit</bold></gradient>/n" + 
+                "<gradient:#54DAF4:#545EB6><bold>━━━━━━━  lore</bold></gradient>/n" + 
+                "<gradient:#54DAF4:#545EB6><bold>━━━━━━━  open</bold></gradient>/n" + 
+                "<gradient:#54DAF4:#545EB6><bold>━━━━━━━  clonekit</bold></gradient>/n" + 
+                "<gradient:#54DAF4:#545EB6><bold>━━━━━━━  give</bold></gradient>/n" + 
+                "<gradient:#54DAF4:#545EB6><bold>━━━━━━━  giveall</bold></gradient>/n" + 
+                "<gradient:#54DAF4:#545EB6><bold>━━━━━━━  permission</bold></gradient>/n" + 
+                "<gradient:#54DAF4:#545EB6><bold>━━━━━━━  reload</bold></gradient>/n" + 
+                "<gradient:#54DAF4:#545EB6><bold>━━━━━━━  help</bold></gradient>/n" + 
+                "<gradient:#54DAF4:#545EB6><bold>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</bold></gradient>/n"));
     }
 
     private void showNameHints(CommandSender sender) {
         MessageUtil.send(sender, MM.deserialize(
-                "<gray>Tip – colour codes: <white>&6Gold  &a Green  &c Red  &#FF5500Hex</white></gray>\n" +
-                "<gray>Gradient: <white><gradient:#54DAF4:#545EB6>My Kit</gradient></white></gray>"));
+            
+                "<gradient:#54DAF4:#545EB6><bold>━━━━━━━  Gradient Font Guide  ━━━━━━━</bold></gradient>/n" +  
+                "<gradient:#54DAF4:#545EB6><bold></bold></gradient>/n" + 
+                "<gradient:#54DAF4:#545EB6><bold>Start by typing <white>'<'gradient #HEX:#HEX'>'</white> without → ''.</bold></gradient>/n" +
+                "<gradient:#54DAF4:#545EB6><bold>'The Perfered Kit Name'.<white></bold></gradient>/n" +
+                "<gradient:#54DAF4:#545EB6><bold>and end with <white>'<'/gradient'>'<white> without → ''.</bold></gradient>/n" + 
+                "<gradient:#54DAF4:#545EB6><bold></bold></gradient>/n" +                 
+                "<gradient:#54DAF4:#545EB6><bold>━━━━━━━  Colour & Style Guide  ━━━━━━</bold></gradient>/n" +
+                "<gradient:#54DAF4:#545EB6><bold></bold></gradient>/n" +  
+                "<gray>Legacy codes:  <white>&a Green  &c Red  &b Aqua  &6 Gold  &l Bold  &o Italic</white></gray>/n" +
+                "<gradient:#54DAF4:#545EB6><bold>You can also typed them as '<'red'> MSG <'/red'> without → ''</bold></gradient>/n" +
+                "<gradient:#54DAF4:#545EB6><bold>same as Bold|Italic|Underline as '<'Bold' > without → '' </'Bold'>'</bold></gradient>/n"));
     }
 
     private String joinArgs(String[] args, int from) {
