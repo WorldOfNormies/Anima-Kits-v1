@@ -254,7 +254,9 @@ public class AnimaKitsCommand implements CommandExecutor {
         if (args.length < 3) { usage(sender, "/anima kits open <kit>"); return true; }
         Kit kit = requireKit(sender, args[2]);
         if (kit == null) return true;
-        new KitEditorGui(plugin, (Player) sender, kit).open();
+        
+        // FIX: Passed '1' as the required default page integer argument
+        new KitEditorGui(plugin, (Player) sender, kit, 1).open();
         return true;
     }
 
@@ -336,7 +338,7 @@ public class AnimaKitsCommand implements CommandExecutor {
         if (!requirePerm(sender, "anima.kits.help")) return true;
         MessageUtil.send(sender, MM.deserialize("""
                 <gradient:#54DAF4:#545EB6><bold>━━━━━━━ AnimaKits Help ━━━━━━━</bold></gradient>
-                <yellow>/anima kits</yellow>                              <gray>Open the kit browser</gray>
+                <yellow>/anima kits</yellow>                               <gray>Open the kit browser</gray>
                 <yellow>/anima kits display <kit></yellow>          <gray>View a kit (read-only)</gray>
                 <yellow>/anima kits edit add <name></yellow>         <gray>Create a new kit</gray>
                 <yellow>/anima kits edit remove <kit></yellow>       <gray>Delete a kit</gray>
@@ -352,29 +354,29 @@ public class AnimaKitsCommand implements CommandExecutor {
                 <yellow>/anima kits reload</yellow>                 <gray>Reload config</gray>
                 <gradient:#54DAF4:#545EB6><bold></bold></gradient>
                 <gradient:#54DAF4:#545EB6><bold>━━━━━━━  Gradient Font Guide  ━━━━━━━</bold></gradient>
-                                                
+                                                                
                 <gradient:#54DAF4:#545EB6><bold>Start by typing <white>"<"gradient #HEX:#HEX">"</white> without → "".</bold></gradient>
                 <gradient:#54DAF4:#545EB6><bold>"The Perfered Kit Name".<white></bold></gradient>
                 <gradient:#54DAF4:#545EB6><bold>and end with <white>"<"/gradient">"<white> without → "".</bold></gradient>
-                                                
+                                                                
                 <gradient:#54DAF4:#545EB6><bold>━━━━━━━  Colour & Style Guide  ━━━━━━</bold></gradient>
-                                                
+                                                                
                 <gray>Legacy codes:  <white>&a Green  &c Red  &b Aqua  &6 Gold  &l Bold  &o Italic</white></gray>
                 <gradient:#54DAF4:#545EB6><bold>You can also typed them as "<"red"> MSG <"/red"> without → ""</bold></gradient> 
                 <gradient:#54DAF4:#545EB6><bold>same as Bold|Italic|Underline as "<"Bold" > without → "" </"Bold">"</bold></gradient> 
-                                                
+                                                                
                 <gradient:#54DAF4:#545EB6><bold>━━━━━━━━━━━━━  Examples  ━━━━━━━━━━━━</bold></gradient>
-                                                
+                                                                
                 <gray>Hex colour:    <white>&#FF5500MyText</white>  → <color:#FF5500>MyText</color></gray>
-                                                
+                                                                
                 <gradient:#54DAF4:#545EB6><bold>━━━━ Color Bold Italic Underline ━━━━</bold></gradient>
-                                                
+                                                                
                 <gray>MiniMessage:   <white><red>Red</red>  <bold>Bold</bold>  <italic>Italic</italic></white></gray>                               
                 <gray>Gradient:      <white><gradient:#54DAF4:#545EB6>My Kit Name</gradient></white></gray>                                             
                 <gray><"Rainbow">:       <white><rainbow>Rainbow Kit</rainbow></white></gray>                                
                 <gray>Example kit name: <white><gradient:#FF6B6B:#FFE66D>Fire Kit</gradient></white></gray>
                 <gray>Example lore:     <white><italic><gray>A blazing hot kit!</gray></italic></white></gray>
-                                                
+                                                                
                 <gradient:#54DAF4:#545EB6><bold>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</bold></gradient>
                 """));
         return true;
@@ -473,36 +475,36 @@ public class AnimaKitsCommand implements CommandExecutor {
 
     private void showMainUsage(CommandSender sender) {
         MessageUtil.send(sender, MM.deserialize(
-                "<gradient:#54DAF4:#545EB6><bold>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</bold></gradient>/n" +
-                "<gradient:#54DAF4:#545EB6><bold>━━━━━━━  USE: /anima kits  ━━━━━━━</bold></gradient>/n" + 
-                "<gradient:#54DAF4:#545EB6><bold>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</bold></gradient>/n" +
-                "<gradient:#54DAF4:#545EB6><bold>━━━━━━━  display</bold></gradient>/n" + 
-                "<gradient:#54DAF4:#545EB6><bold>━━━━━━━  edit</bold></gradient>/n" + 
-                "<gradient:#54DAF4:#545EB6><bold>━━━━━━━  lore</bold></gradient>/n" + 
-                "<gradient:#54DAF4:#545EB6><bold>━━━━━━━  open</bold></gradient>/n" + 
-                "<gradient:#54DAF4:#545EB6><bold>━━━━━━━  clonekit</bold></gradient>/n" + 
-                "<gradient:#54DAF4:#545EB6><bold>━━━━━━━  give</bold></gradient>/n" + 
-                "<gradient:#54DAF4:#545EB6><bold>━━━━━━━  giveall</bold></gradient>/n" + 
-                "<gradient:#54DAF4:#545EB6><bold>━━━━━━━  permission</bold></gradient>/n" + 
-                "<gradient:#54DAF4:#545EB6><bold>━━━━━━━  reload</bold></gradient>/n" + 
-                "<gradient:#54DAF4:#545EB6><bold>━━━━━━━  help</bold></gradient>/n" + 
-                "<gradient:#54DAF4:#545EB6><bold>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</bold></gradient>/n"));
+                "<gradient:#54DAF4:#545EB6><bold>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</bold></gradient>\n" +
+                "<gradient:#54DAF4:#545EB6><bold>━━━━━━━  USE: /anima kits  ━━━━━━━</bold></gradient>\n" + 
+                "<gradient:#54DAF4:#545EB6><bold>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</bold></gradient>\n" +
+                "<gradient:#54DAF4:#545EB6><bold>━━━━━━━  display</bold></gradient>\n" + 
+                "<gradient:#54DAF4:#545EB6><bold>━━━━━━━  edit</bold></gradient>\n" + 
+                "<gradient:#54DAF4:#545EB6><bold>━━━━━━━  lore</bold></gradient>\n" + 
+                "<gradient:#54DAF4:#545EB6><bold>━━━━━━━  open</bold></gradient>\n" + 
+                "<gradient:#54DAF4:#545EB6><bold>━━━━━━━  clonekit</bold></gradient>\n" + 
+                "<gradient:#54DAF4:#545EB6><bold>━━━━━━━  give</bold></gradient>\n" + 
+                "<gradient:#54DAF4:#545EB6><bold>━━━━━━━  giveall</bold></gradient>\n" + 
+                "<gradient:#54DAF4:#545EB6><bold>━━━━━━━  permission</bold></gradient>\n" + 
+                "<gradient:#54DAF4:#545EB6><bold>━━━━━━━  reload</bold></gradient>\n" + 
+                "<gradient:#54DAF4:#545EB6><bold>━━━━━━━  help</bold></gradient>\n" + 
+                "<gradient:#54DAF4:#545EB6><bold>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</bold></gradient>\n"));
     }
 
     private void showNameHints(CommandSender sender) {
         MessageUtil.send(sender, MM.deserialize(
             
-                "<gradient:#54DAF4:#545EB6><bold>━━━━━━━  Gradient Font Guide  ━━━━━━━</bold></gradient>/n" +  
-                "<gradient:#54DAF4:#545EB6><bold></bold></gradient>/n" + 
-                "<gradient:#54DAF4:#545EB6><bold>Start by typing <white>'<'gradient #HEX:#HEX'>'</white> without → ''.</bold></gradient>/n" +
-                "<gradient:#54DAF4:#545EB6><bold>'The Perfered Kit Name'.<white></bold></gradient>/n" +
-                "<gradient:#54DAF4:#545EB6><bold>and end with <white>'<'/gradient'>'<white> without → ''.</bold></gradient>/n" + 
-                "<gradient:#54DAF4:#545EB6><bold></bold></gradient>/n" +                 
-                "<gradient:#54DAF4:#545EB6><bold>━━━━━━━  Colour & Style Guide  ━━━━━━</bold></gradient>/n" +
-                "<gradient:#54DAF4:#545EB6><bold></bold></gradient>/n" +  
-                "<gray>Legacy codes:  <white>&a Green  &c Red  &b Aqua  &6 Gold  &l Bold  &o Italic</white></gray>/n" +
-                "<gradient:#54DAF4:#545EB6><bold>You can also typed them as '<'red'> MSG <'/red'> without → ''</bold></gradient>/n" +
-                "<gradient:#54DAF4:#545EB6><bold>same as Bold|Italic|Underline as '<'Bold' > without → '' </'Bold'>'</bold></gradient>/n"));
+                "<gradient:#54DAF4:#545EB6><bold>━━━━━━━  Gradient Font Guide  ━━━━━━━</bold></gradient>\n" +  
+                "<gradient:#54DAF4:#545EB6><bold></bold></gradient>\n" + 
+                "<gradient:#54DAF4:#545EB6><bold>Start by typing <white>'<'gradient #HEX:#HEX'>'</white> without → ''.</bold></gradient>\n" +
+                "<gradient:#54DAF4:#545EB6><bold>'The Perfered Kit Name'.<white></bold></gradient>\n" +
+                "<gradient:#54DAF4:#545EB6><bold>and end with <white>'<'/gradient'>'<white> without → ''.</bold></gradient>\n" + 
+                "<gradient:#54DAF4:#545EB6><bold></bold></gradient>\n" +                  
+                "<gradient:#54DAF4:#545EB6><bold>━━━━━━━  Colour & Style Guide  ━━━━━━</bold></gradient>\n" +
+                "<gradient:#54DAF4:#545EB6><bold></bold></gradient>\n" +  
+                "<gray>Legacy codes:  <white>&a Green  &c Red  &b Aqua  &6 Gold  &l Bold  &o Italic</white></gray>\n" +
+                "<gradient:#54DAF4:#545EB6><bold>You can also typed them as '<'red'> MSG <'/red'> without → ''</bold></gradient>\n" +
+                "<gradient:#54DAF4:#545EB6><bold>same as Bold|Italic|Underline as '<'Bold' > without → '' </'Bold'>'</bold></gradient>\n"));
     }
 
     private String joinArgs(String[] args, int from) {
@@ -533,9 +535,9 @@ public class AnimaKitsCommand implements CommandExecutor {
         if (raw.equals("-1")) return -1;
         long multiplier = 1;
         String stripped = raw;
-        if (raw.endsWith("m"))      { multiplier = 60;               stripped = raw.substring(0, raw.length() - 1); }
-        else if (raw.endsWith("h")) { multiplier = 3600;             stripped = raw.substring(0, raw.length() - 1); }
-        else if (raw.endsWith("d")) { multiplier = 86400;            stripped = raw.substring(0, raw.length() - 1); }
+        if (raw.endsWith("m"))      { multiplier = 60;                stripped = raw.substring(0, raw.length() - 1); }
+        else if (raw.endsWith("h")) { multiplier = 3600;              stripped = raw.substring(0, raw.length() - 1); }
+        else if (raw.endsWith("d")) { multiplier = 86400;             stripped = raw.substring(0, raw.length() - 1); }
         try { return Long.parseLong(stripped) * multiplier; }
         catch (NumberFormatException e) { return 3600; } // default 1h on parse error
     }
