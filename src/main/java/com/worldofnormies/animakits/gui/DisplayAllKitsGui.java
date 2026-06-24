@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * DisplayAllKitsGui – renamed from "Viewing All Kit GUI".
+ * DisplayAllKitsGui
  * Display name: "Displaying All Kit GUI" with a neat light purple to orange bold letter name.
  * Sorts kits: claimable (with glow) first, then divider, then locked.
  */
@@ -29,7 +29,6 @@ public class DisplayAllKitsGui implements Listener {
 
     private static final MiniMessage MM = MiniMessage.miniMessage();
     private static final int INV_SIZE = 54;
-    private static final int KITS_AREA = 45;
 
     private final AnimaKitsPlugin plugin;
     private final Player player;
@@ -74,12 +73,12 @@ public class DisplayAllKitsGui implements Listener {
             displayList.addAll(locked);
         }
 
-        // Available slots for kits (remaining from decoration)
+        // Available inside grid slots for items (rows 1-4, skipping white glass borders)
         int[] kitSlots = {
-            9, 10, 11, 12, 13, 14, 15,
-            18, 19, 20, 21, 22, 23, 24,
-            27, 28, 29, 30, 31, 32, 33,
-            36, 37, 38, 39, 40, 41, 42
+            10, 11, 12, 13, 14, 15, 16,
+            19, 20, 21, 22, 23, 24, 25,
+            28, 29, 30, 31, 32, 33, 34,
+            37, 38, 39, 40, 41, 42, 43
         };
 
         int totalPages = Math.max(1, (int) Math.ceil(displayList.size() / (double) kitSlots.length));
@@ -98,41 +97,51 @@ public class DisplayAllKitsGui implements Listener {
             }
         }
 
-        // Decoration & Navigation
+        // --- BACKGROUND DECORATION ---
         ItemStack blackPane = GuiItem.border(Material.BLACK_STAINED_GLASS_PANE);
-        // Black: [0, 1, 2, 3, 5, 6, 7, 8, 46, 47, 48, 49, 51, 52, 54] -> 0,1,2,4,5,6,7,45,46,47,48,50,51,53 (Skipped 3, 8, 44, 49, 52)
-        int[] blackSlots = {0, 1, 2, 4, 5, 6, 7, 45, 47, 48, 50, 51, 53};
-        for (int slot : blackSlots) {
-            if (slot < INV_SIZE) inventory.setItem(slot, blackPane);
-        }
-
-        // White glass pane: Slot = [9, 17, 18, 26, 27, 35, 36, 44, 50] -> 8,16,17,25,26,34,35,43,49
         ItemStack whitePane = GuiItem.border(Material.WHITE_STAINED_GLASS_PANE);
-        for (int slot : new int[]{8,16,17,25,26,34,35,43,49}) {
-            if (slot < INV_SIZE) inventory.setItem(slot, whitePane);
+
+        // Top Row (0-8, except slot 4 which is the Ender Chest)
+        for (int slot : new int[]{0, 1, 2, 3, 5, 6, 7, 8}) {
+            inventory.setItem(slot, blackPane);
         }
 
-        // Ender Chest: Slot = [4] -> Index 3
-        inventory.setItem(3, GuiItem.make(Material.ENDER_CHEST, MM.deserialize("<light_purple><bold>Kit Statistics</bold></light_purple>"),
+        // Side Borders (White Glass)
+        for (int slot : new int[]{9, 18, 27, 36, 17, 26, 35, 44}) {
+            inventory.setItem(slot, whitePane);
+        }
+
+        // Bottom Row Fillers (Placing background items first)
+        for (int slot : new int[]{46, 48, 49, 50, 52}) {
+            inventory.setItem(slot, blackPane);
+        }
+
+        // --- INTERACTIVE BUTTONS & UTILITY ITEMS ---
+
+        // Slot 4: Ender Chest (Kit Statistics)
+        inventory.setItem(4, GuiItem.make(Material.ENDER_CHEST, MM.deserialize("<light_purple><bold>Kit Statistics</bold></light_purple>"),
                 List.of(MM.deserialize("<gray>Total Kits: <white>" + allKits.size() + "</white></gray>"),
                         MM.deserialize("<gray>Page: <white>" + (page + 1) + "/" + totalPages + "</white></gray>"))));
 
-        // Red Bundle: Slot = [45] -> Index 44 (Return to main menu)
-        inventory.setItem(44, GuiItem.make(Material.RED_BUNDLE, MM.deserialize("<red><bold>✘ Return to Kits Menu</bold></red>")));
+        // Slot 45: Red Bundle (Return to main menu)
+        inventory.setItem(45, GuiItem.make(Material.RED_BUNDLE, MM.deserialize("<gradient:#8B0000:#FF0000><bold>✘ Return to Kits Menu</bold></gradient>")));
 
-        // Red Glass pane: Slot = [47] -> Index 46 (Prev Page)
+        // Slot 47: Previous Page
         if (page > 0) {
-            inventory.setItem(46, GuiItem.make(Material.RED_STAINED_GLASS_PANE, MM.deserialize("<red>« Previous Page</red>")));
+            inventory.setItem(47, GuiItem.make(Material.RED_STAINED_GLASS_PANE, MM.deserialize("<gradient:#8B0000:#FF8C00><bold>« Previous Page</bold></gradient>")));
         } else {
-            inventory.setItem(46, blackPane);
+            inventory.setItem(47, blackPane);
         }
 
-        // Lime Glass pane: Slot = [53] -> Index 52 (Next Page)
+        // Slot 51: Next Page
         if (to < displayList.size()) {
-            inventory.setItem(52, GuiItem.make(Material.LIME_STAINED_GLASS_PANE, MM.deserialize("<green>Next Page »</green>")));
+            inventory.setItem(51, GuiItem.make(Material.LIME_STAINED_GLASS_PANE, MM.deserialize("<gradient:#32CD32:#ADFF2F><bold>Next Page »</bold></gradient>")));
         } else {
-            inventory.setItem(52, blackPane);
+            inventory.setItem(51, blackPane);
         }
+
+        // Slot 53: Green Bundle replaced by Black Stained Glass Pane
+        inventory.setItem(53, blackPane);
     }
 
     private ItemStack createKitIcon(Kit kit, boolean canClaim) {
@@ -143,10 +152,12 @@ public class DisplayAllKitsGui implements Listener {
         lore.add(MM.deserialize("<gradient:#54DAF4:#545EB6>☚ <bold>Left Mouse Click To View</bold></gradient>"));
         lore.add(MM.deserialize("<gradient:#FFB700:#FF8000>☛ <bold>Right Mouse Click To Claim</bold></gradient>"));
 
-        // Cooldown info
-        lore.add(MM.deserialize("<gray>Kit Has A Cooldown Time Of: <gold><bold>" + formatTime(kit.getCooldown()) + "</bold></gold></gray>"));
-        // TODO: Time left to claim
-        lore.add(MM.deserialize("<gray>This Kit Can Be Claimed Only Once = " + (kit.isSingleClaim() ? "<red>True</red>" : "<green>False</green>") + "</gray>"));
+        // Cooldown Line
+        lore.add(MM.deserialize("<white><bold>Cooldown Time:</bold></white> <gradient:#FFD700:#D3D3D3><bold>" + formatTime(kit.getCooldown()) + "</bold></gradient>"));
+        
+        // Single Claim Line
+        lore.add(MM.deserialize("<gradient:#8A2BE2:#32CD32><bold>Single Claim?</bold></gradient> " + 
+            (kit.isSingleClaim() ? "<gradient:#8B0000:#FF0000><bold>True</bold></gradient>" : "<gradient:#006400:#32CD32><bold>False</bold></gradient>")));
 
         return GuiItem.make(kit.getIconMaterial(), name, lore, canClaim);
     }
@@ -181,21 +192,41 @@ public class DisplayAllKitsGui implements Listener {
         int slot = event.getRawSlot();
         if (slot < 0 || slot >= INV_SIZE) return;
 
-        if (slot == 44) { player.closeInventory(); return; }
-        if (slot == 46 && page > 0) { page--; populate(); return; }
-        if (slot == 52) {
+        if (slot == 45) { player.closeInventory(); return; }
+        if (slot == 47 && page > 0) { page--; populate(); return; }
+        if (slot == 51) {
             List<Kit> allKits = new ArrayList<>(plugin.getKitManager().getAllKits());
-            // ... need to recalculate displayList size for proper pagination check
-            page++; populate();
+            List<Kit> claimable = new ArrayList<>();
+            List<Kit> locked = new ArrayList<>();
+            for (Kit k : allKits) {
+                String kitPerm = "anima.kits.claim.KitName \"" + k.getPlainName() + "\"";
+                if (plugin.getPermissionManager().has(player.getUniqueId(), kitPerm)) claimable.add(k);
+                else locked.add(k);
+            }
+            List<Object> displayList = new ArrayList<>(claimable);
+            if (!locked.isEmpty()) { displayList.add("DIVIDER"); displayList.addAll(locked); }
+
+            int[] kitSlots = {
+                10, 11, 12, 13, 14, 15, 16,
+                19, 20, 21, 22, 23, 24, 25,
+                28, 29, 30, 31, 32, 33, 34,
+                37, 38, 39, 40, 41, 42, 43
+            };
+
+            int to = Math.min((page + 1) * kitSlots.length, displayList.size());
+            if (to < displayList.size()) {
+                page++;
+                populate();
+            }
             return;
         }
 
-        // Check if it's a kit slot
+        // Check grid area for valid item slot clicks
         int[] kitSlots = {
-            9, 10, 11, 12, 13, 14, 15,
-            18, 19, 20, 21, 22, 23, 24,
-            27, 28, 29, 30, 31, 32, 33,
-            36, 37, 38, 39, 40, 41, 42
+            10, 11, 12, 13, 14, 15, 16,
+            19, 20, 21, 22, 23, 24, 25,
+            28, 29, 30, 31, 32, 33, 34,
+            37, 38, 39, 40, 41, 42, 43
         };
 
         int kitIdx = -1;
@@ -230,14 +261,12 @@ public class DisplayAllKitsGui implements Listener {
     }
 
     private void handleClaim(Kit kit) {
-        String kitPerm = "anima.kits.claim.KitName \"" + kit.getPlainName() + "\"";
-        if (!plugin.getPermissionManager().has(player.getUniqueId(), kitPerm)) {
-            player.sendMessage(MM.deserialize("<red>You do not have permission to claim this kit!</red>"));
-            return;
+    String kitPerm = "anima.kits.claim.KitName \"" + kit.getPlainName() + "\"";
+    if (!plugin.getPermissionManager().has(player.getUniqueId(), kitPerm)) {
+        player.sendMessage(MM.deserialize("<gradient:#8B0000:#FF0000><bold>You do not have permission to claim this kit!</bold></gradient>"));
+        return;
         }
-        // TODO: Check cooldown
-
-        // Give items
+    
         for (ItemStack item : kit.getItems()) {
             if (item != null && item.getType() != Material.AIR) {
                 Map<Integer, ItemStack> remaining = player.getInventory().addItem(item.clone());
@@ -246,9 +275,20 @@ public class DisplayAllKitsGui implements Listener {
                 }
             }
         }
-        player.sendMessage(MM.deserialize("<green>You have claimed the " + kit.getPlainName() + " kit!</green>"));
+    
+        // --- Dynamic Gradient Break ---
+        // Part 1: "You have claimed the " (Dark Purple #301934 -> Violet #8A2BE2 -> Light Yellow #FFFFE0)
+        Component prefix = MM.deserialize("<gradient:#301934:#8A2BE2:#FFFFE0><bold>You have claimed the </bold></gradient>");
+        
+        // Part 2: Original kit color name forced into bold
+        Component kitName = ColorUtil.parse(kit.getRawName()).toBuilder().bold(true).build();
+        
+        // Part 3: " kit!" (Same Dark Purple -> Violet -> Light Yellow gradient)
+        Component suffix = MM.deserialize("<gradient:#301934:#8A2BE2:#FFFFE0><bold> kit!</bold></gradient>");
+    
+        // Combine them and send
+        player.sendMessage(prefix.append(kitName).append(suffix));
     }
-
     @EventHandler
     public void onClose(InventoryCloseEvent event) {
         if (event.getInventory().equals(inventory)) HandlerList.unregisterAll(this);
