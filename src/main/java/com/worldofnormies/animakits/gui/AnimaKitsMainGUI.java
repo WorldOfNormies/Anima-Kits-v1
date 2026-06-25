@@ -104,7 +104,7 @@ public class AnimaKitsMainGUI implements Listener {
             lore.add(MM.deserialize("<gradient:#FFD700:#FFA500>⬡ <bold>Left-click</bold></gradient><gray> → View Kit Contents</gray>"));
             lore.add(MM.deserialize("<gradient:#4FC3F7:#1565C0>✎ <bold>Right-click</bold></gradient><gray> → Open Kit Editor</gray>"));
             lore.add(MM.deserialize("<gradient:#A5D6A7:#2E7D32>✦ <bold>Shift + Left</bold></gradient><gray> → Give / Give All</gray>"));
-            lore.add(MM.deserialize("<gradient:#EF9A9A:#B71C1C>✘ <bold>Shift + Q / Middle</bold></gradient><gray> → Delete Kit</gray>"));
+            lore.add(MM.deserialize("<gradient:#EF9A9A:#B71C1C>✘ <bold>Shift + Middle</bold></gradient><gray> → Delete Kit</gray>"));
             lore.add(MM.deserialize("<gradient:#CE93D8:#6A1B9A>⎘ <bold>Shift + Right</bold></gradient><gray> → Clone Kit</gray>"));
             lore.add(Component.empty());
             lore.add(MM.deserialize("<dark_gray>Cooldown: <gray>" + (kit.getCooldown() == 0 ? "<green>None" : "<yellow>" + kit.getCooldown() + "s") + "</gray>"));
