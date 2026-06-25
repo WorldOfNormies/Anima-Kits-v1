@@ -49,11 +49,33 @@ public class AnimaKitsTabCompleter implements TabCompleter {
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command,
                                       String alias, String[] args) {
-        if (args.length == 1) return filter(args[0], SUB1);
-        if (args.length == 2) return filter(args[1], SUB2);
 
-        String sub2 = args[1].toLowerCase();
-        return switch (sub2) {
+        boolean isKitAlias = alias.equalsIgnoreCase("kit");
+
+        if (!isKitAlias && args.length == 1) return filter(args[0], SUB1);
+
+        int offset = isKitAlias ? 0 : 1;
+        if (args.length == (offset + 1)) {
+            List<String> allowed = new ArrayList<>();
+            for (String sub : SUB2) {
+                if (hasSubPermission(sender, sub)) {
+                    allowed.add(sub);
+                }
+            }
+            return filter(args[offset], allowed);
+        }
+
+        String subName = args[offset].toLowerCase();
+
+        // Adjust args for existing logic if it was /kit
+        String[] shiftedArgs = args;
+        if (isKitAlias) {
+            shiftedArgs = new String[args.length + 1];
+            shiftedArgs[0] = "kits";
+            System.arraycopy(args, 0, shiftedArgs, 1, args.length);
+        }
+
+        return switch (subName) {
             case "claim"       -> args.length == 3 ? kitNames(args[2]) : List.of();
             case "add"         -> List.of();
             case "delete"      -> args.length == 3 ? kitNames(args[2]) : List.of();
@@ -145,6 +167,26 @@ public class AnimaKitsTabCompleter implements TabCompleter {
             nums.add(String.valueOf(i));
         }
         return nums;
+    }
+
+    private boolean hasSubPermission(CommandSender sender, String sub) {
+        return switch (sub) {
+            case "claim" -> sender.hasPermission("anima.kits.use");
+            case "add" -> sender.hasPermission("anima.kits.add");
+            case "delete" -> sender.hasPermission("anima.kits.delete");
+            case "rename" -> sender.hasPermission("anima.kits.rename");
+            case "lore" -> sender.hasPermission("anima.kits.lore.add") || sender.hasPermission("anima.kits.lore.edit") || sender.hasPermission("anima.kits.lore.remove");
+            case "clonekit" -> sender.hasPermission("anima.kits.clonekit");
+            case "give" -> sender.hasPermission("anima.kits.give");
+            case "giveall" -> sender.hasPermission("anima.kits.giveall");
+            case "reload" -> sender.hasPermission("anima.kits.reload");
+            case "help" -> sender.hasPermission("anima.kits.use");
+            case "permission" -> sender.hasPermission("anima.kits.permission.add") || sender.hasPermission("anima.kits.permission.remove") || sender.hasPermission("anima.kits.permission.show");
+            case "list" -> sender.hasPermission("anima.kits.list");
+            case "setcooldown" -> sender.hasPermission("anima.kits.setcooldown");
+            case "singleclaim" -> sender.hasPermission("anima.kits.singleclaim");
+            default -> false;
+        };
     }
 
     private List<String> filter(String partial, List<String> options) {

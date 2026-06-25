@@ -85,7 +85,11 @@ public class AnimaClaimMainGUI implements Listener {
             }
         }
 
-        List<Kit> allKits = new ArrayList<>(plugin.getKitManager().getAllKits());
+        List<Kit> allKits = plugin.getKitManager().getAllKits().stream()
+            .filter(k -> player.hasPermission("anima.kits.claim." + k.getPlainName()) ||
+                         player.hasPermission("anima.kits.display") ||
+                         player.hasPermission("anima.kits.admin"))
+            .collect(Collectors.toList());
 
         List<Kit> claimable = allKits.stream()
             .filter(k -> player.hasPermission("anima.kits.claim." + k.getPlainName())

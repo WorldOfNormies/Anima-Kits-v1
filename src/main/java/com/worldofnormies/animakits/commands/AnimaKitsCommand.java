@@ -59,31 +59,52 @@ public class AnimaKitsCommand implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
 
-        if (args.length == 0 || !args[0].equalsIgnoreCase("kits")) {
-            showMainUsage(sender);
-            return true;
+        boolean isKitAlias = label.equalsIgnoreCase("kit");
+
+        if (isKitAlias) {
+            if (args.length == 0) {
+                return handleOpenAdminGUI(sender);
+            }
+        } else {
+            if (args.length == 0 || (!args[0].equalsIgnoreCase("kits") && !args[0].equalsIgnoreCase("help"))) {
+                showMainUsage(sender);
+                return true;
+            }
+
+            if (args[0].equalsIgnoreCase("help")) {
+                return handleHelp(sender);
+            }
+
+            if (args.length == 1) {
+                return handleOpenAdminGUI(sender);
+            }
         }
 
-        if (args.length == 1) {
-            return handleOpenAdminGUI(sender);
+        int offset = isKitAlias ? 0 : 1;
+
+        String sub = args[offset].toLowerCase();
+        String[] shiftedArgs = args;
+        if (isKitAlias) {
+            shiftedArgs = new String[args.length + 1];
+            shiftedArgs[0] = "kits";
+            System.arraycopy(args, 0, shiftedArgs, 1, args.length);
         }
 
-        String sub = args[1].toLowerCase();
         return switch (sub) {
-            case "claim"         -> handleClaim(sender, args);
-            case "add"           -> handleAdd(sender, args);
-            case "delete"        -> handleDelete(sender, args);
-            case "rename"        -> handleRename(sender, args);
-            case "lore"          -> handleLore(sender, args);
-            case "clonekit"      -> handleClone(sender, args);
-            case "give"          -> handleGive(sender, args);
-            case "giveall"       -> handleGiveAll(sender, args);
+            case "claim"         -> handleClaim(sender, shiftedArgs);
+            case "add"           -> handleAdd(sender, shiftedArgs);
+            case "delete"        -> handleDelete(sender, shiftedArgs);
+            case "rename"        -> handleRename(sender, shiftedArgs);
+            case "lore"          -> handleLore(sender, shiftedArgs);
+            case "clonekit"      -> handleClone(sender, shiftedArgs);
+            case "give"          -> handleGive(sender, shiftedArgs);
+            case "giveall"       -> handleGiveAll(sender, shiftedArgs);
             case "reload"        -> handleReload(sender);
             case "help"          -> handleHelp(sender);
-            case "permission"    -> handlePermission(sender, args);
+            case "permission"    -> handlePermission(sender, shiftedArgs);
             case "list"          -> handleList(sender);
-            case "setcooldown"   -> handleSetCooldown(sender, args);
-            case "singleclaim"   -> handleSingleClaim(sender, args);
+            case "setcooldown"   -> handleSetCooldown(sender, shiftedArgs);
+            case "singleclaim"   -> handleSingleClaim(sender, shiftedArgs);
             default              -> { showMainUsage(sender); yield true; }
         };
     }
@@ -92,7 +113,11 @@ public class AnimaKitsCommand implements CommandExecutor {
         if (!requirePlayer(sender)) return true;
         if (!requirePerm(sender, "anima.kits.use")) return true;
         Player player = (Player) sender;
-        new AnimaKitsMainGUI(plugin, player).open();
+        if (player.hasPermission("anima.kits.add") || player.hasPermission("anima.kits.admin")) {
+            new AnimaKitsMainGUI(plugin, player).open();
+        } else {
+            new AnimaClaimMainGUI(plugin, player).open();
+        }
         return true;
     }
 
@@ -252,32 +277,41 @@ public class AnimaKitsCommand implements CommandExecutor {
     }
 
     private boolean handleHelp(CommandSender sender) {
-        if (!requirePerm(sender, "anima.kits.help")) return true;
-        MessageUtil.send(sender, MM.deserialize("""
-                <gradient:#54DAF4:#545EB6><bold>━━━━━━━ AnimaKits Help ━━━━━━━</bold></gradient>
-                <yellow>/anima kits</yellow>                              <gray>Open the kit browser</gray>
-                <yellow>/anima kits add <name></yellow>              <gray>Create a new kit</gray>
-                <yellow>/anima kits delete <kit></yellow>            <gray>Delete a kit</gray>
-                <yellow>/anima kits rename <kit> <new></yellow>      <gray>Rename a kit</gray>
-                <yellow>/anima kits claim</yellow>                       <gray>Open Claim Kits menu</gray>
-                <yellow>/anima kits claim <kit></yellow>                 <gray>Claim a kit</gray>
-                <yellow>/anima kits lore add <kit> <text></yellow>   <gray>Add a lore line</gray>
-                <yellow>/anima kits lore edit <kit> <#> <text></yellow> <gray>Edit a lore line</gray>
-                <yellow>/anima kits lore remove <kit> <#></yellow>  <gray>Remove a lore line</gray>
-                <yellow>/anima kits clonekit <kit> <new></yellow>   <gray>Clone a kit</gray>
-                <yellow>/anima kits give <player> <kit> <n></yellow> <gray>Give kit to player</gray>
-                <yellow>/anima kits giveall <kit> <n></yellow>      <gray>Give kit to all online</gray>
-                <yellow>/anima kits permission ...</yellow>         <gray>Manage timed perms</gray>
-                <yellow>/anima kits permission claim <player> <kit> <true|false> [duration]</yellow> <gray>Grant/revoke kit claim perm</gray>
-                <yellow>/anima kits reload</yellow>                 <gray>Reload config</gray>
-                <gradient:#54DAF4:#545EB6><bold>━━━━ Colour & Gradient Guide ━━━━</bold></gradient>
-                <gray>Legacy codes:  <white>&a Green  &c Red  &b Aqua  &6 Gold  &l Bold  &o Italic</white></gray>
-                <gray>Hex colour:    <white>&#FF5500MyText</white>  → <color:#FF5500>MyText</color></gray>
-                <gray>MiniMessage:   <white><red>Red</red>  <bold>Bold</bold>  <italic>Italic</italic></white></gray>
-                <gray>Gradient:      <white><gradient:#54DAF4:#545EB6>My Kit Name</gradient></white></gray>
-                <gray>Rainbow:       <white><rainbow>Rainbow Kit</rainbow></white></gray>
-                <gradient:#54DAF4:#545EB6><bold>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</bold></gradient>
-                """));
+        List<String> lines = new ArrayList<>();
+        lines.add("<gradient:#AA00FF:#FF6AFF:#FFFFFF:#FF6AFF:#AA00FF><bold>⋆༺⸸ Anima Kits Help ⸸༻⋆</bold></gradient>");
+        lines.add("<gray>Available commands based on your permissions:</gray>");
+        lines.add("");
+
+        if (sender.hasPermission("anima.kits.use")) {
+            lines.add("<gradient:#FFD700:#FFA500>⬡ /anima kits</gradient> <dark_gray>»</dark_gray> <white>Open kit menu</white>");
+            lines.add("<gradient:#FFD700:#FFA500>⬡ /anima kits claim [kit]</gradient> <dark_gray>»</dark_gray> <white>Claim a kit</white>");
+        }
+
+        if (sender.hasPermission("anima.kits.add")) {
+            lines.add("<gradient:#4FC3F7:#1565C0>✦ /anima kits add <name></gradient> <dark_gray>»</dark_gray> <white>Create a kit</white>");
+        }
+        if (sender.hasPermission("anima.kits.delete")) {
+            lines.add("<gradient:#4FC3F7:#1565C0>✦ /anima kits delete <kit></gradient> <dark_gray>»</dark_gray> <white>Delete a kit</white>");
+        }
+        if (sender.hasPermission("anima.kits.rename")) {
+            lines.add("<gradient:#4FC3F7:#1565C0>✦ /anima kits rename <kit> <new></gradient> <dark_gray>»</dark_gray> <white>Rename a kit</white>");
+        }
+        if (sender.hasPermission("anima.kits.clonekit")) {
+            lines.add("<gradient:#4FC3F7:#1565C0>✦ /anima kits clonekit <kit> <new></gradient> <dark_gray>»</dark_gray> <white>Clone a kit</white>");
+        }
+        if (sender.hasPermission("anima.kits.give")) {
+            lines.add("<gradient:#A5D6A7:#2E7D32>✦ /anima kits give <player> <kit> [n]</gradient> <dark_gray>»</dark_gray> <white>Give kit</white>");
+        }
+        if (sender.hasPermission("anima.kits.reload")) {
+            lines.add("<gradient:#EF9A9A:#B71C1C>✦ /anima kits reload</gradient> <dark_gray>»</dark_gray> <white>Reload plugin</white>");
+        }
+
+        lines.add("");
+        lines.add("<gradient:#AA00FF:#FF6AFF:#FFFFFF:#FF6AFF:#AA00FF><bold>━━━━━━━━━━━━━━━━━━━━━━━━━━━━</bold></gradient>");
+
+        for (String line : lines) {
+            MessageUtil.send(sender, MM.deserialize(line));
+        }
         return true;
     }
 
@@ -530,8 +564,7 @@ public class AnimaKitsCommand implements CommandExecutor {
     }
 
     private void showMainUsage(CommandSender sender) {
-        MessageUtil.send(sender, MM.deserialize(
-                "<red>Usage: <white>/anima kits [claim|add|delete|rename|lore|clonekit|give|giveall|permission|reload|help]</white></red>"));
+        MessageUtil.send(sender, MM.deserialize("<gradient:#FF4444:#CC0000><bold>✘ Invalid Usage!</bold></gradient> <gray>Type <white>/anima help</white> for a list of commands.</gray>"));
     }
 
     private String joinArgs(String[] args, int from) {

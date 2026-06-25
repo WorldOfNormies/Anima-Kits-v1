@@ -17,6 +17,10 @@ commands:
     usage: "/anima kits [subcommand]"
     aliases: [ ak, animakits ]
     permission: anima.kits.use
+  kit:
+    description: "Short alias for /anima kits"
+    usage: "/kit [subcommand]"
+    permission: anima.kits.use
 
 permissions:
   anima.kits.*:
@@ -47,7 +51,7 @@ permissions:
 
   anima.kits.use:
     description: "Open the main Kits GUI menu."
-    default: op
+    default: true
 
   anima.kits.display:
     description: "Display (view-only) any kit's contents."
