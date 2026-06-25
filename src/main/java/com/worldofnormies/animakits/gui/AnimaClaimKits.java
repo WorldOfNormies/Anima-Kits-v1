@@ -12,6 +12,7 @@ import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -53,7 +54,9 @@ public class AnimaClaimKits implements Listener {
 
     public void open() {
         Component title = MM.deserialize(
-            "<gradient:#FF3030:#FFFFFF:#3060FF><bold>⋆༺⸸ " + kit.getPlainName() + " ⸸༻⋆</bold></gradient>");
+            "<gradient:#FF3030:#FFFFFF:#3060FF><bold>⋆༺⸸ </bold></gradient>")
+            .append(com.worldofnormies.animakits.util.ColorUtil.parse(kit.getRawName()))
+            .append(MM.deserialize("<gradient:#FF3030:#FFFFFF:#3060FF><bold> ⸸༻⋆</bold></gradient>"));
         inventory = Bukkit.createInventory(null, INV_SIZE, title);
         populate();
         Bukkit.getPluginManager().registerEvents(this, plugin);
@@ -166,9 +169,18 @@ public class AnimaClaimKits implements Listener {
     public void onClick(InventoryClickEvent event) {
         if (!event.getInventory().equals(inventory)) return;
         if (!event.getWhoClicked().equals(player)) return;
-        event.setCancelled(true);
 
         int slot = event.getRawSlot();
+        if (slot < 0) return;
+
+        if (slot < INV_SIZE) {
+            event.setCancelled(true);
+        } else {
+            if (event.getClick().isShiftClick()) {
+                event.setCancelled(true);
+            }
+            return;
+        }
 
         if (slot == 45) { // Claim kit trigger[cite: 3]
             UUID uuid      = player.getUniqueId();
@@ -236,6 +248,13 @@ public class AnimaClaimKits implements Listener {
                 if (isAdmin) new AnimaKitsMainGUI(plugin, player).open();
                 else         new AnimaClaimMainGUI(plugin, player).open();
             });
+        }
+    }
+
+    @EventHandler
+    public void onDrag(InventoryDragEvent event) {
+        if (event.getInventory().equals(inventory)) {
+            event.setCancelled(true);
         }
     }
 
