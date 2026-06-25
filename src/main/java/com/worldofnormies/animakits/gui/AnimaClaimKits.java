@@ -18,6 +18,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -29,14 +30,14 @@ public class AnimaClaimKits implements Listener {
     private static final MiniMessage MM        = MiniMessage.miniMessage();
     private static final int         INV_SIZE  = 54;
 
-    // Interior display window bounding slots based on Claim Kit GUI.png
+    // Interior display window bounding slots (28 slots total)
     private static final int[] CONTENT_SLOTS = {
-        11, 12, 13, 14, 15,
-        20, 21, 22, 23, 24,
-        29, 30, 31, 32, 33,
-        38, 39, 40, 41, 42
+        10, 11, 12, 13, 14, 15, 16,
+        19, 20, 21, 22, 23, 24, 25,
+        28, 29, 30, 31, 32, 33, 34,
+        37, 38, 39, 40, 41, 42, 43
     };
-    private static final int ITEMS_PER_PAGE = CONTENT_SLOTS.length; // 20
+    private static final int ITEMS_PER_PAGE = CONTENT_SLOTS.length; // 28
 
     private final AnimaKitsPlugin plugin;
     private final Player          player;
@@ -70,20 +71,22 @@ public class AnimaClaimKits implements Listener {
         page = Math.min(page, totalPages - 1);
 
         // ── 1. Frame / Alternating Border Edge Setup (Lime & Green Glass) ──
-        Material[] borderPattern = {
-            // Row 1
-            Material.LIME_STAINED_GLASS_PANE, Material.GREEN_STAINED_GLASS_PANE, Material.LIME_STAINED_GLASS_PANE, Material.GREEN_STAINED_GLASS_PANE, Material.LIME_STAINED_GLASS_PANE, Material.GREEN_STAINED_GLASS_PANE, Material.LIME_STAINED_GLASS_PANE, Material.GREEN_STAINED_GLASS_PANE, Material.LIME_STAINED_GLASS_PANE,
-            // Row 2
-            Material.LIME_STAINED_GLASS_PANE, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.GREEN_STAINED_GLASS_PANE, Material.LIME_STAINED_GLASS_PANE,
-            // Row 3
-            Material.GREEN_STAINED_GLASS_PANE, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.GREEN_STAINED_GLASS_PANE, Material.LIME_STAINED_GLASS_PANE,
-            // Row 4
-            Material.LIME_STAINED_GLASS_PANE, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.GREEN_STAINED_GLASS_PANE, Material.LIME_STAINED_GLASS_PANE,
-            // Row 5
-            Material.LIME_STAINED_GLASS_PANE, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.GREEN_STAINED_GLASS_PANE, Material.LIME_STAINED_GLASS_PANE,
-            // Row 6 (Functional Buttons & Custom Overrides Left Blank)
-            Material.AIR, Material.GREEN_STAINED_GLASS_PANE, Material.AIR, Material.GREEN_STAINED_GLASS_PANE, Material.AIR, Material.LIME_STAINED_GLASS_PANE, Material.LIME_STAINED_GLASS_PANE, Material.GREEN_STAINED_GLASS_PANE, Material.AIR
-        };
+        Material[] borderPattern = new Material[INV_SIZE];
+        Arrays.fill(borderPattern, Material.AIR);
+
+        // Fill borders (Row 1, Row 6, and Columns 1 & 9)
+        for (int i = 0; i < 9; i++) {
+            borderPattern[i] = (i % 2 == 0) ? Material.LIME_STAINED_GLASS_PANE : Material.GREEN_STAINED_GLASS_PANE;
+            borderPattern[45 + i] = (i % 2 == 0) ? Material.LIME_STAINED_GLASS_PANE : Material.GREEN_STAINED_GLASS_PANE;
+        }
+        for (int i = 1; i < 5; i++) {
+            borderPattern[i * 9] = (i % 2 == 0) ? Material.GREEN_STAINED_GLASS_PANE : Material.LIME_STAINED_GLASS_PANE;
+            borderPattern[i * 9 + 8] = (i % 2 == 0) ? Material.LIME_STAINED_GLASS_PANE : Material.GREEN_STAINED_GLASS_PANE;
+        }
+
+        // Functional button slots should be AIR in borderPattern to not be overwritten by panes
+        int[] actionSlots = {45, 47, 49, 51, 53};
+        for (int slot : actionSlots) borderPattern[slot] = Material.AIR;
 
         for (int i = 0; i < INV_SIZE; i++) {
             if (borderPattern[i] != Material.AIR) {

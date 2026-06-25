@@ -65,10 +65,14 @@ public class AnimaKitsEditor implements Listener {
     }
 
     public void open() {
-        Component title = MM.deserialize(
-                "<gradient:#FFD700:#FF8C00:#FF4500><bold>[ </bold></gradient>" +
-                "<gradient:#FF6AFF:#AA00FF><bold>" + kit.getPlainName() + " Edit</bold></gradient>" +
-                "<gradient:#FFD700:#FF8C00:#FF4500><bold> ] PAGE " + (page + 1) + "</bold></gradient>");
+        Component title = MM.deserialize("<gradient:#FFD700:#FF8C00:#FF4500><bold>[ </bold></gradient>")
+                .append(com.worldofnormies.animakits.util.ColorUtil.parse(kit.getRawName()))
+                .append(MM.deserialize("<gradient:#FF6AFF:#AA00FF><bold> Edit</bold></gradient>"))
+                .append(MM.deserialize("<gradient:#FFD700:#FF8C00:#FF4500><bold> ]</bold></gradient>"));
+
+        if (page > 0) {
+            title = title.append(MM.deserialize("<gradient:#FFD700:#FF8C00:#FF4500><bold> PAGE " + (page + 1) + "</bold></gradient>"));
+        }
 
         inventory = Bukkit.createInventory(null, INV_SIZE, title);
         populate();
@@ -117,14 +121,14 @@ public class AnimaKitsEditor implements Listener {
                 Material.NAME_TAG,
                 MM.deserialize("<gradient:#FFD700:#FFA500><bold>✎ Rename Kit</bold></gradient>"),
                 List.of(
-                    MM.deserialize("<gray>Current name: <white>" + kit.getPlainName() + "</white></gray>"),
+                    MM.deserialize("<gray>Current name: </gray>").append(com.worldofnormies.animakits.util.ColorUtil.parse(kit.getRawName())),
                     Component.empty(),
                     MM.deserialize("<gradient:#FFD700:#FFA500>⬡ Click</gradient><gray> to modify the text layout.</gray>"),
                     MM.deserialize("<dark_gray>Type <white>//cancel</white> to abort.</dark_gray>")
                 )));
 
         inventory.setItem(SLOT_ICON_CHEST, GuiItem.make(
-                Material.CHEST,
+                kit.getIconMaterial(),
                 MM.deserialize("<gradient:#FFB300:#FB8C00><bold>📦 Change Kit Icon</bold></gradient>"),
                 List.of(
                     MM.deserialize("<gray>Current Icon Material: <white>" + kit.getIconMaterial().name() + "</white></gray>"),
