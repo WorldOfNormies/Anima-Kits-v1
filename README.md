@@ -59,6 +59,10 @@
 | `/anima kits clonekit <kit> <new>` | Clone an existing kit. | `anima.kits.clonekit` |
 | `/anima kits give <player> <kit> <amount>` | Give a kit to a specific player. | `anima.kits.give` |
 | `/anima kits giveall <kit> <amount>` | Give a kit to all online players. | `anima.kits.giveall` |
+| `/anima kits claim <kit>` | Claim a kit. | `anima.kits.claim.<kit>` |
+| `/anima kits list` | List all available kits. | `anima.kits.list` |
+| `/anima kits setcooldown <kit> <seconds>` | Set a kit's cooldown. | `anima.kits.setcooldown` |
+| `/anima kits singleclaim <kit> <true|false>` | Set a kit's singleclaim status. | `anima.kits.singleclaim` |
 | `/anima kits reload` | Reload the plugin configuration. | `anima.kits.reload` |
 | `/anima kits help` | Display the help menu. | `anima.kits.help` |
 | `/anima kits permission add <perm> <player> <time>` | Grant a timed permission. | `anima.kits.permission.add` |
@@ -86,6 +90,10 @@
 | `anima.kits.clonekit` | Clone kits. | `op` |
 | `anima.kits.give` | Give a kit to a specific player. | `op` |
 | `anima.kits.giveall` | Give a kit to all online players. | `op` |
+| `anima.kits.claim.<kit>` | Claim a specific kit. | `op` |
+| `anima.kits.list` | List all available kits. | `op` |
+| `anima.kits.setcooldown` | Set kit cooldowns. | `op` |
+| `anima.kits.singleclaim` | Toggle single claim status. | `op` |
 | `anima.kits.reload` | Reload the plugin. | `op` |
 | `anima.kits.help` | View the help menu. | `op` |
 | `anima.kits.permission.add` | Grant timed permissions to players. | `op` |
