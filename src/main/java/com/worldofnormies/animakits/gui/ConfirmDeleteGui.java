@@ -31,9 +31,9 @@ public class ConfirmDeleteGui implements Listener {
     private final Kit             kit;
     private Inventory             inventory;
 
-    private static final int CANCEL_SLOT  = 11;
+    private static final int CANCEL_SLOT  = 10;
     private static final int TNT_SLOT     = 13;
-    private static final int CONFIRM_SLOT = 15;
+    private static final int CONFIRM_SLOT = 16;
 
     public ConfirmDeleteGui(AnimaKitsPlugin plugin, Player player, Kit kit) {
         this.plugin = plugin;
