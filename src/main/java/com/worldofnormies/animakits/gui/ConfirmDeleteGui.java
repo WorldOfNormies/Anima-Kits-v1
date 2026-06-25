@@ -20,13 +20,6 @@ import java.util.List;
 
 /**
  * ConfirmDeleteGui – 1-row (9-slot) GUI confirming kit deletion.
- *
- * Layout (slots 0-8):
- *   0 1 2 = BLACK pane
- *   3     = RED pane   → Cancel (go back to Kit editor)
- *   4     = BLACK pane
- *   5     = LIME pane  → Confirm delete
- *   6 7 8 = BLACK pane
  */
 public class ConfirmDeleteGui implements Listener {
 
@@ -58,7 +51,8 @@ public class ConfirmDeleteGui implements Listener {
 
     private void populate() {
         ItemStack black = pane(Material.BLACK_STAINED_GLASS_PANE,
-                MM.deserialize("<dark_gray> </dark_gray>"));
+                MM.deserialize("<dark_gray> </dark_gray>"),
+                List.of());
         ItemStack red   = pane(Material.RED_STAINED_GLASS_PANE,
                 MM.deserialize("<red><bold>✘ Cancel</bold></red>"),
                 List.of(MM.deserialize("<gray>Go back – keep the kit.</gray>")));
@@ -81,15 +75,14 @@ public class ConfirmDeleteGui implements Listener {
 
         int slot = event.getRawSlot();
         if (slot == CANCEL_SLOT) {
-            // Reopen the editor for this kit
             HandlerList.unregisterAll(this);
             Bukkit.getScheduler().runTask(plugin, () ->
-                    new KitEditorGui(plugin, player, kit, 0).open());
+                    new AnimaKitsEditor(plugin, player, kit, 0).open());
         } else if (slot == CONFIRM_SLOT) {
             plugin.getKitManager().deleteKit(kit.getPlainName());
             HandlerList.unregisterAll(this);
             Bukkit.getScheduler().runTask(plugin, () ->
-                    new KitBrowserGui(plugin, player).open());
+                    new AnimaKitsMainGUI(plugin, player).open());
         }
     }
 
@@ -97,12 +90,6 @@ public class ConfirmDeleteGui implements Listener {
     public void onClose(InventoryCloseEvent event) {
         if (!event.getInventory().equals(inventory)) return;
         HandlerList.unregisterAll(this);
-    }
-
-    // ── helpers ───────────────────────────────────────────────────
-
-    private ItemStack pane(Material mat, Component name) {
-        return pane(mat, name, List.of());
     }
 
     private ItemStack pane(Material mat, Component name, List<Component> lore) {

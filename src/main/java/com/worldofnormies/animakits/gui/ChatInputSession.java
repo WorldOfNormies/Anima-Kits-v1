@@ -1,6 +1,7 @@
 package com.worldofnormies.animakits.gui;
 
 import com.worldofnormies.animakits.AnimaKitsPlugin;
+import com.worldofnormies.animakits.kit.Kit;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.minimessage.MiniMessage;
@@ -106,6 +107,20 @@ public class ChatInputSession implements Listener {
         player.sendMessage(Component.empty());
         player.sendMessage(mm.deserialize(
                 "<yellow>Type the lore line in chat, then press <white>Enter</white>:</yellow>"));
+        player.sendMessage(Component.empty());
+
+        Component cancelLink = mm.deserialize("<red><bold>[Click here to cancel]</bold></red>")
+                .clickEvent(ClickEvent.runCommand("/animakits-cancel-input"));
+        player.sendMessage(cancelLink);
+    }
+
+    public static void sendClonePrompt(AnimaKitsPlugin plugin, Player player, Kit kit) {
+        MiniMessage mm = MiniMessage.miniMessage();
+
+        player.sendMessage(mm.deserialize(
+                "<gradient:#54DAF4:#545EB6><bold>━━━━ AnimaKits – Clone Kit ━━━━</bold></gradient>"));
+        player.sendMessage(mm.deserialize("<gray>Cloning kit: <white>" + kit.getPlainName() + "</white></gray>"));
+        player.sendMessage(mm.deserialize("<yellow>Enter new name for the clone in chat:</yellow>"));
         player.sendMessage(Component.empty());
 
         Component cancelLink = mm.deserialize("<red><bold>[Click here to cancel]</bold></red>")
