@@ -76,7 +76,7 @@ public class AnimaKitsMainGUI implements Listener {
 
         // ── 1. Frame Setup matching image_3f280d.png (Purple Glass Borders) ──
         Material[] borderPattern = {
-            Material.LIGHT_BLUE_STAINED_GLASS_PANE, Material.BLUE_STAINED_GLASS_PANE, Material.AIR, Material.BLUE_STAINED_GLASS_PANE, Material.AIR, Material.BLUE_STAINED_GLASS_PANE, Material.AIR, BLUE_STAINED_GLASS_PANE, Material.LIGHT_BLUE_STAINED_GLASS_PANE,
+            Material.LIGHT_BLUE_STAINED_GLASS_PANE, Material.BLUE_STAINED_GLASS_PANE, Material.AIR, Material.BLUE_STAINED_GLASS_PANE, Material.AIR, Material.BLUE_STAINED_GLASS_PANE, Material.AIR, Material.BLUE_STAINED_GLASS_PANE, Material.LIGHT_BLUE_STAINED_GLASS_PANE,
             Material.BLUE_STAINED_GLASS_PANE, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.BLUE_STAINED_GLASS_PANE,
             Material.LIGHT_BLUE_STAINED_GLASS_PANE, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.LIGHT_BLUE_STAINED_GLASS_PANE,
             Material.BLUE_STAINED_GLASS_PANE, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.BLUE_STAINED_GLASS_PANE,
