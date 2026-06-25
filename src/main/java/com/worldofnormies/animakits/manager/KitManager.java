@@ -194,6 +194,17 @@ public class KitManager {
         return getKitByPlainName(name);
     }
 
+    public void sortKits(Comparator<Kit> comparator) {
+        List<Kit> kitList = new ArrayList<>(kits.values());
+        kitList.sort(comparator);
+        kits.clear();
+        for (Kit k : kitList) {
+            kits.put(k.getId(), k);
+        }
+        saveKits();
+        refreshAllBrowsers();
+    }
+
     // ── GUI Refresh ────────────────────────────────────────────────
 
     /** Register an open browser GUI for a player so it gets refreshed on kit changes. */

@@ -74,13 +74,13 @@ public class AnimaClaimKits implements Listener {
             // Row 1
             Material.LIME_STAINED_GLASS_PANE, Material.GREEN_STAINED_GLASS_PANE, Material.LIME_STAINED_GLASS_PANE, Material.GREEN_STAINED_GLASS_PANE, Material.LIME_STAINED_GLASS_PANE, Material.GREEN_STAINED_GLASS_PANE, Material.LIME_STAINED_GLASS_PANE, Material.GREEN_STAINED_GLASS_PANE, Material.LIME_STAINED_GLASS_PANE,
             // Row 2
-            Material.LIME_STAINED_GLASS_PANE, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.GREEN_STAINED_GLASS_PANE, Material.LIME_STAINED_GLASS_PANE,
+            Material.LIME_STAINED_GLASS_PANE, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.GREEN_STAINED_GLASS_PANE, Material.LIME_STAINED_GLASS_PANE,
             // Row 3
-            Material.GREEN_STAINED_GLASS_PANE, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.GREEN_STAINED_GLASS_PANE, Material.LIME_STAINED_GLASS_PANE,
+            Material.GREEN_STAINED_GLASS_PANE, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.GREEN_STAINED_GLASS_PANE, Material.LIME_STAINED_GLASS_PANE,
             // Row 4
-            Material.LIME_STAINED_GLASS_PANE, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.GREEN_STAINED_GLASS_PANE, Material.LIME_STAINED_GLASS_PANE,
+            Material.LIME_STAINED_GLASS_PANE, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.GREEN_STAINED_GLASS_PANE, Material.LIME_STAINED_GLASS_PANE,
             // Row 5
-            Material.LIME_STAINED_GLASS_PANE, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.GREEN_STAINED_GLASS_PANE, Material.LIME_STAINED_GLASS_PANE,
+            Material.LIME_STAINED_GLASS_PANE, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.GREEN_STAINED_GLASS_PANE, Material.LIME_STAINED_GLASS_PANE,
             // Row 6 (Functional Buttons & Custom Overrides Left Blank)
             Material.AIR, Material.GREEN_STAINED_GLASS_PANE, Material.AIR, Material.GREEN_STAINED_GLASS_PANE, Material.AIR, Material.LIME_STAINED_GLASS_PANE, Material.LIME_STAINED_GLASS_PANE, Material.GREEN_STAINED_GLASS_PANE, Material.AIR
         };

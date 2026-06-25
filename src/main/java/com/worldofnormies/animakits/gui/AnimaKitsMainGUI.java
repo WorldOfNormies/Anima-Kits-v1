@@ -21,6 +21,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -81,7 +82,7 @@ public class AnimaKitsMainGUI implements Listener {
             Material.PURPLE_STAINED_GLASS_PANE, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.PURPLE_STAINED_GLASS_PANE,
             Material.PURPLE_STAINED_GLASS_PANE, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.PURPLE_STAINED_GLASS_PANE,
             Material.PURPLE_STAINED_GLASS_PANE, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.PURPLE_STAINED_GLASS_PANE,
-            Material.AIR, Material.PURPLE_STAINED_GLASS_PANE, Material.AIR, Material.PURPLE_STAINED_GLASS_PANE, Material.PURPLE_STAINED_GLASS_PANE, Material.PURPLE_STAINED_GLASS_PANE, Material.AIR, Material.PURPLE_STAINED_GLASS_PANE, Material.AIR
+            Material.AIR, Material.PURPLE_STAINED_GLASS_PANE, Material.AIR, Material.PURPLE_STAINED_GLASS_PANE, Material.PURPLE_STAINED_GLASS_PANE, Material.AIR, Material.AIR, Material.PURPLE_STAINED_GLASS_PANE, Material.AIR
         };
 
         for (int i = 0; i < INV_SIZE; i++) {
@@ -104,8 +105,9 @@ public class AnimaKitsMainGUI implements Listener {
             lore.add(MM.deserialize("<gradient:#FFD700:#FFA500>⬡ <bold>Left-click</bold></gradient><gray> → View Kit Contents</gray>"));
             lore.add(MM.deserialize("<gradient:#4FC3F7:#1565C0>✎ <bold>Right-click</bold></gradient><gray> → Open Kit Editor</gray>"));
             lore.add(MM.deserialize("<gradient:#A5D6A7:#2E7D32>✦ <bold>Shift + Left</bold></gradient><gray> → Give / Give All</gray>"));
-            lore.add(MM.deserialize("<gradient:#EF9A9A:#B71C1C>✘ <bold>Shift + Q / Middle</bold></gradient><gray> → Delete Kit</gray>"));
-            lore.add(MM.deserialize("<gradient:#CE93D8:#6A1B9A>⎘ <bold>Shift + Right</bold></gradient><gray> → Clone Kit</gray>"));
+            lore.add(MM.deserialize("<gradient:#FFD700:#FFA500>✦ <bold>Shift + Right</bold></gradient><gray> → Claim Kit (Test)</gray>"));
+            lore.add(MM.deserialize("<gradient:#EF9A9A:#B71C1C>✘ <bold>Middle Click</bold></gradient><gray> → Delete Kit</gray>"));
+            lore.add(MM.deserialize("<gradient:#CE93D8:#6A1B9A>⎘ <bold>Shift + Drop</bold></gradient><gray> → Clone Kit</gray>"));
             lore.add(Component.empty());
             lore.add(MM.deserialize("<dark_gray>Cooldown: <gray>" + (kit.getCooldown() == 0 ? "<green>None" : "<yellow>" + kit.getCooldown() + "s") + "</gray>"));
             lore.add(MM.deserialize("<dark_gray>Single Claim: <gray>" + (kit.isSingleClaim() ? "<red>Yes" : "<green>No") + "</gray>"));
@@ -135,10 +137,17 @@ public class AnimaKitsMainGUI implements Listener {
         inventory.setItem(4, GuiItem.make(Material.ENDER_CHEST,
                 MM.deserialize("<gradient:#CC88FF:#6600CC><bold>✦ Kit Performance Statistics</bold></gradient>"), infoLore));
 
-        // Slot 7 – Bookshelf = Static menu UI Structuring info layout
-        inventory.setItem(7, GuiItem.make(Material.BOOKSHELF,
-                MM.deserialize("<gradient:#F5B041:#DC7633><bold>🕮 System Organizer Framework</bold></gradient>"),
-                List.of(MM.deserialize("<gray>Standardized configuration interface grid template.</gray>"))));
+        // Slot 6 – Bookshelf = System Organizer Framework (Sorting)
+        List<Component> sortLore = new ArrayList<>();
+        sortLore.add(MM.deserialize("<gradient:#F5B041:#DC7633><bold>🕮 System Organizer Framework</bold></gradient>"));
+        sortLore.add(Component.empty());
+        sortLore.add(MM.deserialize("<gradient:#4FC3F7:#1565C0>⬡ <bold>Left-click</bold></gradient><gray> → Sort Alphabetically (A-Z)</gray>"));
+        sortLore.add(MM.deserialize("<gradient:#FFD700:#FFA500>✦ <bold>Right-click</bold></gradient><gray> → Sort by Item Count (High-Low)</gray>"));
+        inventory.setItem(6, GuiItem.make(Material.BOOKSHELF,
+                MM.deserialize("<gradient:#F5B041:#DC7633><bold>🕮 System Organizer</bold></gradient>"), sortLore));
+
+        // Slot 7 - Purple Pane
+        inventory.setItem(7, makePane(Material.PURPLE_STAINED_GLASS_PANE));
 
         // ── 4. Bottom Controls Matrix ──
         inventory.setItem(45, GuiItem.make(Material.RED_BUNDLE,
@@ -215,6 +224,19 @@ public class AnimaKitsMainGUI implements Listener {
             return;
         }
 
+        // Slot 6: Bookshelf logic (Sorting)
+        if (slot == 6) {
+            if (event.getClick() == ClickType.LEFT) {
+                plugin.getKitManager().sortKits(Comparator.comparing(Kit::getPlainName, String.CASE_INSENSITIVE_ORDER));
+                player.sendMessage(MM.deserialize("<gradient:#44FF88:#00CC55>✔ Kits sorted alphabetically!</gradient>"));
+            } else if (event.getClick() == ClickType.RIGHT) {
+                plugin.getKitManager().sortKits((k1, k2) -> Integer.compare(k2.getItems().size(), k1.getItems().size()));
+                player.sendMessage(MM.deserialize("<gradient:#44FF88:#00CC55>✔ Kits sorted by item count!</gradient>"));
+            }
+            refresh();
+            return;
+        }
+
         // Slot 4: Ender Chest logic (Right-click handles new kit generation engine)
         if (slot == 4 && event.getClick() == ClickType.RIGHT) {
             String defaultName = "New Kit";
@@ -251,9 +273,20 @@ public class AnimaKitsMainGUI implements Listener {
                             .append(MM.deserialize("<green>✦ [Give All]</green>")
                                     .clickEvent(ClickEvent.suggestCommand("/anima kits giveall \"" + kit.getPlainName() + "\" 1")));
                     player.sendMessage(msg);
-                } else if (click == ClickType.MIDDLE || (event.getClick() == ClickType.DROP && event.isShiftClick())) {
-                    new ConfirmDeleteGui(plugin, player, kit).open();
                 } else if (click == ClickType.SHIFT_RIGHT) {
+                    // Admin Test Claim
+                    for (ItemStack item : kit.getItems()) {
+                        if (item != null && item.getType() != Material.AIR) {
+                            java.util.HashMap<Integer, ItemStack> leftover = player.getInventory().addItem(item.clone());
+                            for (ItemStack drop : leftover.values()) {
+                                player.getWorld().dropItemNaturally(player.getLocation(), drop);
+                            }
+                        }
+                    }
+                    player.sendMessage(MM.deserialize("<gradient:#44FF88:#00CC55>✔ Admin claim test for <white>" + kit.getPlainName() + "</white> successful!</gradient>"));
+                } else if (click == ClickType.MIDDLE) {
+                    new ConfirmDeleteGui(plugin, player, kit).open();
+                } else if (click == ClickType.DROP && event.isShiftClick()) {
                     player.closeInventory();
                     ChatInputSession.sendClonePrompt(plugin, player, kit);
                     new ChatInputSession(plugin, player,
