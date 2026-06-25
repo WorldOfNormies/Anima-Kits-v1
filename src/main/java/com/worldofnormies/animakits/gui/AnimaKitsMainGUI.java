@@ -120,7 +120,7 @@ public class AnimaKitsMainGUI implements Listener {
         eyeLore.add(MM.deserialize("<gradient:#54DAF4:#545EB6><bold>── Kit Overview Registry ──</bold></gradient>"));
         eyeLore.add(Component.empty());
         eyeLore.add(MM.deserialize("<gradient:#FFD700:#FFA500>⬡ <bold>Left-click</bold></gradient><gray> → List all kits & timers in chat</gray>"));
-        inventory.setItem(2, GuiItem.make(Material.EYE_OF_ENDER,
+        inventory.setItem(2, GuiItem.make(Material.ENDER_EYE,
                 MM.deserialize("<gradient:#00FFCC:#0099AA><bold>👁 Global Kits Registry</bold></gradient>"), eyeLore));
 
         // Slot 4 – Ender Chest = Overall configuration totals, statistics, pages info & creation engine
