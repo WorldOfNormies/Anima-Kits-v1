@@ -83,7 +83,7 @@ public class AnimaKitsMainGUI implements Listener {
             Material.LIGHT_BLUE_STAINED_GLASS_PANE, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.LIGHT_BLUE_STAINED_GLASS_PANE,
             Material.AIR, Material.BLUE_STAINED_GLASS_PANE, Material.AIR, Material.BLUE_STAINED_GLASS_PANE, Material.LIGHT_BLUE_STAINED_GLASS_PANE, Material.BLUE_STAINED_GLASS_PANE, Material.AIR, Material.BLUE_STAINED_GLASS_PANE, Material.AIR
         };
-
+        
         for (int i = 0; i < INV_SIZE; i++) {
             if (borderPattern[i] != Material.AIR) {
                 inventory.setItem(i, makePane(borderPattern[i]));
@@ -136,7 +136,7 @@ public class AnimaKitsMainGUI implements Listener {
                 MM.deserialize("<gradient:#CC88FF:#6600CC><bold>✦ Kit Performance Statistics</bold></gradient>"), infoLore));
 
         // Slot 7 – Bookshelf = Static menu UI Structuring info layout
-        inventory.setItem(7, GuiItem.make(Material.BOOKSHELF,
+        inventory.setItem(6, GuiItem.make(Material.BOOKSHELF,
                 MM.deserialize("<gradient:#F5B041:#DC7633><bold>🕮 System Organizer Framework</bold></gradient>"),
                 List.of(MM.deserialize("<gray>Standardized configuration interface grid template.</gray>"))));
 
