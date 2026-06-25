@@ -12,8 +12,17 @@ import java.util.*;
 /**
  * PermissionManager – stores timed/permanent per-player AnimaKits permissions.
  * Expiry of -1 means permanent.
+ *
+ * Per-kit claim permissions follow the node pattern:
+ *   anima.kits.claim.<kitName>
+ *
+ * Use {@link #grantClaimPermission} / {@link #revokeClaimPermission} / {@link #hasClaimPermission}
+ * as convenience wrappers for those nodes.
  */
 public class PermissionManager {
+
+    /** Prefix used for per-kit claim permission nodes stored in this manager. */
+    public static final String CLAIM_PREFIX = "anima.kits.claim.";
 
     private final AnimaKitsPlugin plugin;
     private final File file;
@@ -58,6 +67,10 @@ public class PermissionManager {
         }
     }
 
+    // -----------------------------------------------------------------------
+    // Generic perm API
+    // -----------------------------------------------------------------------
+
     public void grant(UUID player, String perm, long durationSeconds) {
         long expiry = durationSeconds == -1 ? -1 : Instant.now().getEpochSecond() + durationSeconds;
         data.computeIfAbsent(player, k -> new HashMap<>()).put(perm, expiry);
@@ -91,5 +104,62 @@ public class PermissionManager {
         long now = Instant.now().getEpochSecond();
         perms.entrySet().removeIf(e -> e.getValue() != -1 && now > e.getValue());
         return Collections.unmodifiableMap(perms);
+    }
+
+    // -----------------------------------------------------------------------
+    // Per-kit claim permission helpers
+    // -----------------------------------------------------------------------
+
+    /**
+     * Grant a player permission to claim {@code kitName}.
+     *
+     * @param player          the player's UUID
+     * @param kitName         plain (lower-case) kit name
+     * @param durationSeconds seconds until expiry, or {@code -1} for permanent
+     */
+    public void grantClaimPermission(UUID player, String kitName, long durationSeconds) {
+        grant(player, CLAIM_PREFIX + kitName, durationSeconds);
+    }
+
+    /**
+     * Revoke a player's permission to claim {@code kitName}.
+     *
+     * @return {@code true} if the permission existed and was removed
+     */
+    public boolean revokeClaimPermission(UUID player, String kitName) {
+        return revoke(player, CLAIM_PREFIX + kitName);
+    }
+
+    /**
+     * Check whether a player currently holds a valid (non-expired) per-kit claim
+     * permission managed by this manager.
+     *
+     * <p>Note: this only checks the custom permission store. Bukkit-level permissions
+     * (e.g. granted by a permission plugin) are checked separately via
+     * {@link org.bukkit.entity.Player#hasPermission(String)}.
+     *
+     * @param player  the player's UUID
+     * @param kitName plain kit name
+     * @return {@code true} if the stored permission is valid
+     */
+    public boolean hasClaimPermission(UUID player, String kitName) {
+        // Wildcard stored claim covers all kits
+        if (has(player, "anima.kits.claim.*")) return true;
+        return has(player, CLAIM_PREFIX + kitName);
+    }
+
+    /**
+     * Return all claim-permission entries for a player (nodes starting with
+     * {@link #CLAIM_PREFIX}), with expired ones removed lazily.
+     */
+    public Map<String, Long> getAllClaimPermissions(UUID player) {
+        Map<String, Long> all = getAll(player);
+        Map<String, Long> result = new LinkedHashMap<>();
+        for (Map.Entry<String, Long> e : all.entrySet()) {
+            if (e.getKey().startsWith(CLAIM_PREFIX) || e.getKey().equals("anima.kits.claim.*")) {
+                result.put(e.getKey(), e.getValue());
+            }
+        }
+        return Collections.unmodifiableMap(result);
     }
 }

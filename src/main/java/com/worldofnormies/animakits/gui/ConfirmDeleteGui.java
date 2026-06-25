@@ -19,14 +19,12 @@ import org.bukkit.inventory.meta.ItemMeta;
 import java.util.List;
 
 /**
- * ConfirmDeleteGui – 1-row (9-slot) GUI confirming kit deletion.
+ * ConfirmDeleteGui – 3-row (27-slot) chest GUI confirming kit deletion.
  *
- * Layout (slots 0-8):
- *   0 1 2 = BLACK pane
- *   3     = RED pane   → Cancel (go back to Kit editor)
- *   4     = BLACK pane
- *   5     = LIME pane  → Confirm delete
- *   6 7 8 = BLACK pane
+ * Layout (matches GUI_Delete_Kit.png):
+ *   Row 0  [0-8]  : grey/brown filler panes
+ *   Row 1  [9-17] : col 2=red cancel (slot 11), col 4=TNT display (slot 13), col 6=lime confirm (slot 15), rest filler
+ *   Row 2  [18-26]: grey/brown filler panes
  */
 public class ConfirmDeleteGui implements Listener {
 
@@ -37,9 +35,10 @@ public class ConfirmDeleteGui implements Listener {
     private final Kit kit;
     private Inventory inventory;
 
-    // slots
-    private static final int CANCEL_SLOT  = 3;
-    private static final int CONFIRM_SLOT = 5;
+    // Middle row slots
+    private static final int CANCEL_SLOT  = 11;
+    private static final int TNT_SLOT     = 13;
+    private static final int CONFIRM_SLOT = 15;
 
     public ConfirmDeleteGui(AnimaKitsPlugin plugin, Player player, Kit kit) {
         this.plugin = plugin;
@@ -50,26 +49,50 @@ public class ConfirmDeleteGui implements Listener {
     public void open() {
         Component title = MM.deserialize(
                 "<red><bold>Delete kit: </bold></red><white>" + kit.getPlainName() + "</white><red><bold>?</bold></red>");
-        inventory = Bukkit.createInventory(null, 9, title);
+        inventory = Bukkit.createInventory(null, 27, title);
         populate();
         Bukkit.getPluginManager().registerEvents(this, plugin);
         player.openInventory(inventory);
     }
 
     private void populate() {
-        ItemStack black = pane(Material.BLACK_STAINED_GLASS_PANE,
-                MM.deserialize("<dark_gray> </dark_gray>"));
-        ItemStack red   = pane(Material.RED_STAINED_GLASS_PANE,
+        // Brown/grey filler panes for background (matches screenshot dark grid)
+        ItemStack brownFill = pane(Material.BROWN_STAINED_GLASS_PANE,
+                MM.deserialize("<dark_gray> </dark_gray>"),
+                List.of());
+        ItemStack grayFill  = pane(Material.GRAY_STAINED_GLASS_PANE,
+                MM.deserialize("<dark_gray> </dark_gray>"),
+                List.of());
+
+        // Fill all slots with alternating pattern matching the screenshot
+        for (int i = 0; i < 27; i++) {
+            // Alternate brown and gray to match the checker-like look in the screenshot
+            inventory.setItem(i, (i % 2 == 0) ? brownFill : grayFill);
+        }
+
+        // Red cancel button – slot 11 (left side of middle row)
+        ItemStack red = pane(Material.RED_STAINED_GLASS_PANE,
                 MM.deserialize("<red><bold>✘ Cancel</bold></red>"),
                 List.of(MM.deserialize("<gray>Go back – keep the kit.</gray>")));
-        ItemStack lime  = pane(Material.LIME_STAINED_GLASS_PANE,
+        inventory.setItem(CANCEL_SLOT, red);
+
+        // TNT display item – slot 13 (centre of middle row)
+        ItemStack tnt = new ItemStack(Material.TNT);
+        ItemMeta tntMeta = tnt.getItemMeta();
+        if (tntMeta != null) {
+            tntMeta.displayName(MM.deserialize("<red><bold>" + kit.getPlainName() + "</bold></red>"));
+            tntMeta.lore(List.of(
+                    MM.deserialize("<gray>Are you sure you want to</gray>"),
+                    MM.deserialize("<red>permanently delete</red> <gray>this kit?</gray>")
+            ));
+            tnt.setItemMeta(tntMeta);
+        }
+        inventory.setItem(TNT_SLOT, tnt);
+
+        // Lime confirm button – slot 15 (right side of middle row)
+        ItemStack lime = pane(Material.LIME_STAINED_GLASS_PANE,
                 MM.deserialize("<green><bold>✔ Confirm Delete</bold></green>"),
                 List.of(MM.deserialize("<red>This action cannot be undone!</red>")));
-
-        for (int i : new int[]{0, 1, 2, 4, 6, 7, 8}) {
-            inventory.setItem(i, black);
-        }
-        inventory.setItem(CANCEL_SLOT,  red);
         inventory.setItem(CONFIRM_SLOT, lime);
     }
 
@@ -81,15 +104,14 @@ public class ConfirmDeleteGui implements Listener {
 
         int slot = event.getRawSlot();
         if (slot == CANCEL_SLOT) {
-            // Reopen the editor for this kit
             HandlerList.unregisterAll(this);
             Bukkit.getScheduler().runTask(plugin, () ->
-                    new KitEditorGui(plugin, player, kit, 0).open());
+                    new AnimaKitsEditor(plugin, player, kit, 0).open());
         } else if (slot == CONFIRM_SLOT) {
             plugin.getKitManager().deleteKit(kit.getPlainName());
             HandlerList.unregisterAll(this);
             Bukkit.getScheduler().runTask(plugin, () ->
-                    new KitBrowserGui(plugin, player).open());
+                    new AnimaKitsMainGUI(plugin, player).open());
         }
     }
 
@@ -97,12 +119,6 @@ public class ConfirmDeleteGui implements Listener {
     public void onClose(InventoryCloseEvent event) {
         if (!event.getInventory().equals(inventory)) return;
         HandlerList.unregisterAll(this);
-    }
-
-    // ── helpers ───────────────────────────────────────────────────
-
-    private ItemStack pane(Material mat, Component name) {
-        return pane(mat, name, List.of());
     }
 
     private ItemStack pane(Material mat, Component name, List<Component> lore) {

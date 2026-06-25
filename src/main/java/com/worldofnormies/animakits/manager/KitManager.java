@@ -1,7 +1,7 @@
 package com.worldofnormies.animakits.manager;
 
 import com.worldofnormies.animakits.AnimaKitsPlugin;
-import com.worldofnormies.animakits.gui.KitBrowserGui;
+import com.worldofnormies.animakits.gui.AnimaKitsMainGUI;
 import com.worldofnormies.animakits.kit.Kit;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -28,8 +28,8 @@ public class KitManager {
     /** In-memory kit map: UUID → Kit */
     private final Map<UUID, Kit> kits = new LinkedHashMap<>();
 
-    /** Track which players have a KitBrowserGui open so we can refresh them. */
-    private final Map<UUID, KitBrowserGui> openBrowsers = new ConcurrentHashMap<>();
+    /** Track which players have an AnimaKitsMainGUI open so we can refresh them. */
+    private final Map<UUID, AnimaKitsMainGUI> openBrowsers = new ConcurrentHashMap<>();
 
     public KitManager(AnimaKitsPlugin plugin) {
         this.plugin = plugin;
@@ -197,7 +197,7 @@ public class KitManager {
     // ── GUI Refresh ────────────────────────────────────────────────
 
     /** Register an open browser GUI for a player so it gets refreshed on kit changes. */
-    public void registerBrowser(Player player, KitBrowserGui gui) {
+    public void registerBrowser(Player player, AnimaKitsMainGUI gui) {
         openBrowsers.put(player.getUniqueId(), gui);
     }
 
@@ -213,7 +213,7 @@ public class KitManager {
     private void refreshAllBrowsers() {
         // Must run on the main thread
         Bukkit.getScheduler().runTask(plugin, () -> {
-            for (Map.Entry<UUID, KitBrowserGui> entry : openBrowsers.entrySet()) {
+            for (Map.Entry<UUID, AnimaKitsMainGUI> entry : openBrowsers.entrySet()) {
                 Player p = Bukkit.getPlayer(entry.getKey());
                 if (p != null && p.isOnline()) {
                     entry.getValue().refresh();
