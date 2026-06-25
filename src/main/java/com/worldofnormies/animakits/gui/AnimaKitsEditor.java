@@ -199,16 +199,25 @@ public class AnimaKitsEditor implements Listener {
         if (!event.getWhoClicked().equals(player)) return;
 
         int slot = event.getRawSlot();
+        if (slot < 0) return;
 
+        // Allow interaction with player inventory
+        if (slot >= INV_SIZE) {
+            return;
+        }
+
+        // Allow interaction with editable slots
         for (int editSlot : EDIT_SLOTS) {
             if (editSlot == slot) return;
         }
 
+        // Block interaction with other GUI slots (borders/buttons) unless handled below
         event.setCancelled(true);
 
         if (slot == SLOT_ICON_CHEST) {
             ItemStack hand = player.getInventory().getItemInMainHand();
             if (hand.getType() != Material.AIR) {
+                saveCurrentPage();
                 kit.setIconMaterial(hand.getType());
                 populate();
             }
@@ -216,6 +225,7 @@ public class AnimaKitsEditor implements Listener {
         }
 
         if (slot == SLOT_SINGLE_CLAIM) {
+            saveCurrentPage();
             kit.setSingleClaim(!kit.isSingleClaim());
             populate();
             return;
@@ -346,9 +356,14 @@ public class AnimaKitsEditor implements Listener {
     public void onDrag(InventoryDragEvent event) {
         if (!event.getInventory().equals(inventory)) return;
         for (int slot : event.getRawSlots()) {
+            if (slot >= INV_SIZE) continue; // Allow dragging in player inventory
+
             boolean valid = false;
             for (int editSlot : EDIT_SLOTS) {
-                if (editSlot == slot) { valid = true; break; }
+                if (editSlot == slot) {
+                    valid = true;
+                    break;
+                }
             }
             if (!valid) {
                 event.setCancelled(true);

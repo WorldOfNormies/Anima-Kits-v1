@@ -36,13 +36,27 @@ public final class ColorUtil {
 
     public static Component parse(String input) {
         if (input == null || input.isEmpty()) return Component.empty();
+
+        // If it looks like MiniMessage but doesn't have legacy codes, try MM first
+        if (input.contains("<") && input.contains(">") && !input.contains("&")) {
+            try {
+                return MM.deserialize(input);
+            } catch (Exception ignored) {}
+        }
+
         String converted = hexToMiniMessage(input);
         converted = convertAmpersand(converted);
-        try {
-            return MM.deserialize(converted);
-        } catch (Exception e) {
-            return LEGACY.deserialize(converted);
+
+        // After converting hex and ampersands, if it has tags, it might be mixed
+        if (converted.contains("<") && converted.contains(">")) {
+            try {
+                return MM.deserialize(converted);
+            } catch (Exception e) {
+                return LEGACY.deserialize(converted);
+            }
         }
+
+        return LEGACY.deserialize(converted);
     }
 
     public static String toLegacy(Component component) {

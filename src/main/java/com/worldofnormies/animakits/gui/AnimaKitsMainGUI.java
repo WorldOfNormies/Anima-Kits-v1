@@ -15,6 +15,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -35,12 +36,12 @@ public class AnimaKitsMainGUI implements Listener {
     private Inventory inventory;
 
     private static final int[] CONTENT_SLOTS = {
-        11, 12, 13, 14, 15,
-        20, 21, 22, 23, 24,
-        29, 30, 31, 32, 33,
-        38, 39, 40, 41, 42
+        10, 11, 12, 13, 14, 15, 16,
+        19, 20, 21, 22, 23, 24, 25,
+        28, 29, 30, 31, 32, 33, 34,
+        37, 38, 39, 40, 41, 42, 43
     };
-    private static final int KITS_PER_PAGE = CONTENT_SLOTS.length; // 20
+    private static final int KITS_PER_PAGE = CONTENT_SLOTS.length; // 28
     private static final int INV_SIZE = 54;
 
     public AnimaKitsMainGUI(AnimaKitsPlugin plugin, Player player) {
@@ -80,7 +81,7 @@ public class AnimaKitsMainGUI implements Listener {
             Material.PURPLE_STAINED_GLASS_PANE, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.PURPLE_STAINED_GLASS_PANE,
             Material.PURPLE_STAINED_GLASS_PANE, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.PURPLE_STAINED_GLASS_PANE,
             Material.PURPLE_STAINED_GLASS_PANE, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.PURPLE_STAINED_GLASS_PANE,
-            Material.AIR, Material.PURPLE_STAINED_GLASS_PANE, Material.AIR, Material.PURPLE_STAINED_GLASS_PANE, Material.PURPLE_STAINED_GLASS_PANE, Material.AIR, Material.PURPLE_STAINED_GLASS_PANE, Material.AIR, Material.AIR
+            Material.AIR, Material.PURPLE_STAINED_GLASS_PANE, Material.AIR, Material.PURPLE_STAINED_GLASS_PANE, Material.PURPLE_STAINED_GLASS_PANE, Material.PURPLE_STAINED_GLASS_PANE, Material.AIR, Material.PURPLE_STAINED_GLASS_PANE, Material.AIR
         };
 
         for (int i = 0; i < INV_SIZE; i++) {
@@ -162,10 +163,18 @@ public class AnimaKitsMainGUI implements Listener {
         if (!event.getInventory().equals(inventory)) return;
         if (!(event.getWhoClicked() instanceof Player clicker)) return;
         if (!clicker.equals(player)) return;
-        event.setCancelled(true);
 
         int slot = event.getRawSlot();
-        if (slot < 0 || slot >= INV_SIZE) return;
+        if (slot < 0) return;
+
+        if (slot < INV_SIZE) {
+            event.setCancelled(true);
+        } else {
+            if (event.getClick().isShiftClick()) {
+                event.setCancelled(true);
+            }
+            return;
+        }
 
         if (slot == 45) {
             player.closeInventory();
@@ -262,6 +271,13 @@ public class AnimaKitsMainGUI implements Listener {
                 }
                 break;
             }
+        }
+    }
+
+    @EventHandler
+    public void onDrag(InventoryDragEvent event) {
+        if (event.getInventory().equals(inventory)) {
+            event.setCancelled(true);
         }
     }
 
