@@ -22,38 +22,19 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * AnimaClaimMainGUI – Player-facing kit claim browser  (/anima kits claim).
- *
- * Sorting: claimable kits first (enchanted/glowing), then a Black-Stained-Glass-Pane
- *          divider pointing ← (can claim) and → (can't claim), then unclaimable kits.
- *
- * Filter modes toggled by Ender Chest click:
- *   0 = show all   1 = claimable only   2 = unclaimable only
- *
- * Bottom bar (row 6 = slots 44-53):
- *   44 = Red Bundle        → Close GUI
- *   45 = black pane
- *   46 = black pane
- *   47 = Red Glass Pane    → « Previous
- *   48 = black pane
- *   49 = Ender Chest       → Toggle filter
- *   50 = black pane
- *   51 = Lime Glass Pane   → Next »
- *   52 = black pane
- *   53 = Lime Bundle       → Claim All (claimable kits)
+ * AnimaClaimMainGUI – Player-facing kit claim browser matching All Claim Kit GUI.png layout.
  */
 public class AnimaClaimMainGUI implements Listener {
 
     private static final MiniMessage MM = MiniMessage.miniMessage();
     private static final int INV_SIZE   = 54;
 
-    // Slots 0-43 for kits (44 kit slots per page)
+    // Center area empty slots where kits go (28 slots total)
     private static final int[] KIT_SLOTS = {
-        0,1,2,3,4,5,6,7,8,
-        9,10,11,12,13,14,15,16,17,
-        18,19,20,21,22,23,24,25,26,
-        27,28,29,30,31,32,33,34,35,
-        36,37,38,39,40,41,42,43
+        10, 11, 12, 13, 14, 15, 16,
+        19, 20, 21, 22, 23, 24, 25,
+        28, 29, 30, 31, 32, 33, 34,
+        37, 38, 39, 40, 41, 42, 43
     };
 
     private final AnimaKitsPlugin plugin;
@@ -68,8 +49,9 @@ public class AnimaClaimMainGUI implements Listener {
     }
 
     public void open() {
+        // Centered bold reddish-orange to gold gradient title
         Component title = MM.deserialize(
-            "<gradient:#FF3030:#FFFFFF:#3060FF><bold>⋆༺⸸ Claim Kits ⸸༻⋆</bold></gradient>");
+            "        <gradient:#FF4500:#FFD700><bold>Claim GUI Menu</bold></gradient>");
         inventory = Bukkit.createInventory(null, INV_SIZE, title);
         populate();
         Bukkit.getPluginManager().registerEvents(this, plugin);
@@ -79,6 +61,28 @@ public class AnimaClaimMainGUI implements Listener {
     private void populate() {
         inventory.clear();
         UUID uuid = player.getUniqueId();
+
+        // ── 1. Setup Static Border Background Pattern ──
+        Material[] borderPattern = {
+            Material.YELLOW_STAINED_GLASS_PANE, Material.ORANGE_STAINED_GLASS_PANE,
+            Material.YELLOW_STAINED_GLASS_PANE, Material.ORANGE_STAINED_GLASS_PANE,
+            Material.AIR, // Slot 4 placeholder for Ender Chest
+            Material.ORANGE_STAINED_GLASS_PANE, Material.YELLOW_STAINED_GLASS_PANE,
+            Material.ORANGE_STAINED_GLASS_PANE, Material.YELLOW_STAINED_GLASS_PANE,
+
+            Material.ORANGE_STAINED_GLASS_PANE, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.ORANGE_STAINED_GLASS_PANE,
+            Material.YELLOW_STAINED_GLASS_PANE, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.YELLOW_STAINED_GLASS_PANE,
+            Material.ORANGE_STAINED_GLASS_PANE, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.ORANGE_STAINED_GLASS_PANE,
+            Material.YELLOW_STAINED_GLASS_PANE, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.YELLOW_STAINED_GLASS_PANE,
+
+            Material.AIR, Material.YELLOW_STAINED_GLASS_PANE, Material.AIR, Material.YELLOW_STAINED_GLASS_PANE, Material.ORANGE_STAINED_GLASS_PANE, Material.YELLOW_STAINED_GLASS_PANE, Material.AIR, Material.YELLOW_STAINED_GLASS_PANE, Material.AIR
+        };
+
+        for (int i = 0; i < INV_SIZE; i++) {
+            if (borderPattern[i] != Material.AIR) {
+                inventory.setItem(i, GuiItem.border(borderPattern[i]));
+            }
+        }
 
         List<Kit> allKits = new ArrayList<>(plugin.getKitManager().getAllKits());
 
@@ -94,12 +98,10 @@ public class AnimaClaimMainGUI implements Listener {
             .sorted(Comparator.comparing(Kit::getPlainName))
             .collect(Collectors.toList());
 
-        // Build display list based on filter
         List<Object> combined = new ArrayList<>();
         if (filterMode == 0) {
             combined.addAll(claimable);
             if (!claimable.isEmpty() && !unclaimable.isEmpty()) {
-                // Separator: left arrow (can claim side) | right arrow (can't claim side)
                 combined.add("separator");
             }
             combined.addAll(unclaimable);
@@ -115,6 +117,7 @@ public class AnimaClaimMainGUI implements Listener {
         int from = page * KIT_SLOTS.length;
         int to   = Math.min(from + KIT_SLOTS.length, combined.size());
 
+        // Fill kit content area
         for (int i = 0; i < (to - from); i++) {
             Object obj = combined.get(from + i);
             if (obj instanceof Kit kit) {
@@ -127,7 +130,6 @@ public class AnimaClaimMainGUI implements Listener {
                 for (String line : kit.getLore()) lore.add(MM.deserialize(line));
                 if (!kit.getLore().isEmpty()) lore.add(Component.empty());
 
-                // Status line
                 if (!hasPerm) {
                     lore.add(MM.deserialize("<red>✘ No permission to claim.</red>"));
                 } else if (claimed) {
@@ -139,16 +141,13 @@ public class AnimaClaimMainGUI implements Listener {
                 }
 
                 lore.add(Component.empty());
-                lore.add(MM.deserialize(
-                    "<gradient:#44FF88:#00CC55>⬡ <bold>Left-click</bold></gradient><gray> → View Kit Contents</gray>"));
-                lore.add(MM.deserialize(
-                    "<gradient:#FFD700:#FFA500>✦ <bold>Right-click</bold></gradient><gray> → Claim This Kit</gray>"));
+                lore.add(MM.deserialize("<gradient:#44FF88:#00CC55>⬡ <bold>Left-click</bold></gradient><gray> → View Kit Contents</gray>"));
+                lore.add(MM.deserialize("<gradient:#FFD700:#FFA500>✦ <bold>Right-click</bold></gradient><gray> → Claim This Kit</gray>"));
 
                 Component kitTitle = ColorUtil.parse(kit.getRawName()).decoration(TextDecoration.BOLD, true);
                 inventory.setItem(KIT_SLOTS[i], GuiItem.make(kit.getIconMaterial(), kitTitle, lore, canClaim));
 
             } else if ("separator".equals(obj)) {
-                // Arrow panes pointing left (can-claim side) and right (can't-claim side)
                 List<Component> sepLore = List.of(
                     MM.deserialize("<gradient:#44FF88:#00CC55>← Can Claim</gradient>   <gradient:#FF6060:#CC0000>Can't Claim →</gradient>"),
                     MM.deserialize("<dark_gray>Glowing kits can be claimed now.</dark_gray>")
@@ -159,25 +158,12 @@ public class AnimaClaimMainGUI implements Listener {
             }
         }
 
-        // ── Bottom bar ─────────────────────────────────────────────
-        ItemStack blackPane = GuiItem.border(Material.BLACK_STAINED_GLASS_PANE);
-        for (int s = 44; s < 54; s++) inventory.setItem(s, blackPane);
-
-        // Slot 44 – Red Bundle = Close
-        inventory.setItem(44, GuiItem.make(Material.RED_BUNDLE,
-            MM.deserialize("<gradient:#FF4444:#CC0000><bold>✘ Close Menu</bold></gradient>"),
-            List.of(MM.deserialize("<gray>Close the Claim Kits menu.</gray>"))));
-
-        // Slot 47 – Previous
-        inventory.setItem(47, GuiItem.make(Material.RED_STAINED_GLASS_PANE,
-            MM.deserialize("<gradient:#FF6060:#CC0000><bold>« Previous Page</bold></gradient>"),
-            List.of(MM.deserialize("<gray>Page <white>" + (page + 1) + "/" + totalPages + "</white></gray>"))));
-
-        // Slot 49 – Ender Chest = filter toggle
+        // ── 2. Top Interactive Action Setup ──
+        // Slot 4 – Ender Chest = Filter Toggle
         String filterLabel = filterMode == 0 ? "<white>All Kits</white>"
                            : filterMode == 1 ? "<green>Claimable Only</green>"
                                              : "<red>Unclaimable Only</red>";
-        inventory.setItem(49, GuiItem.make(Material.ENDER_CHEST,
+        inventory.setItem(4, GuiItem.make(Material.ENDER_CHEST,
             MM.deserialize("<gradient:#CC88FF:#6600CC><bold>✦ Filter Kits</bold></gradient>"),
             List.of(
                 MM.deserialize("<gray>Current filter: " + filterLabel + "</gray>"),
@@ -188,12 +174,23 @@ public class AnimaClaimMainGUI implements Listener {
                 MM.deserialize("<dark_gray>Claimable: <green>" + claimable.size() + "</green>  |  Unclaimable: <red>" + unclaimable.size() + "</red></dark_gray>")
             )));
 
-        // Slot 51 – Next
+        // ── 3. Bottom Interactive Action Setup (Row 6) ──
+        // Slot 45 – Red Bundle = Close Menu
+        inventory.setItem(45, GuiItem.make(Material.RED_BUNDLE,
+            MM.deserialize("<gradient:#FF4444:#CC0000><bold>✘ Close Menu</bold></gradient>"),
+            List.of(MM.deserialize("<gray>Close the Claim Kits menu.</gray>"))));
+
+        // Slot 47 – Red Stained Glass Pane = Previous Page
+        inventory.setItem(47, GuiItem.make(Material.RED_STAINED_GLASS_PANE,
+            MM.deserialize("<gradient:#FF6060:#CC0000><bold>« Previous Page</bold></gradient>"),
+            List.of(MM.deserialize("<gray>Page <white>" + (page + 1) + "/" + totalPages + "</white></gray>"))));
+
+        // Slot 51 – Lime Stained Glass Pane = Next Page
         inventory.setItem(51, GuiItem.make(Material.LIME_STAINED_GLASS_PANE,
             MM.deserialize("<gradient:#44FF88:#00AA44><bold>Next Page »</bold></gradient>"),
             List.of(MM.deserialize("<gray>Page <white>" + (page + 1) + "/" + totalPages + "</white></gray>"))));
 
-        // Slot 53 – Lime Bundle = Claim All
+        // Slot 53 – Lime Bundle = Claim All Available
         int claimableCount = claimable.size();
         inventory.setItem(53, GuiItem.make(Material.LIME_BUNDLE,
             MM.deserialize("<gradient:#44FF88:#00CC55><bold>✦ Claim All Kits</bold></gradient>"),
@@ -215,33 +212,36 @@ public class AnimaClaimMainGUI implements Listener {
         int slot = event.getRawSlot();
         if (slot < 0 || slot >= INV_SIZE) return;
 
-        if (slot == 44) {
+        // Slot 45: Close
+        if (slot == 45) {
             player.closeInventory();
             return;
         }
 
-        if (slot == 47 && page > 0) {
-            page--;
-            populate();
-            return;
-        }
-
-        if (slot == 49) {
-            // Cycle filter
+        // Slot 4: Toggle filter
+        if (slot == 4) {
             filterMode = (filterMode + 1) % 3;
             page = 0;
             populate();
             return;
         }
 
+        // Slot 47: Previous page
+        if (slot == 47 && page > 0) {
+            page--;
+            populate();
+            return;
+        }
+
+        // Slot 51: Next page
         if (slot == 51) {
             page++;
             populate();
             return;
         }
 
+        // Slot 53: Claim All
         if (slot == 53) {
-            // Claim all claimable kits
             UUID uuid       = player.getUniqueId();
             List<Kit> allKits = new ArrayList<>(plugin.getKitManager().getAllKits());
             int claimed     = 0;
@@ -266,17 +266,15 @@ public class AnimaClaimMainGUI implements Listener {
                 claimed++;
             }
             if (claimed > 0) {
-                player.sendMessage(MM.deserialize(
-                    "<gradient:#44FF88:#00CC55>✔ Claimed <white>" + claimed + "</white> kit(s)!</gradient>"));
+                player.sendMessage(MM.deserialize("<gradient:#44FF88:#00CC55>✔ Claimed <white>" + claimed + "</white> kit(s)!</gradient>"));
             } else {
-                player.sendMessage(MM.deserialize(
-                    "<gold>⚠ No kits available to claim right now.</gold>"));
+                player.sendMessage(MM.deserialize("<gold>⚠ No kits available to claim right now.</gold>"));
             }
             populate();
             return;
         }
 
-        // Kit slot click
+        // Process Kit items inside center panel layout
         int slotIndex = -1;
         for (int i = 0; i < KIT_SLOTS.length; i++) {
             if (KIT_SLOTS[i] == slot) { slotIndex = i; break; }
@@ -285,7 +283,6 @@ public class AnimaClaimMainGUI implements Listener {
 
         int combinedIndex = page * KIT_SLOTS.length + slotIndex;
 
-        // Rebuild combined list for index lookup
         UUID uuid = player.getUniqueId();
         List<Kit> allKits   = new ArrayList<>(plugin.getKitManager().getAllKits());
         List<Kit> claimable = allKits.stream()
@@ -320,32 +317,25 @@ public class AnimaClaimMainGUI implements Listener {
             Bukkit.getScheduler().runTask(plugin, () ->
                 new AnimaClaimKits(plugin, player, kit, false).open());
         } else if (click == ClickType.RIGHT) {
-            // Quick-claim
             boolean hasPerm = player.hasPermission("anima.kits.claim." + kit.getPlainName());
             long remaining  = plugin.getPlayerManager().getRemainingCooldown(uuid, kit.getId());
             boolean claimed = kit.isSingleClaim() && plugin.getPlayerManager().hasClaimed(uuid, kit.getId());
 
             if (!hasPerm) {
-                player.sendMessage(MM.deserialize(
-                    "<gradient:#FF4444:#CC0000>✘ You don't have permission to claim <white>" +
-                    kit.getPlainName() + "</white>.</gradient>"));
+                player.sendMessage(MM.deserialize("<gradient:#FF4444:#CC0000>✘ You don't have permission to claim <white>" + kit.getPlainName() + "</white>.</gradient>"));
                 return;
             }
             if (claimed) {
-                player.sendMessage(MM.deserialize(
-                    "<gradient:#FF4444:#CC0000>✘ You have already claimed <white>" +
-                    kit.getPlainName() + "</white> (single-claim only).</gradient>"));
+                player.sendMessage(MM.deserialize("<gradient:#FF4444:#CC0000>✘ You have already claimed <white>" + kit.getPlainName() + "</white> (single-claim only).</gradient>"));
                 return;
             }
             if (remaining > 0) {
-                player.sendMessage(MM.deserialize(
-                    "<gold>⏱ Wait <white>" + formatTime(remaining) + "</white> before claiming again.</gold>"));
+                player.sendMessage(MM.deserialize("<gold>⏱ Wait <white>" + formatTime(remaining) + "</white> before claiming again.</gradient>"));
                 return;
             }
             for (ItemStack item : kit.getItems()) {
                 if (item != null && item.getType() != org.bukkit.Material.AIR) {
-                    java.util.HashMap<Integer, ItemStack> leftover =
-                        player.getInventory().addItem(item.clone());
+                    java.util.HashMap<Integer, ItemStack> leftover = player.getInventory().addItem(item.clone());
                     for (ItemStack drop : leftover.values()) {
                         player.getWorld().dropItemNaturally(player.getLocation(), drop);
                     }
@@ -354,8 +344,7 @@ public class AnimaClaimMainGUI implements Listener {
             plugin.getPlayerManager().markClaimed(uuid, kit.getId());
             if (kit.getCooldown() > 0)
                 plugin.getPlayerManager().setCooldown(uuid, kit.getId(), kit.getCooldown());
-            player.sendMessage(MM.deserialize(
-                "<gradient:#44FF88:#00CC55>✔ You claimed <white>" + kit.getPlainName() + "</white>!</gradient>"));
+            player.sendMessage(MM.deserialize("<gradient:#44FF88:#00CC55>✔ You claimed <white>" + kit.getPlainName() + "</white>!</gradient>"));
             populate();
         }
     }

@@ -1,6 +1,6 @@
 # AnimaKits
 
-> A powerful, feature-rich kit management plugin for Paper servers — with gradient support, multi-page GUIs, and Bedrock compatibility.
+A powerful, feature-rich kit management plugin for Paper servers — complete with premium gradient engines, paginated smart menus, interactive chat prompts, and global target variables.
 
 ---
 
@@ -8,68 +8,81 @@
 
 | Build | Minecraft Version | Java | Gradle |
 |---|---|---|---|
-| **26.1.2** | 26.1.0 · 26.1.1 · **26.1.2** | JDK 26+ | 9.4.0+ |
-| **1.21.x** | 1.21.0 → **1.21.4** | JDK 21+ | 8.5+ / 9.x |
+| **26.1.2** | 26.1.0 · 26.1.1 · 26.1.2 | JDK 26+ | 9.4.0+ |
+| **1.21.x** | 1.21.0 → 1.21.4 | JDK 21+ | 8.5+ / 9.x |
 
-> **Note:** Both builds target [PaperMC](https://papermc.io/downloads/paper). Compatible forks (Purpur, Folia, etc.) are also supported.
+Both builds natively target PaperMC. Downstream ecosystem forks such as Purpur, Folia, or Pufferfish are fully supported.
 
 ---
 
 ## Features
 
-- **Gradient Support** — Full MiniMessage and Birdflop `&#RRGGBB` gradient support in kit names and lore lines.
-- **Multi-page GUIs** — Browse large kit libraries and edit kit contents across paginated menus.
-- **Bedrock Support** — Native form menus for Bedrock players via [GeyserMC](https://geysermc.org/) and [Floodgate](https://github.com/GeyserMC/Floodgate).
-- **Timed Permissions** — Grant temporary, time-limited access to any AnimaKits permission node.
-- **Drag-and-Drop Editing** — Place or remove items directly inside the kit editor GUI; changes save on close.
-- **Live GUI Refresh** — All open kit browsers update in real-time when kits are created, renamed, or deleted.
-- **Clone & Rename** — Duplicate any kit with a single command, preserving items and lore.
+- **Omnipresent Subcommands** — Subcommands register dynamically for all connected players to ensure command auto-completion populates properly. Strict permission verification is calculated during execution rather than hiding choices.
+- **Global Claim Targets** — Setting permissions using the `free` selector makes designated items instantly claimable by everyone on the server, including brand-new player profile joins.
+- **Paginated Smart Viewports** — Effortlessly handle deep server inventories and edit multi-page loadouts using visual pagination panels.
+- **Timed Stored Permissions** — Grant custom temporary permissions inside a local flat-file storage directory, bypassing complex external permission networks for individual kits.
+- **Immersive Chat Input Sessions** — Modify identifiers and properties directly inside chatboxes safely bounded within styled data layout boxes.
+- **Smart Escape Sessions** — Real-time motion fallback listeners track spatial updates. Players can close chatboxes or hit Escape without typing anything, or write `/cancel`, to instantly safely terminate input sessions.
+- **Real-Time Synchronisation** — Active administrative viewports update immediately when items are registered, modified, or updated.
 
 ---
 
 ## Installation
 
-1. Download the correct JAR for your server version from the [Releases](../../releases) page.
-2. Drop it into your server's `plugins/` folder.
-3. Restart or reload your server.
-4. Edit `plugins/AnimaKits/config.yml` to customise messages, GUI titles, and colours.
+1. Download the preferred production JAR matching your environment architecture from the Releases page.
+2. Drop the plugin binary directly into your server's `plugins/` directory.
+3. Start or reload your server instance to generate required directories.
+4. Customise localized messaging strings, visual titles, and interface constants inside `plugins/AnimaKits/config.yml`.
 
 ### Optional Dependencies
 
 | Plugin | Purpose |
 |---|---|
-| [Geyser](https://geysermc.org/) + [Floodgate](https://github.com/GeyserMC/Floodgate) | Bedrock player support |
-| [PlaceholderAPI](https://www.spigotmc.org/resources/placeholderapi.6245/) | Placeholder support |
+| Geyser + Floodgate | Custom Bedrock form engine rendering layers |
+| PlaceholderAPI | Evaluates external variable expansions inside displays |
 
 ---
 
 ## Commands
 
+### Player Subcommands
+
 | Command | Description | Permission |
 |---|---|---|
-| `/anima kits` | Open the main kit browser GUI. | `anima.kits.use` |
-| `/anima kits display <kit>` | View a kit's contents (read-only). | `anima.kits.display` |
-| `/anima kits edit add <name>` | Create a new kit. | `anima.kits.edit.add` |
-| `/anima kits edit remove <kit>` | Delete a kit. | `anima.kits.edit.remove` |
-| `/anima kits edit rename <kit> <new>` | Rename a kit. | `anima.kits.edit.rename` |
-| `/anima kits lore add <kit> <text>` | Add a lore line to a kit. | `anima.kits.lore.add` |
-| `/anima kits lore edit <kit> <#> <text>` | Edit a specific lore line. | `anima.kits.lore.edit` |
-| `/anima kits lore remove <kit> <#>` | Remove a lore line. | `anima.kits.lore.remove` |
-| `/anima kits open <kit>` | Open the kit editor directly. | `anima.kits.open` |
-| `/anima kits clonekit <kit> <new>` | Clone an existing kit. | `anima.kits.clonekit` |
-| `/anima kits give <player> <kit> <amount>` | Give a kit to a specific player. | `anima.kits.give` |
-| `/anima kits giveall <kit> <amount>` | Give a kit to all online players. | `anima.kits.giveall` |
-| `/anima kits claim <kit>` | Claim a kit. | `anima.kits.claim.<kit>` |
-| `/anima kits list` | List all available kits. | `anima.kits.list` |
-| `/anima kits setcooldown <kit> <seconds>` | Set a kit's cooldown. | `anima.kits.setcooldown` |
-| `/anima kits singleclaim <kit> <true|false>` | Set a kit's singleclaim status. | `anima.kits.singleclaim` |
-| `/anima kits reload` | Reload the plugin configuration. | `anima.kits.reload` |
-| `/anima kits help` | Display the help menu. | `anima.kits.help` |
-| `/anima kits permission add <perm> <player> <time>` | Grant a timed permission. | `anima.kits.permission.add` |
-| `/anima kits permission remove <perm> <player>` | Revoke a permission. | `anima.kits.permission.remove` |
-| `/anima kits permission show <player>` | Show all permissions for a player. | `anima.kits.permission.show` |
+| `/anima kits` | Opens the graphical admin kit dashboard interface. | `anima.kits.use` |
+| `/anima kit` | Opens the graphical player-facing kit claim workspace. | Available to all |
+| `/anima kit claim` | Alternate shorthand to display the user claim screen. | Available to all |
+| `/anima kit claim [kit]` | Claims a kit directly via command line execution. | `anima.kits.claim.[kit]` |
 
-> **Aliases:** `/anima`, `/ak`, `/animakits`
+### Administrative Subcommands
+
+| Command | Description | Permission |
+|---|---|---|
+| `/anima kit add [name]` | Generates a new loadout configuration block. | `anima.kits.add` |
+| `/anima kit delete [kit]` | Erases an active configuration registry tracking item blocks. | `anima.kits.delete` |
+| `/anima kit rename [kit] [new]` | Adjusts raw system and display names. | `anima.kits.rename` |
+| `/anima kit lore add [kit] [text]` | Appends a text string directly to item descriptors. | `anima.kits.lore.add` |
+| `/anima kit lore edit [kit] [#] [text]` | Replaces target lines with edited localized string details. | `anima.kits.lore.edit` |
+| `/anima kit lore remove [kit] [#]` | Deletes selected layout indexes from display arrays. | `anima.kits.lore.remove` |
+| `/anima kit clonekit [kit] [new]` | Duplicates an item config into a unique target profile. | `anima.kits.clonekit` |
+| `/anima kit give [player|@a] [kit] [n]` | Pushes inventory blocks directly to targeted users. | `anima.kits.give` |
+| `/anima kit giveall [kit] [n]` | Uniformly distributes sets to all active online player connections. | `anima.kits.giveall` |
+| `/anima kit list` | Prints an itemized overview of tracking structures to text. | `anima.kits.list` |
+| `/anima kit setcooldown [kit] [secs]` | Assigns waiting restrictions using standard integers. | `anima.kits.setcooldown` |
+| `/anima kit singleclaim [kit] [t|f]` | Restricts access profiles to a singular activation sequence. | `anima.kits.singleclaim` |
+| `/anima kit reload` | Hot-reloads values without server state interruptions. | `anima.kits.reload` |
+| `/anima kit help` | Displays an inline formatted operations sheet. | `anima.kits.help` |
+
+### Stored Permission Subcommands
+
+| Command | Description | Permission |
+|---|---|---|
+| `/anima kit permission add [node] [player] [time]` | Attaches temporary permissions using formatted durations. | `anima.kits.permission.add` |
+| `/anima kit permission remove [node] [player]` | Strips nodes instantly from custom file storage. | `anima.kits.permission.remove` |
+| `/anima kit permission show [player]` | Reviews duration sheets and entries for a single user. | `anima.kits.permission.show` |
+| `/anima kit permission claim [player|@a|free] [kit] [true|false] [time]` | Toggles kit claim rules for specific players, groups, or sets it globally free. | `anima.kits.permission.add` |
+
+*Aliases:* `/anima`, `/ak`, `/animakits`
 
 ---
 
@@ -77,84 +90,65 @@
 
 | Node | Description | Default |
 |---|---|---|
-| `anima.kits.*` | Grants access to **all** AnimaKits features. | `op` |
-| `anima.kits.use` | Open the main kit browser GUI. | `op` |
-| `anima.kits.display` | View kit contents (read-only). | `op` |
-| `anima.kits.edit.add` | Create new kits. | `op` |
-| `anima.kits.edit.remove` | Delete kits. | `op` |
-| `anima.kits.edit.rename` | Rename kits. | `op` |
-| `anima.kits.lore.add` | Add lore lines to kits. | `op` |
-| `anima.kits.lore.edit` | Edit existing lore lines. | `op` |
-| `anima.kits.lore.remove` | Remove lore lines. | `op` |
-| `anima.kits.open` | Open the kit editor GUI directly. | `op` |
-| `anima.kits.clonekit` | Clone kits. | `op` |
-| `anima.kits.give` | Give a kit to a specific player. | `op` |
-| `anima.kits.giveall` | Give a kit to all online players. | `op` |
-| `anima.kits.claim.<kit>` | Claim a specific kit. | `op` |
-| `anima.kits.list` | List all available kits. | `op` |
-| `anima.kits.setcooldown` | Set kit cooldowns. | `op` |
-| `anima.kits.singleclaim` | Toggle single claim status. | `op` |
-| `anima.kits.reload` | Reload the plugin. | `op` |
-| `anima.kits.help` | View the help menu. | `op` |
-| `anima.kits.permission.add` | Grant timed permissions to players. | `op` |
-| `anima.kits.permission.remove` | Revoke permissions from players. | `op` |
-| `anima.kits.permission.show` | View a player's permission list. | `op` |
+| `anima.kits.*` | Complete operational control over all subcommands and parameters. | op |
+| `anima.kits.use` | Grants rights to load administrative layout screens. | op |
+| `anima.kits.add` | Grants rights to build profile data records. | op |
+| `anima.kits.delete` | Grants rights to remove assets permanently. | op |
+| `anima.kits.rename` | Grants rights to alter target visual strings. | op |
+| `anima.kits.lore.add` | Grants rights to attach description arrays to files. | op |
+| `anima.kits.lore.edit` | Grants rights to overwrite specified message rows. | op |
+| `anima.kits.lore.remove` | Grants rights to truncate description tracking sheets. | op |
+| `anima.kits.clonekit` | Grants rights to replicate loaded inventories instantly. | op |
+| `anima.kits.give` | Grants rights to feed materials directly into target containers. | op |
+| `anima.kits.giveall` | Grants rights to issue items to everyone globally. | op |
+| `anima.kits.claim.*` | Wildcard enabling claim sequences across all configurations. | op |
+| `anima.kits.claim.[kit]` | Authorizes a claim loop for a unique configuration path. | op |
+| `anima.kits.list` | Authorizes reading database metadata summaries over text. | op |
+| `anima.kits.setcooldown` | Authorizes assigning duration holds on properties. | op |
+| `anima.kits.singleclaim` | Authorizes flipping lifetime access toggles on databases. | op |
+| `anima.kits.reload` | Authorizes internal parameter file refreshes. | op |
+| `anima.kits.help` | Access to view structural command information. | op |
+| `anima.kits.permission.add` | Authorizes granting timed permission nodes. | op |
+| `anima.kits.permission.remove` | Authorizes erasing user nodes manually. | op |
+| `anima.kits.permission.show` | Authorizes structural profiling audits on individuals. | op |
 
 ---
 
 ## Colour & Gradient Support
 
-Kit names and lore lines support all three colour formats simultaneously:
+Names and descriptions evaluate parsing formats natively across all inputs:
 
-| Format | Example | Result |
-|---|---|---|
-| Legacy codes | `&6&lGolden Kit` | Bold gold text |
-| Hex (Birdflop) | `&#FF5500Lava Kit` | Orange hex colour |
-| MiniMessage | `<gradient:#54DAF4:#545EB6>My Kit</gradient>` | Blue-to-purple gradient |
+- **Legacy Constants:** Traditional codes (example: `&6&lGolden Kit`) apply fast vanilla properties.
+- **Hex Formatting:** Standard web strings (example: `&#FF5500Lava Kit`) yield fine hexadecimal output variations.
+- **MiniMessage Tokens:** Comprehensive tags (example: `<gradient:#54DAF4:#545EB6>My Kit</gradient>`) build clean gradient steps across components.
 
 ---
 
 ## Technical Notes
 
-**Click Mapping in the Kit Browser**
+### Advanced UI Click Mapping
+Because specific controls (like Ctrl+Click) are withheld by the vanilla client engine outside of creative gamemodes, alternative interaction layers coordinate administrative behaviors:
+- **Left-Click:** Reviews interior item properties securely inside a protected sandbox window.
+- **Right-Click:** Enters live inventory editing grids.
+- **Shift + Left-Click:** Opens safe cloning duplication setups.
+- **Shift + Right-Click:** Launches deletion prompt routines.
 
-Minecraft does not forward `Ctrl+Click` to the server for inventory slots outside creative mode. AnimaKits uses the following alternative mappings inside the kit browser:
+### Bedrock Compatibility Matrix
+When Geyser and Floodgate stacks are present, the plugin uses a Bedrock form parser. This skips regular chest interface designs for Bedrock connections, transforming options into native mobile UI elements.
 
-| Click | Action |
-|---|---|
-| Left-click | View kit (read-only display) |
-| Right-click | Open kit editor |
-| Shift + Right-click | Delete kit |
-| Shift + Left-click | Clone kit |
-
-**Bedrock Players**
-
-Bedrock players connected via Geyser and Floodgate receive native Bedrock form menus (powered by the Cumulus API) instead of the Java inventory GUI, providing a seamless cross-platform experience.
-
-**Data Storage**
-
-Kits are stored in `plugins/AnimaKits/kits.yml`. Timed permissions are stored separately in `plugins/AnimaKits/permissions.yml`. Both files are reloaded via `/anima kits reload` without a server restart.
+### Persistence Strategy
+Data assets separate structural concerns into structured text files under `plugins/AnimaKits/`:
+- `kits.yml` maintains core inventory setups, metadata tags, and duration targets.
+- `permissions.yml` registers custom timestamp strings managing user node allocations.
+- `players.yml` preserves cooldown tracking and single claim validation history.
 
 ---
 
-## Building from Source
+## Building From Source
 
-Two GitHub Actions workflows are included:
+Automated GitHub actions utilize distinct workflow setups to generate deployments:
 
 ```bash
-# Trigger a release build (creates a GitHub Release automatically)
+# To trigger an automated distribution release artifact build:
 git tag v1.0.0
 git push origin v1.0.0
-```
-
-| Workflow | Target Paper | Java Required | Gradle Required |
-|---|---|---|---|
-| `build26_1_2.yml` | 26.1.2 | JDK 26 | 9.4.0+ |
-| `build1_21_x.yml` | 1.21.4 | JDK 21 | 8.5+ |
-
----
-
-## Credits
-
-Created by **World Of Normies**.  
-Website: [github.com/worldofnormies/AnimaKits](https://github.com/worldofnormies/AnimaKits)

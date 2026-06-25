@@ -12,39 +12,35 @@ import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
+import org.bukkit.event.player.PlayerMoveEvent;
 
 import java.util.UUID;
 import java.util.function.Consumer;
 
 /**
  * ChatInputSession – waits for a single chat message from a player.
- * Cancel by typing  //cancel  OR by pressing Escape (which fires
- * PlayerCommandPreprocessEvent with "/") in some clients, or by just
- * pressing Enter with no input – we treat blank + escape as cancel.
- *
- * No clickable "cancel" buttons are shown; the prompt just tells the
- * player to type //cancel to abort.
+ * Cancel by typing /cancel, or by walking/moving away (interpreted as closing chatbox/Esc).
  */
 public class ChatInputSession implements Listener {
 
     private static final MiniMessage MM = MiniMessage.miniMessage();
 
-    private final AnimaKitsPlugin  plugin;
-    private final Player           player;
+    private final AnimaKitsPlugin plugin;
+    private final Player player;
     private final Consumer<String> onInput;
-    private final Runnable         onCancel;
-    private final String           cancelMessage; // shown when cancelled
-    private volatile boolean       handled = false;
+    private final Runnable onCancel;
+    private final String cancelMessage; 
+    private volatile boolean handled = false;
 
     public ChatInputSession(AnimaKitsPlugin plugin, Player player,
-                            Consumer<String> onInput, Runnable onCancel) {
+                              Consumer<String> onInput, Runnable onCancel) {
         this(plugin, player, onInput, onCancel,
-             "<gray>No changes were made.</gray>");
+             "<gray>No adjustments were saved.</gray>");
     }
 
     public ChatInputSession(AnimaKitsPlugin plugin, Player player,
-                            Consumer<String> onInput, Runnable onCancel,
-                            String cancelMessage) {
+                              Consumer<String> onInput, Runnable onCancel,
+                              String cancelMessage) {
         this.plugin        = plugin;
         this.player        = player;
         this.onInput       = onInput;
@@ -57,7 +53,7 @@ public class ChatInputSession implements Listener {
         Bukkit.getPluginManager().registerEvents(this, plugin);
     }
 
-    // ── Chat listener (primary) ────────────────────────────────────
+    // ── Chat listener ──────────────────────────────────────────────
 
     @EventHandler(priority = EventPriority.LOWEST)
     public void onChat(AsyncPlayerChatEvent event) {
@@ -70,7 +66,7 @@ public class ChatInputSession implements Listener {
         String msg = event.getMessage().trim();
 
         Bukkit.getScheduler().runTask(plugin, () -> {
-            if (msg.equalsIgnoreCase("//cancel") || msg.isEmpty()) {
+            if (msg.equalsIgnoreCase("/cancel") || msg.equalsIgnoreCase("//cancel") || msg.isEmpty()) {
                 sendCancelNotice();
                 onCancel.run();
             } else {
@@ -79,14 +75,15 @@ public class ChatInputSession implements Listener {
         });
     }
 
-    // ── Command pre-process: catches /  (Escape in some clients) ───
+    // ── Command Preprocess listener (Catches /cancel) ──────────────
 
     @EventHandler(priority = EventPriority.LOWEST)
     public void onCommandPreprocess(PlayerCommandPreprocessEvent event) {
         if (!event.getPlayer().equals(player)) return;
         String msg = event.getMessage().trim();
-        // Treat a bare "/" or "//cancel" typed as command as cancel
-        if (!msg.equals("/") && !msg.equalsIgnoreCase("//cancel")) return;
+        
+        if (!msg.equalsIgnoreCase("/cancel") && !msg.equalsIgnoreCase("//cancel") && !msg.equals("/")) return;
+        
         event.setCancelled(true);
         if (handled) return;
         handled = true;
@@ -98,77 +95,94 @@ public class ChatInputSession implements Listener {
         });
     }
 
+    // ── Physical Movement fallback (Catches closing chatbox / ESC) ──
+
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void onPlayerMove(PlayerMoveEvent event) {
+        if (!event.getPlayer().equals(player)) return;
+        
+        // Ensure player actually changed position blocks or jumped, instead of just rotating camera pitch/yaw
+        if (event.getFrom().getX() == event.getTo().getX() && 
+            event.getFrom().getY() == event.getTo().getY() && 
+            event.getFrom().getZ() == event.getTo().getZ()) {
+            return;
+        }
+
+        if (handled) return;
+        handled = true;
+        HandlerList.unregisterAll(this);
+
+        Bukkit.getScheduler().runTask(plugin, () -> {
+            sendCancelNotice();
+            onCancel.run();
+        });
+    }
+
     // ─────────────────────────────────────────────────────────────
-    // Internal
+    // Internal Utilities
     // ─────────────────────────────────────────────────────────────
 
     private void sendCancelNotice() {
         player.sendMessage(MM.deserialize(
-            "<gradient:#FF6060:#CC0000>✘ Cancelled. </gradient>" + cancelMessage));
+            "<gradient:#FF5555:#FF2222><b>✕</b> Input Terminated. </gradient>" + cancelMessage));
     }
 
     // ─────────────────────────────────────────────────────────────
-    // Static prompt helpers
+    // Formatted Chat Container Displays
     // ─────────────────────────────────────────────────────────────
 
     public static void sendRenamePrompt(AnimaKitsPlugin plugin, Player player) {
-        player.sendMessage(MM.deserialize(
-            "<gradient:#FFD700:#FF8C00><bold>━━━━ AnimaKits · Rename Kit ━━━━</bold></gradient>"));
-        player.sendMessage(MM.deserialize(
-            "<gray>Supports <white>legacy &codes</white>, <white>&#HEX</white>, and <white>MiniMessage</white>:</gray>"));
-        player.sendMessage(MM.deserialize(
-            "<dark_gray>  &6&lGolden Kit  · &#FF5500Lava Kit  · <gradient:#54DAF4:#545EB6>Gradient Kit</gradient>  · <rainbow>Rainbow Kit</rainbow></dark_gray>"));
         player.sendMessage(Component.empty());
-        player.sendMessage(MM.deserialize(
-            "<yellow>✎ Type the new kit name in chat and press <white>Enter</white>.</yellow>"));
-        player.sendMessage(MM.deserialize(
-            "<dark_gray>Type <white>//cancel</white> or press <white>Escape</white> to abort.</dark_gray>"));
-        player.sendMessage(MM.deserialize(
-            "<gradient:#FFD700:#FF8C00><bold>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</bold></gradient>"));
+        player.sendMessage(MM.deserialize("<gradient:#FFD700:#FF8C00><b>┌──────────────────────────────────────────────────┐</b></gradient>"));
+        player.sendMessage(MM.deserialize("   <gradient:#FFD700:#FF8C00><b>✎ EDIT KIT NAME</b></gradient>"));
+        player.sendMessage(MM.deserialize("   <gray>Type your value in chat and press enter.</gray>"));
+        player.sendMessage(Component.empty());
+        player.sendMessage(MM.deserialize("   <dark_gray>▪ </dark_gray><gray>Formatting Options Supported:</gray>"));
+        player.sendMessage(MM.deserialize("     <gold>&6Legacy Colors</gold><gray>, </gray><b>&#FF5500HEX Formats</b><gray>, or </gray><gradient:#54DAF4:#545EB6>MiniMessage</gradient>"));
+        player.sendMessage(Component.empty());
+        player.sendMessage(MM.deserialize("   <dark_gray>▪ Type <white><b>/cancel</b></white> or move/walk away to exit prompt safely.</dark_gray>"));
+        player.sendMessage(MM.deserialize("<gradient:#FFD700:#FF8C00><b>└──────────────────────────────────────────────────┘</b></gradient>"));
+        player.sendMessage(Component.empty());
     }
 
     public static void sendLorePrompt(AnimaKitsPlugin plugin, Player player) {
-        player.sendMessage(MM.deserialize(
-            "<gradient:#A5D6A7:#2E7D32><bold>━━━━ AnimaKits · Add Lore Line ━━━━</bold></gradient>"));
-        player.sendMessage(MM.deserialize(
-            "<gray>Supports MiniMessage, hex and legacy codes:</gray>"));
-        player.sendMessage(MM.deserialize(
-            "<dark_gray>  <italic><gray>A blazing hot kit!</gray></italic>  ·  " +
-            "<gradient:#FF6B6B:#FFE66D>Legendary Loot Inside!</gradient>  ·  <color:#AA00FF>Mystic power</color></dark_gray>"));
         player.sendMessage(Component.empty());
-        player.sendMessage(MM.deserialize(
-            "<yellow>✎ Type the lore line in chat and press <white>Enter</white>.</yellow>"));
-        player.sendMessage(MM.deserialize(
-            "<dark_gray>Type <white>//cancel</white> or press <white>Escape</white> to abort.</dark_gray>"));
-        player.sendMessage(MM.deserialize(
-            "<gradient:#A5D6A7:#2E7D32><bold>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</bold></gradient>"));
+        player.sendMessage(MM.deserialize("<gradient:#A5D6A7:#2E7D32><b>┌──────────────────────────────────────────────────┐</b></gradient>"));
+        player.sendMessage(MM.deserialize("   <gradient:#A5D6A7:#2E7D32><b>✎ ADD LORE STRING LINE</b></gradient>"));
+        player.sendMessage(MM.deserialize("   <gray>Type your lore line string content in chat.</gray>"));
+        player.sendMessage(Component.empty());
+        player.sendMessage(MM.deserialize("   <dark_gray>▪ </dark_gray><gray>Example Formatting Layout Preview:</gray>"));
+        player.sendMessage(MM.deserialize("     <i><gray>\"A mystical sword...\"</gray></i> <dark_gray>·</dark_gray> <gradient:#FF6B6B:#FFE66D><b>Legendary Loot</b></gradient>"));
+        player.sendMessage(Component.empty());
+        player.sendMessage(MM.deserialize("   <dark_gray>▪ Type <white><b>/cancel</b></white> or move/walk away to exit prompt safely.</dark_gray>"));
+        player.sendMessage(MM.deserialize("<gradient:#A5D6A7:#2E7D32><b>└──────────────────────────────────────────────────┘</b></gradient>"));
+        player.sendMessage(Component.empty());
     }
 
     public static void sendClonePrompt(AnimaKitsPlugin plugin, Player player, Kit kit) {
-        player.sendMessage(MM.deserialize(
-            "<gradient:#CE93D8:#6A1B9A><bold>━━━━ AnimaKits · Clone Kit ━━━━</bold></gradient>"));
-        player.sendMessage(MM.deserialize(
-            "<gray>Cloning: <white>" + kit.getPlainName() + "</white></gray>"));
-        player.sendMessage(MM.deserialize(
-            "<yellow>✎ Type the name for the clone and press <white>Enter</white>.</yellow>"));
-        player.sendMessage(MM.deserialize(
-            "<dark_gray>Type <white>//cancel</white> or press <white>Escape</white> to abort.</dark_gray>"));
-        player.sendMessage(MM.deserialize(
-            "<gradient:#CE93D8:#6A1B9A><bold>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</bold></gradient>"));
+        player.sendMessage(Component.empty());
+        player.sendMessage(MM.deserialize("<gradient:#CE93D8:#6A1B9A><b>┌──────────────────────────────────────────────────┐</b></gradient>"));
+        player.sendMessage(MM.deserialize("   <gradient:#CE93D8:#6A1B9A><b>✎ DUPLICATE & CLONE KIT</b></gradient>"));
+        player.sendMessage(MM.deserialize("   <gray>Target Object Source Name: <white>" + kit.getPlainName() + "</white></gray>"));
+        player.sendMessage(Component.empty());
+        player.sendMessage(MM.deserialize("   <dark_gray>▪ </dark_gray><yellow>Provide a completely unique identifier string name.</yellow>"));
+        player.sendMessage(Component.empty());
+        player.sendMessage(MM.deserialize("   <dark_gray>▪ Type <white><b>/cancel</b></white> or move/walk away to exit prompt safely.</dark_gray>"));
+        player.sendMessage(MM.deserialize("<gradient:#CE93D8:#6A1B9A><b>└──────────────────────────────────────────────────┘</b></gradient>"));
+        player.sendMessage(Component.empty());
     }
 
     public static void sendCooldownPrompt(Player player) {
-        player.sendMessage(MM.deserialize(
-            "<gradient:#CE93D8:#6A1B9A><bold>━━━━ AnimaKits · Set Cooldown ━━━━</bold></gradient>"));
-        player.sendMessage(MM.deserialize(
-            "<gray>Enter cooldown in <white>seconds</white>.</gray>"));
-        player.sendMessage(MM.deserialize(
-            "<dark_gray>  Examples: <white>300</white> = 5 min · <white>3600</white> = 1 hr · <white>0</white> = none</dark_gray>"));
-        player.sendMessage(MM.deserialize(
-            "<yellow>✎ Type the value and press <white>Enter</white>.</yellow>"));
-        player.sendMessage(MM.deserialize(
-            "<dark_gray>Type <white>//cancel</white> or press <white>Escape</white> to abort.</dark_gray>"));
-        player.sendMessage(MM.deserialize(
-            "<gradient:#CE93D8:#6A1B9A><bold>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</bold></gradient>"));
+        player.sendMessage(Component.empty());
+        player.sendMessage(MM.deserialize("<gradient:#54DAF4:#545EB6><b>┌──────────────────────────────────────────────────┐</b></gradient>"));
+        player.sendMessage(MM.deserialize("   <gradient:#54DAF4:#545EB6><b>✎ ADJUST COOLDOWN TIMER</b></gradient>"));
+        player.sendMessage(MM.deserialize("   <gray>Specify duration thresholds using integer seconds.</gray>"));
+        player.sendMessage(Component.empty());
+        player.sendMessage(MM.deserialize("   <dark_gray>▪ </dark_gray><gray>Reference Configurations Quick Sheet:</gray>"));
+        player.sendMessage(MM.deserialize("     <aqua>300</aqua> <gray>(5 mins)</gray> <dark_gray>·</dark_gray> <aqua>3600</aqua> <gray>(1 hour)</gray> <dark_gray>·</dark_gray> <aqua>0</aqua> <gray>(Instant Reset)</gray>"));
+        player.sendMessage(Component.empty());
+        player.sendMessage(MM.deserialize("   <dark_gray>▪ Type <white><b>/cancel</b></white> or move/walk away to exit prompt safely.</dark_gray>"));
+        player.sendMessage(MM.deserialize("<gradient:#54DAF4:#545EB6><b>└──────────────────────────────────────────────────┘</b></gradient>"));
+        player.sendMessage(Component.empty());
     }
 }

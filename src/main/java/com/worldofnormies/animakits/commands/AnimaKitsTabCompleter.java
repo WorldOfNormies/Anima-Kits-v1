@@ -14,7 +14,7 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * AnimaKitsTabCompleter – provides context-aware tab completion for /anima.
+ * AnimaKitsTabCompleter – provides auto-complete handling for free kit tags and @a targets.
  */
 public class AnimaKitsTabCompleter implements TabCompleter {
 
@@ -26,11 +26,10 @@ public class AnimaKitsTabCompleter implements TabCompleter {
             "list", "setcooldown", "singleclaim");
 
     private static final List<String> LORE_ACTIONS   = List.of("add", "edit", "remove");
-    private static final List<String> PERM_ACTIONS   = List.of("add", "remove", "show");
+    private static final List<String> PERM_ACTIONS   = List.of("add", "remove", "show", "claim");
 
     private static final List<String> AMOUNTS        = List.of("1", "2", "3", "5", "10", "64");
-    private static final List<String> DURATIONS      = List.of("-1", "30s", "1m", "5m", "30m",
-            "1h", "6h", "12h", "1d", "7d", "30d");
+    private static final List<String> DURATIONS      = List.of("-1", "30s", "1m", "5m", "30m", "1h", "6h", "12h", "1d", "7d", "30d");
 
     private static final List<String> KNOWN_PERMS = List.of(
             "anima.kits.use", "anima.kits.add", "anima.kits.delete",
@@ -47,9 +46,9 @@ public class AnimaKitsTabCompleter implements TabCompleter {
     }
 
     @Override
-    public List<String> onTabComplete(CommandSender sender, Command command,
-                                      String alias, String[] args) {
+    public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (args.length == 1) return filter(args[0], SUB1);
+        if (args[0].equalsIgnoreCase("kits")) return List.of();
         if (args.length == 2) return filter(args[1], SUB2);
 
         String sub2 = args[1].toLowerCase();
@@ -59,7 +58,7 @@ public class AnimaKitsTabCompleter implements TabCompleter {
             case "delete"      -> args.length == 3 ? kitNames(args[2]) : List.of();
             case "rename"      -> args.length == 3 ? kitNames(args[2]) : List.of();
             case "lore"        -> completeLore(args);
-            case "clonekit"    -> completeCloneKit(args);
+            case "clonekit"    -> args.length == 3 ? kitNames(args[2]) : List.of();
             case "give"        -> completeGive(args);
             case "giveall"     -> completeGiveAll(args);
             case "permission"  -> completePermission(args);
@@ -77,13 +76,12 @@ public class AnimaKitsTabCompleter implements TabCompleter {
         return List.of();
     }
 
-    private List<String> completeCloneKit(String[] args) {
-        if (args.length == 3) return kitNames(args[2]);
-        return List.of();
-    }
-
     private List<String> completeGive(String[] args) {
-        if (args.length == 3) return onlinePlayers(args[2]);
+        if (args.length == 3) {
+            List<String> options = new ArrayList<>(onlinePlayers(""));
+            options.add("@a");
+            return filter(args[2], options);
+        }
         if (args.length == 4) return kitNames(args[3]);
         if (args.length == 5) return filter(args[4], AMOUNTS);
         return List.of();
@@ -103,6 +101,7 @@ public class AnimaKitsTabCompleter implements TabCompleter {
 
     private List<String> completePermission(String[] args) {
         if (args.length == 3) return filter(args[2], PERM_ACTIONS);
+        
         String action = args[2].toLowerCase();
         return switch (action) {
             case "add" -> {
@@ -118,6 +117,18 @@ public class AnimaKitsTabCompleter implements TabCompleter {
             }
             case "show" -> {
                 if (args.length == 4) yield onlinePlayers(args[3]);
+                yield List.of();
+            }
+            case "claim" -> {
+                if (args.length == 4) {
+                    List<String> options = new ArrayList<>(onlinePlayers(""));
+                    options.add("free");
+                    options.add("@a");
+                    return filter(args[3], options);
+                }
+                if (args.length == 5) yield kitNames(args[4]);
+                if (args.length == 6) yield filter(args[5], List.of("true", "false"));
+                if (args.length == 7) yield filter(args[6], DURATIONS);
                 yield List.of();
             }
             default -> List.of();
