@@ -16,7 +16,7 @@ import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import java.util.UUID;
 import java.util.function.Consumer;
 
-/**
+/** 
  * ChatInputSession – waits for a single chat message from a player.
  * Cancel by typing  //cancel  OR by pressing Escape (which fires
  * PlayerCommandPreprocessEvent with "/") in some clients, or by just

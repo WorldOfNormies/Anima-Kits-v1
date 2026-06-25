@@ -13,7 +13,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * PlayerManager – handles persistence of player-specific data like kit cooldowns and single-claim history.
- */
+ */ 
 public class PlayerManager {
 
     private final AnimaKitsPlugin plugin;

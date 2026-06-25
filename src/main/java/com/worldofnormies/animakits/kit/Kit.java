@@ -11,7 +11,7 @@ import java.util.UUID;
 
 /**
  * Represents a single AnimaKit with a name, lore, and item contents.
- */
+ */ 
 public class Kit {
 
     private final UUID id;

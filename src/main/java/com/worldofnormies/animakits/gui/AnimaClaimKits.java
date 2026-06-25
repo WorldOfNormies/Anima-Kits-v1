@@ -14,35 +14,28 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 /**
- * AnimaClaimKits – Shows items inside a specific kit to a player.
- *
- * Layout (54 slots):
- *   Slots 0-43  → kit items (display-only, not takeable)
- *   Slots 44-53 → bottom bar
- *     44 = Green Bundle  → Claim this kit
- *     45 = black pane
- *     46 = black pane
- *     47 = Red Glass Pane → « Previous page
- *     48 = black pane
- *     49 = Ender Chest   → Kit info (cooldown, permission, status)
- *     50 = black pane
- *     51 = Lime Glass Pane → Next page »
- *     52 = black pane
- *     53 = Red Bundle    → Back to Claim Main GUI
- *
- * All gradient button names + lores.
+ * AnimaClaimKits – Displays items inside a specific kit to a player matching Claim Kit GUI.png layout.
  */
 public class AnimaClaimKits implements Listener {
 
     private static final MiniMessage MM        = MiniMessage.miniMessage();
     private static final int         INV_SIZE  = 54;
-    private static final int         ITEMS_PER_PAGE = 44; // slots 0-43
+
+    // Interior display window bounding slots based on Claim Kit GUI.png
+    private static final int[] CONTENT_SLOTS = {
+        11, 12, 13, 14, 15,
+        20, 21, 22, 23, 24,
+        29, 30, 31, 32, 33,
+        38, 39, 40, 41, 42
+    };
+    private static final int ITEMS_PER_PAGE = CONTENT_SLOTS.length; // 20
 
     private final AnimaKitsPlugin plugin;
     private final Player          player;
@@ -73,28 +66,46 @@ public class AnimaClaimKits implements Listener {
         int totalPages = Math.max(1, (int) Math.ceil(items.size() / (double) ITEMS_PER_PAGE));
         page = Math.min(page, totalPages - 1);
 
-        int from = page * ITEMS_PER_PAGE;
-        int to   = Math.min(from + ITEMS_PER_PAGE, items.size());
+        // ── 1. Frame / Alternating Border Edge Setup (Lime & Green Glass) ──
+        Material[] borderPattern = {
+            // Row 1
+            Material.LIME_STAINED_GLASS_PANE, Material.GREEN_STAINED_GLASS_PANE, Material.LIME_STAINED_GLASS_PANE, Material.GREEN_STAINED_GLASS_PANE, Material.LIME_STAINED_GLASS_PANE, Material.GREEN_STAINED_GLASS_PANE, Material.LIME_STAINED_GLASS_PANE, Material.GREEN_STAINED_GLASS_PANE, Material.LIME_STAINED_GLASS_PANE,
+            // Row 2
+            Material.LIME_STAINED_GLASS_PANE, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.GREEN_STAINED_GLASS_PANE, Material.LIME_STAINED_GLASS_PANE,
+            // Row 3
+            Material.GREEN_STAINED_GLASS_PANE, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.GREEN_STAINED_GLASS_PANE, Material.LIME_STAINED_GLASS_PANE,
+            // Row 4
+            Material.LIME_STAINED_GLASS_PANE, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.GREEN_STAINED_GLASS_PANE, Material.LIME_STAINED_GLASS_PANE,
+            // Row 5
+            Material.LIME_STAINED_GLASS_PANE, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.GREEN_STAINED_GLASS_PANE, Material.LIME_STAINED_GLASS_PANE,
+            // Row 6 (Functional Buttons & Custom Overrides Left Blank)
+            Material.AIR, Material.GREEN_STAINED_GLASS_PANE, Material.AIR, Material.GREEN_STAINED_GLASS_PANE, Material.AIR, Material.LIME_STAINED_GLASS_PANE, Material.LIME_STAINED_GLASS_PANE, Material.GREEN_STAINED_GLASS_PANE, Material.AIR
+        };
 
-        // Place kit items (display only)
-        for (int i = 0; i < (to - from); i++) {
-            ItemStack item = items.get(from + i);
-            if (item != null && item.getType() != org.bukkit.Material.AIR) {
-                inventory.setItem(i, item.clone());
+        for (int i = 0; i < INV_SIZE; i++) {
+            if (borderPattern[i] != Material.AIR) {
+                inventory.setItem(i, makePane(borderPattern[i]));
             }
         }
 
-        // ── Bottom bar ────────────────────────────────────────────────
-        ItemStack blackPane = GuiItem.border(Material.BLACK_STAINED_GLASS_PANE);
-        for (int s = 44; s < 54; s++) inventory.setItem(s, blackPane);
+        // ── 2. Content Injection Processing ──
+        int from = page * ITEMS_PER_PAGE;
+        int to   = Math.min(from + ITEMS_PER_PAGE, items.size());
 
+        for (int i = 0; i < (to - from); i++) {
+            ItemStack item = items.get(from + i);
+            if (item != null && item.getType() != org.bukkit.Material.AIR) {
+                inventory.setItem(CONTENT_SLOTS[i], item.clone());
+            }
+        }
+
+        // ── 3. Operational Parameter Checks ──
         UUID uuid         = player.getUniqueId();
         boolean hasPerm   = player.hasPermission("anima.kits.claim." + kit.getPlainName());
         long remaining    = plugin.getPlayerManager().getRemainingCooldown(uuid, kit.getId());
         boolean claimed   = kit.isSingleClaim() && plugin.getPlayerManager().hasClaimed(uuid, kit.getId());
-        boolean canClaim  = hasPerm && remaining <= 0 && !claimed;
 
-        // Slot 44 – Green Bundle = Claim
+        // Slot 45 – Green Bundle = Claim Kit[cite: 3]
         List<Component> claimLore = new ArrayList<>();
         if (!hasPerm) {
             claimLore.add(MM.deserialize("<red>✘ You do not have permission to claim this kit.</red>"));
@@ -106,16 +117,16 @@ public class AnimaClaimKits implements Listener {
             claimLore.add(MM.deserialize("<green>✔ Ready to claim!</green>"));
         }
 
-        inventory.setItem(44, GuiItem.make(Material.LIME_BUNDLE,
+        inventory.setItem(45, GuiItem.make(Material.LIME_BUNDLE,
             MM.deserialize("<gradient:#44FF88:#00CC55><bold>✔ Claim Kit</bold></gradient>"),
             claimLore));
 
-        // Slot 47 – Red Glass Pane = Previous page
+        // Slot 47 – Red Glass Pane = Previous Page[cite: 3]
         inventory.setItem(47, GuiItem.make(Material.RED_STAINED_GLASS_PANE,
             MM.deserialize("<gradient:#FF6060:#CC0000><bold>« Previous Page</bold></gradient>"),
             List.of(MM.deserialize("<gray>Page <white>" + page + "/" + totalPages + "</white></gray>"))));
 
-        // Slot 49 – Ender Chest = Kit info
+        // Slot 49 – Ender Chest = Kit Stats Display[cite: 3]
         List<Component> infoLore = new ArrayList<>();
         infoLore.add(MM.deserialize("<gradient:#54DAF4:#545EB6><bold>── Kit Details ──</bold></gradient>"));
         infoLore.add(Component.empty());
@@ -140,12 +151,12 @@ public class AnimaClaimKits implements Listener {
             MM.deserialize("<gradient:#CC88FF:#6600CC><bold>✦ Kit Information</bold></gradient>"),
             infoLore));
 
-        // Slot 51 – Lime Glass Pane = Next page
+        // Slot 51 – Lime Glass Pane = Next Page[cite: 3]
         inventory.setItem(51, GuiItem.make(Material.LIME_STAINED_GLASS_PANE,
             MM.deserialize("<gradient:#44FF88:#00AA44><bold>Next Page »</bold></gradient>"),
             List.of(MM.deserialize("<gray>Page <white>" + (page + 2) + "/" + totalPages + "</white></gray>"))));
 
-        // Slot 53 – Red Bundle = Back
+        // Slot 53 – Red Bundle = Return Menu Layout[cite: 3]
         inventory.setItem(53, GuiItem.make(Material.RED_BUNDLE,
             MM.deserialize("<gradient:#FF4444:#CC0000><bold>✘ Back</bold></gradient>"),
             List.of(MM.deserialize("<gray>Return to the Claim Kits menu.</gray>"))));
@@ -159,8 +170,7 @@ public class AnimaClaimKits implements Listener {
 
         int slot = event.getRawSlot();
 
-        if (slot == 44) {
-            // Claim kit
+        if (slot == 45) { // Claim kit trigger[cite: 3]
             UUID uuid      = player.getUniqueId();
             boolean perm   = player.hasPermission("anima.kits.claim." + kit.getPlainName());
             long remaining = plugin.getPlayerManager().getRemainingCooldown(uuid, kit.getId());
@@ -185,7 +195,6 @@ public class AnimaClaimKits implements Listener {
                 return;
             }
 
-            // Actually give the kit
             for (ItemStack item : kit.getItems()) {
                 if (item != null && item.getType() != org.bukkit.Material.AIR) {
                     java.util.HashMap<Integer, ItemStack> leftover =
@@ -202,17 +211,17 @@ public class AnimaClaimKits implements Listener {
             player.sendMessage(MM.deserialize(
                 "<gradient:#44FF88:#00CC55>✔ You claimed <white>" +
                 kit.getPlainName() + "</white>!</gradient>"));
-            populate(); // refresh to show updated status
+            populate();
             return;
         }
 
-        if (slot == 47 && page > 0) {
+        if (slot == 47 && page > 0) { // Previous Page[cite: 3]
             page--;
             populate();
             return;
         }
 
-        if (slot == 51) {
+        if (slot == 51) { // Next Page[cite: 3]
             List<ItemStack> items = kit.getItems();
             if ((page + 1) * ITEMS_PER_PAGE < items.size()) {
                 page++;
@@ -221,7 +230,7 @@ public class AnimaClaimKits implements Listener {
             return;
         }
 
-        if (slot == 53) {
+        if (slot == 53) { // Back Bundle[cite: 3]
             HandlerList.unregisterAll(this);
             Bukkit.getScheduler().runTask(plugin, () -> {
                 if (isAdmin) new AnimaKitsMainGUI(plugin, player).open();
@@ -241,5 +250,12 @@ public class AnimaClaimKits implements Listener {
         if (h > 0) return h + "h " + m + "m";
         if (m > 0) return m + "m " + s + "s";
         return s + "s";
+    }
+
+    private ItemStack makePane(Material material) {
+        ItemStack item = new ItemStack(material);
+        ItemMeta meta = item.getItemMeta();
+        if (meta != null) { meta.displayName(Component.space()); item.setItemMeta(meta); }
+        return item;
     }
 }

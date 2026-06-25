@@ -141,7 +141,7 @@ Kits are stored in `plugins/AnimaKits/kits.yml`. Timed permissions are stored se
 
 Two GitHub Actions workflows are included:
 
-```bash
+```bash 
 # Trigger a release build (creates a GitHub Release automatically)
 git tag v1.0.0
 git push origin v1.0.0

@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/**
+/** 
  * AnimaKitsTabCompleter – provides context-aware tab completion for /anima.
  */
 public class AnimaKitsTabCompleter implements TabCompleter {
