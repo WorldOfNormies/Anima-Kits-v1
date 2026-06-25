@@ -17,19 +17,11 @@ public final class GuiItem {
     }
 
     public static ItemStack make(Material material, Component name, List<Component> lore) {
-        return make(material, name, lore, false);
-    }
-
-    public static ItemStack make(Material material, Component name, List<Component> lore, boolean glow) {
         ItemStack item = new ItemStack(material);
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {
             meta.displayName(name);
             meta.lore(lore);
-            if (glow) {
-                meta.addEnchant(org.bukkit.enchantments.Enchantment.UNBREAKING, 1, true);
-                meta.addItemFlags(org.bukkit.inventory.ItemFlag.HIDE_ENCHANTS);
-            }
             item.setItemMeta(meta);
         }
         return item;

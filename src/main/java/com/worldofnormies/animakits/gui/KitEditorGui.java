@@ -14,168 +14,184 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * KitEditorGui – multi-page kit content and metadata editor.
+ * KitEditorGui – multi-page kit editor.
+ *
+ * Bottom bar (slots 45-53):
+ *   45 = RED  Bundle  → Cancel / back to Kits Main Menu
+ *   46 = BLACK pane   (filler)
+ *   47 = BLACK pane   (filler)
+ *   48 = NAME TAG     → Rename kit (chat input with gradient guide)
+ *   49 = CHEST/icon   → Set kit icon from main hand
+ *   50 = BOOK&QUILL   → Add lore line (chat input with gradient guide)
+ *   51 = BLACK pane   (filler)
+ *   52 = RED  pane    → Prev page  (hidden on page 0, black pane instead)
+ *   53 = LIME pane    → Next page  OR  LIME Bundle → Apply & back (last page)
  */
 public class KitEditorGui implements Listener {
 
-    private static final MiniMessage MM = MiniMessage.miniMessage();
-    private static final int INV_SIZE = 54;
+    private static final MiniMessage MM         = MiniMessage.miniMessage();
+    private static final int         INV_SIZE   = 54;
+    private static final int         ITEMS_AREA = 45;  // slots 0-44
+
+    // Top bar slot assignments (for controls)
+    private static final int SLOT_NAME_TAG      = 2;
+    private static final int SLOT_CHEST         = 4;
+    private static final int SLOT_BOOK          = 6;
+
+    // Bottom bar slot assignments
+    private static final int SLOT_RED_BUNDLE    = 45;
+    private static final int SLOT_PREV_PAGE     = 52;
+    private static final int SLOT_NEXT_OR_APPLY = 53;
 
     private final AnimaKitsPlugin plugin;
-    private final Player player;
-    private final Kit kit;
-    private int page;
-    private Inventory inventory;
-    private boolean closing = false;
-
-    private final int[] itemSlots = {
-        9,  10, 11, 12, 13, 14, 15,
-        18, 19, 20, 21, 22, 23, 24,
-        27, 28, 29, 30, 31, 32, 33,
-        36, 37, 38, 39, 40, 41, 42
-    };
+    private final Player          player;
+    private final Kit             kit;
+    private int                   page;
+    private Inventory             inventory;
+    private boolean               closing = false;
 
     public KitEditorGui(AnimaKitsPlugin plugin, Player player, Kit kit, int page) {
         this.plugin = plugin;
         this.player = player;
-        this.kit = kit;
-        this.page = page;
+        this.kit    = kit;
+        this.page   = page;
     }
 
+    // ── Open ──────────────────────────────────────────────────────
+
     public void open() {
-        Component title = MM.deserialize("[ New Kit Edit ]");
+        // Title always shows kit name; shows PAGE N only when there are multiple pages
+        String kitDisplayName = kit.getRawName();
+        String pageSuffix     = totalPages() > 1 ? " PAGE " + (page + 1) : "";
+        String titleRaw       = "[ " + kitDisplayName + " ]" + pageSuffix;
+        Component title       = MM.deserialize(
+                "<gradient:#54DAF4:#545EB6><bold>" + titleRaw + "</bold></gradient>");
+
         inventory = Bukkit.createInventory(null, INV_SIZE, title);
         populate();
         Bukkit.getPluginManager().registerEvents(this, plugin);
         player.openInventory(inventory);
     }
 
+    // ── Populate ──────────────────────────────────────────────────
+
     private void populate() {
-        inventory.clear();
+        for (int i = 0; i < INV_SIZE; i++) inventory.setItem(i, null);
 
-        ItemStack black = GuiItem.border(Material.BLACK_STAINED_GLASS_PANE);
-        ItemStack white = GuiItem.border(Material.WHITE_STAINED_GLASS_PANE);
-
-        for (int s : new int[]{0, 1, 3, 5, 7, 8}) {
-            inventory.setItem(s, black);
+        // Fill top row with fillers initially
+        ItemStack black = makePaneBlack();
+        for (int i = 0; i < 9; i++) {
+            inventory.setItem(i, black);
         }
 
-        for (int s : new int[]{8, 16, 17, 25, 26, 34, 35, 43}) {
-            inventory.setItem(s, white);
-        }
+        // Slot 2 – Name Tag → Rename
+        inventory.setItem(SLOT_NAME_TAG, GuiItem.make(
+                Material.NAME_TAG,
+                MM.deserialize("<yellow><bold>✎ Rename Kit</bold></yellow>"),
+                List.of(
+                        MM.deserialize("<gray>Current: <white>" + kit.getRawName() + "</white></gray>"),
+                        Component.empty(),
+                        MM.deserialize("<gray>Click to rename this kit.</gray>"),
+                        MM.deserialize("<gray>A chat prompt will guide you.</gray>"))));
 
-        for (int s : new int[]{45, 47, 48, 50, 51}) {
-            inventory.setItem(s, black);
-        }
+        // Slot 4 – Kit icon (shows the actual current icon material)
+        Material iconMat = kit.getIconMaterial();
+        inventory.setItem(SLOT_CHEST, GuiItem.make(
+                iconMat,
+                MM.deserialize("<aqua><bold>⬛ Kit Icon</bold></aqua>"),
+                List.of(
+                        MM.deserialize("<gray>Hold an item in your <white>main hand</white></gray>"),
+                        MM.deserialize("<gray>and click to set it as the kit icon.</gray>"),
+                        Component.empty(),
+                        MM.deserialize("<gray>Current icon: <white>" + iconMat.name() + "</white></gray>"))));
 
-        // Slot 2 (Index 1): Rename Kit
-        List<Component> nameTagLore = List.of(
-            MM.deserialize("<gray>Current Display Name:</gray> " + kit.getRawName()),
-            Component.empty(),
-            MM.deserialize("<gray>Clicking this closes the UI to accept chat input.</gray>"),
-            MM.deserialize("<gray>You can use <gold><bold>&lt;gradient:#Hex:#Hex&gt;</bold></gold> properties</gray>"),
-            MM.deserialize("<gray>while naming your kits to give it a neat look!</gray>")
-        );
-        inventory.setItem(1, GuiItem.make(Material.NAME_TAG, MM.deserialize("<gradient:#FFD700:#FF8C00><bold>✎ Modify Kit Name</bold></gradient>"), nameTagLore));
+        // Slot 6 – Book & Quill → Add lore line
+        inventory.setItem(SLOT_BOOK, GuiItem.make(
+                Material.WRITABLE_BOOK,
+                MM.deserialize("<light_purple><bold>✎ Add Lore Line</bold></light_purple>"),
+                List.of(
+                        MM.deserialize("<gray>Click to add a new lore line.</gray>"),
+                        MM.deserialize("<gray>Supports gradient & hex colours.</gray>"),
+                        Component.empty(),
+                        MM.deserialize("<gray>Current lore lines: <white>" + kit.getLore().size() + "</white></gray>"))));
 
-        // Slot 4 (Index 3): Icon Customization
-        List<Component> chestLore = List.of(
-            MM.deserialize("<gray>Current Selector Material: <white>" + kit.getIconMaterial().name() + "</white></gray>"),
-            Component.empty(),
-            MM.deserialize("<gray>Hold any alternative item stack block inside your</gray>"),
-            MM.deserialize("<gray>main inventory hand, then click here to save it as</gray>"),
-            MM.deserialize("<gray>the primary menu display icon representing this kit.</gray>")
-        );
-        inventory.setItem(3, GuiItem.make(kit.getIconMaterial(), MM.deserialize("<gradient:#00FFFF:#4682B4><bold>⬛ Change Menu Icon</bold></gradient>"), chestLore));
-
-        // Slot 6 (Index 5): Add Lore Line
-        List<Component> bookLore = List.of(
-            MM.deserialize("<gray>Current Configured Lines: <white>" + kit.getLore().size() + "</white></gray>"),
-            Component.empty(),
-            MM.deserialize("<gray>Appends an extra detailed line description to the icon lore.</gray>"),
-            MM.deserialize("<gray>Supports standard <gold><bold>&lt;gradient:#Hex:#Hex&gt;</bold></gold> systems</gray>"),
-            MM.deserialize("<gray>to maintain high-quality theme formats throughout menus.</gray>")
-        );
-        inventory.setItem(5, GuiItem.make(Material.WRITABLE_BOOK, MM.deserialize("<gradient:#DA70D6:#8A2BE2><bold>✎ Append Lore Descriptions</bold></gradient>"), bookLore));
-
+        // Item area – slots 9-44
         List<ItemStack> allItems = kit.getItems();
-        int from = page * itemSlots.length;
-        for (int i = 0; i < itemSlots.length; i++) {
+        int from = page * (ITEMS_AREA - 9); // now 36 items per page because top row is used
+        for (int i = 0; i < (ITEMS_AREA - 9); i++) {
             int idx = from + i;
             if (idx < allItems.size() && allItems.get(idx) != null) {
-                inventory.setItem(itemSlots[i], allItems.get(idx).clone());
+                inventory.setItem(9 + i, allItems.get(idx).clone());
             }
         }
 
-        // Slot 45 (Index 44): Cancel
-        List<Component> cancelLore = List.of(
-            MM.deserialize("<gray>Left-Click to exit to browser without adding modifications.</gray>"),
-            MM.deserialize("<red><bold>Shift + Right-Click</bold></red> <gray>safely purges and destroys this kit completely.</gray>")
-        );
-        inventory.setItem(44, GuiItem.make(Material.RED_BUNDLE, MM.deserialize("<gradient:#8B0000:#FF0000><bold>✘ Cancel Changes</bold></gradient>"), cancelLore));
+        // Filler panes (bottom row)
+        for (int s = 46; s < 52; s++) inventory.setItem(s, black);
 
-        // Slot 47 (Index 46): Previous Page
+        // Slot 45 – Red Bundle → Cancel / return to browser
+        inventory.setItem(SLOT_RED_BUNDLE, makeBundle(
+                Material.RED_BUNDLE,
+                MM.deserialize("<red><bold>✘ Cancel / Return to Kits Menu</bold></red>"),
+                List.of(MM.deserialize("<gray>Return to the Kits Main Menu.</gray>"),
+                        MM.deserialize("<gray>Page changes will be saved.</gray>"))));
+
+        // Slot 52 – Prev page (black pane on page 0)
         if (page > 0) {
-            List<Component> prevLore = List.of(MM.deserialize("<gray>Flips back to page <white>" + page + "</white> storage grid items.</gray>"));
-            inventory.setItem(46, GuiItem.make(Material.RED_STAINED_GLASS_PANE, MM.deserialize("<gradient:#8B0000:#FF8C00><bold>« Previous Page</bold></gradient>"), prevLore));
+            inventory.setItem(SLOT_PREV_PAGE, makePaneColoured(
+                    Material.RED_STAINED_GLASS_PANE,
+                    MM.deserialize("<red><bold>« Page " + page + "</bold></red>"),
+                    List.of(MM.deserialize("<gray>Go back to page <white>" + page + "</white>.</gray>"))));
         } else {
-            inventory.setItem(46, black);
+            inventory.setItem(SLOT_PREV_PAGE, black);
         }
 
-        // Slot 53 (Index 52): Next Page
-        if (hasMoreItems()) {
-            List<Component> nextLore = List.of(MM.deserialize("<gray>Advances to page <white>" + (page + 2) + "</white> to display more contents.</gray>"));
-            inventory.setItem(52, GuiItem.make(Material.LIME_STAINED_GLASS_PANE, MM.deserialize("<gradient:#32CD32:#ADFF2F><bold>Next Page »</bold></gradient>"), nextLore));
+        // Slot 53 – Next page pane OR Lime Bundle (apply & exit on last/only page)
+        int tp = totalPages();
+        if (page < tp - 1) {
+            inventory.setItem(SLOT_NEXT_OR_APPLY, makePaneColoured(
+                    Material.LIME_STAINED_GLASS_PANE,
+                    MM.deserialize("<green><bold>Page " + (page + 2) + " »</bold></green>"),
+                    List.of(MM.deserialize("<gray>Go to page <white>" + (page + 2) + "</white>.</gray>"))));
         } else {
-            inventory.setItem(52, black);
+            inventory.setItem(SLOT_NEXT_OR_APPLY, makeBundle(
+                    Material.LIME_BUNDLE,
+                    MM.deserialize("<green><bold>✔ Apply & Return to Kits Menu</bold></green>"),
+                    List.of(MM.deserialize("<gray>Save all changes and go back.</gray>"))));
         }
-
-        // Slot 54 (Index 53): Apply Changes
-        List<Component> applyLore = List.of(
-            MM.deserialize("<gray>Saves modified layout placements, metadata attributes,</gray>"),
-            MM.deserialize("<gray>and returns selection to the centralized kit browser.</gray>")
-        );
-        inventory.setItem(53, GuiItem.make(Material.LIME_BUNDLE, MM.deserialize("<gradient:#006400:#32CD32><bold>✔ Apply & Save Changes</bold></gradient>"), applyLore));
     }
 
-    private boolean hasMoreItems() {
-        return kit.getItems().size() > (page + 1) * itemSlots.length;
-    }
+    // ── Events ────────────────────────────────────────────────────
 
     @EventHandler
     public void onClick(InventoryClickEvent event) {
         if (!event.getInventory().equals(inventory)) return;
-        if (!event.getWhoClicked().equals(player)) return;
+        if (!event.getWhoClicked().equals(player))   return;
 
         int slot = event.getRawSlot();
 
-        boolean isItemSlot = false;
-        for (int s : itemSlots) {
-            if (s == slot) {
-                isItemSlot = true;
-                break;
-            }
-        }
-
-        if (isItemSlot || slot >= INV_SIZE) {
-            return;
+        // Allow free drag-and-drop in the item area (slots 9-44)
+        if (slot >= 9 && slot < ITEMS_AREA) {
+            return; // let vanilla handle it
         }
 
         event.setCancelled(true);
 
-        if (slot == 44) {
-            if (event.isShiftClick() && event.isRightClick()) {
+        if (slot == SLOT_RED_BUNDLE) {
+            // Check for right click to delete
+            if (event.isRightClick()) {
                 saveCurrentPage();
                 closing = true;
                 HandlerList.unregisterAll(this);
                 Bukkit.getScheduler().runTask(plugin, () -> new ConfirmDeleteGui(plugin, player, kit).open());
                 return;
             }
+            // Save + return to browser
             saveCurrentPage();
             plugin.getKitManager().saveKits();
             plugin.getKitManager().refreshAllBrowsersSafe();
@@ -183,17 +199,18 @@ public class KitEditorGui implements Listener {
             HandlerList.unregisterAll(this);
             Bukkit.getScheduler().runTask(plugin, () -> new KitBrowserGui(plugin, player).open());
 
-        } else if (slot == 1) { 
+        } else if (slot == SLOT_NAME_TAG) {
             saveCurrentPage();
             plugin.getKitManager().saveKits();
             closing = true;
             HandlerList.unregisterAll(this);
             player.closeInventory();
 
+            // Show the rename prompt in chat
             ChatInputSession.sendRenamePrompt(plugin, player);
 
-            final Kit theKit = kit;
-            final int thePage = page;
+            final Kit  theKit  = kit;
+            final int  thePage = page;
             new ChatInputSession(plugin, player,
                     newName -> {
                         theKit.setRawName(newName);
@@ -204,28 +221,30 @@ public class KitEditorGui implements Listener {
                     () -> new KitEditorGui(plugin, player, theKit, thePage).open()
             ).await();
 
-        } else if (slot == 3) { 
+        } else if (slot == SLOT_CHEST) {
             ItemStack hand = player.getInventory().getItemInMainHand();
             if (hand.getType() != Material.AIR) {
                 kit.setIconMaterial(hand.getType());
                 plugin.getKitManager().saveKits();
                 saveCurrentPage();
-                populate(); 
-            } else {
-                player.sendMessage(MM.deserialize("<gradient:#8B0000:#FF0000><bold>You must hold an item stack in your main hand to apply an icon!</bold></gradient>"));
+                closing = true;
+                HandlerList.unregisterAll(this);
+                Bukkit.getScheduler().runTask(plugin, () ->
+                        new KitEditorGui(plugin, player, kit, page).open());
             }
 
-        } else if (slot == 5) { 
+        } else if (slot == SLOT_BOOK) {
             saveCurrentPage();
             plugin.getKitManager().saveKits();
             closing = true;
             HandlerList.unregisterAll(this);
             player.closeInventory();
 
+            // Show the lore prompt in chat
             ChatInputSession.sendLorePrompt(plugin, player);
 
-            final Kit theKit = kit;
-            final int thePage = page;
+            final Kit  theKit  = kit;
+            final int  thePage = page;
             new ChatInputSession(plugin, player,
                     loreLine -> {
                         theKit.addLoreLine(loreLine);
@@ -235,49 +254,59 @@ public class KitEditorGui implements Listener {
                     () -> new KitEditorGui(plugin, player, theKit, thePage).open()
             ).await();
 
-        } else if (slot == 46 && page > 0) { 
+        } else if (slot == SLOT_PREV_PAGE && page > 0) {
             saveCurrentPage();
-            page--;
-            populate();
-
-        } else if (slot == 52 && hasMoreItems()) { 
-            saveCurrentPage();
-            page++;
-            populate();
-
-        } else if (slot == 53) { 
-            saveCurrentPage();
-            plugin.getKitManager().saveKits();
-            plugin.getKitManager().refreshAllBrowsersSafe();
             closing = true;
             HandlerList.unregisterAll(this);
-            Bukkit.getScheduler().runTask(plugin, () -> new KitBrowserGui(plugin, player).open());
+            Bukkit.getScheduler().runTask(plugin, () ->
+                    new KitEditorGui(plugin, player, kit, page - 1).open());
+
+        } else if (slot == SLOT_NEXT_OR_APPLY) {
+            saveCurrentPage();
+            int tp = totalPages();
+            if (page < tp - 1) {
+                // Navigate to next existing page
+                closing = true;
+                HandlerList.unregisterAll(this);
+                Bukkit.getScheduler().runTask(plugin, () ->
+                        new KitEditorGui(plugin, player, kit, page + 1).open());
+            } else {
+                // Last page – apply and return to browser
+                plugin.getKitManager().saveKits();
+                plugin.getKitManager().refreshAllBrowsersSafe();
+                closing = true;
+                HandlerList.unregisterAll(this);
+                Bukkit.getScheduler().runTask(plugin, () ->
+                        new KitBrowserGui(plugin, player).open());
+            }
         }
     }
 
     @EventHandler
     public void onClose(InventoryCloseEvent event) {
         if (!event.getInventory().equals(inventory)) return;
-        if (!event.getPlayer().equals(player)) return;
-        if (closing) return;
+        if (!event.getPlayer().equals(player))       return;
+        if (closing) { HandlerList.unregisterAll(this); return; }
 
+        // Auto-save on natural close (Escape key, etc.)
         saveCurrentPage();
         plugin.getKitManager().saveKits();
         plugin.getKitManager().refreshAllBrowsersSafe();
         HandlerList.unregisterAll(this);
     }
 
+    // ── Page save ─────────────────────────────────────────────────
+
     private void saveCurrentPage() {
         List<ItemStack> allItems = new ArrayList<>(kit.getItems());
-        int itemsPerPage = itemSlots.length;
+        int itemsPerPage = ITEMS_AREA - 9;
         int from = page * itemsPerPage;
 
-        while (allItems.size() < from + itemsPerPage) {
-            allItems.add(null);
-        }
+        // Expand to fit this page
+        while (allItems.size() < from + itemsPerPage) allItems.add(null);
 
         for (int i = 0; i < itemsPerPage; i++) {
-            ItemStack item = inventory.getItem(itemSlots[i]);
+            ItemStack item = inventory.getItem(9 + i);
             if (item != null && item.getType() != Material.AIR) {
                 allItems.set(from + i, item.clone());
             } else {
@@ -285,6 +314,7 @@ public class KitEditorGui implements Listener {
             }
         }
 
+        // Trim trailing nulls
         while (!allItems.isEmpty() && allItems.get(allItems.size() - 1) == null) {
             allItems.remove(allItems.size() - 1);
         }
@@ -294,19 +324,65 @@ public class KitEditorGui implements Listener {
             if (is != null && is.getType() != Material.AIR) {
                 kit.addItem(is);
             } else {
+                // If we want to preserve gaps, we should add AIR or keep them as null.
+                // User said: "i dont think there is a difference , so yeah i guess but if player has full inventory ensure to drop items on ground at players position"
+                // This suggests compressing is fine.
+                // To preserve gaps in GUI, we should probably store AIR and skip it when giving.
                 kit.addItem(new ItemStack(Material.AIR));
             }
         }
 
+        // Final trim of AIR from the end of the list
         List<ItemStack> kitItems = kit.getItems();
         while (!kitItems.isEmpty() && kitItems.get(kitItems.size() - 1).getType() == Material.AIR) {
+            kit.clearItems(); // Not efficient but Kit.java doesn't have removeLast
+            // Re-adding everything except last
             List<ItemStack> temp = new ArrayList<>(kitItems);
             temp.remove(temp.size() - 1);
-            kit.clearItems();
-            for (ItemStack ts : temp) {
-                kit.addItem(ts);
-            }
+            for (ItemStack ts : temp) kit.addItem(ts);
             kitItems = kit.getItems();
         }
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────
+
+    /**
+     * Total number of pages: at least 1; one extra page is added when the
+     * current item count exactly fills a page (to allow adding more items).
+     */
+    private int totalPages() {
+        int size = kit.getItems().size();
+        int itemsPerPage = ITEMS_AREA - 9;
+        if (size == 0) return 1;
+        return (int) Math.ceil(size / (double) itemsPerPage);
+    }
+
+    private ItemStack makePaneBlack() {
+        ItemStack item = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
+        ItemMeta  meta = item.getItemMeta();
+        if (meta != null) { meta.displayName(Component.space()); item.setItemMeta(meta); }
+        return item;
+    }
+
+    private ItemStack makePaneColoured(Material mat, Component name, List<Component> lore) {
+        ItemStack item = new ItemStack(mat);
+        ItemMeta  meta = item.getItemMeta();
+        if (meta != null) {
+            meta.displayName(name);
+            meta.lore(lore);
+            item.setItemMeta(meta);
+        }
+        return item;
+    }
+
+    private ItemStack makeBundle(Material mat, Component name, List<Component> lore) {
+        ItemStack item = new ItemStack(mat);
+        ItemMeta  meta = item.getItemMeta();
+        if (meta != null) {
+            meta.displayName(name);
+            meta.lore(lore);
+            item.setItemMeta(meta);
+        }
+        return item;
     }
 }

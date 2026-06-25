@@ -5,7 +5,6 @@ import com.worldofnormies.animakits.kit.Kit;
 import com.worldofnormies.animakits.util.ColorUtil;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
-import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -20,22 +19,23 @@ import org.bukkit.inventory.ItemStack;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * KitBrowserGui – paginated kit list.
+ * Refreshes automatically when kits are added, removed or renamed.
+ */
 public class KitBrowserGui implements Listener {
 
     private static final MiniMessage MM = MiniMessage.miniMessage();
-    private static final int INV_SIZE = 54;
 
     private final AnimaKitsPlugin plugin;
     private final Player player;
-    private Inventory inventory;
     private int page = 0;
+    private Inventory inventory;
 
-    private final int[] kitSlots = {
-        10, 11, 12, 13, 14, 15, 16,
-        19, 20, 21, 22, 23, 24, 25,
-        28, 29, 30, 31, 32, 33, 34,
-        37, 38, 39, 40, 41, 42, 43
-    };
+    private static final int KITS_PER_PAGE = 45;
+    private static final int INV_SIZE = 54;
+    private static final int PREV_SLOT = 48;
+    private static final int NEXT_SLOT = 50;
 
     public KitBrowserGui(AnimaKitsPlugin plugin, Player player) {
         this.plugin = plugin;
@@ -43,142 +43,134 @@ public class KitBrowserGui implements Listener {
     }
 
     public void open() {
-        Component title = MM.deserialize("<gradient:#8A2BE2:#4B0082><bold>Kit Selection Browser</bold></gradient>");
-        inventory = Bukkit.createInventory(null, INV_SIZE, title);
-        populate();
+        build();
+        plugin.getKitManager().registerBrowser(player, this);
         Bukkit.getPluginManager().registerEvents(this, plugin);
         player.openInventory(inventory);
     }
 
+    /** Rebuild and re-push inventory contents to all viewers (live refresh). */
     public void refresh() {
+        if (inventory == null) return;
+        inventory.clear();
         populate();
     }
 
-    public void populate() {
-        inventory.clear();
-        List<Kit> kits = new ArrayList<>(plugin.getKitManager().getAllKits());
+    // ── Build ──────────────────────────────────────────────────────
 
-        ItemStack blackPane = GuiItem.border(Material.BLACK_STAINED_GLASS_PANE);
-        ItemStack whitePane = GuiItem.border(Material.WHITE_STAINED_GLASS_PANE);
+    private void build() {
+        String titleRaw = plugin.getConfig().getString(
+                "gui.main-title", "<gradient:#54DAF4:#545EB6><bold>✦ Kit Browser ✦</bold></gradient>");
+        Component title = MM.deserialize(titleRaw);
 
-        for (int s : new int[]{0, 1, 2, 3, 4, 5, 6, 7, 8}) inventory.setItem(s, blackPane);
-        for (int s : new int[]{9, 17, 18, 26, 27, 35, 36, 44}) inventory.setItem(s, whitePane);
-        for (int s : new int[]{46, 48, 49, 50, 52}) inventory.setItem(s, blackPane);
+        inventory = Bukkit.createInventory(null, INV_SIZE, title);
+        populate();
+    }
 
-        int totalPages = Math.max(1, (int) Math.ceil(kits.size() / (double) kitSlots.length));
+    private void populate() {
+        List<Kit> allKits = new ArrayList<>(plugin.getKitManager().getAllKits());
+        int totalPages = Math.max(1, (int) Math.ceil(allKits.size() / (double) KITS_PER_PAGE));
         page = Math.min(page, totalPages - 1);
 
-        int from = page * kitSlots.length;
-        int to = Math.min(from + kitSlots.length, kits.size());
+        int from = page * KITS_PER_PAGE;
+        int to   = Math.min(from + KITS_PER_PAGE, allKits.size());
+        List<Kit> pageKits = allKits.subList(from, to);
 
-        for (int i = 0; i < (to - from); i++) {
-            Kit kit = kits.get(from + i);
+        // Kit icons
+        for (int i = 0; i < pageKits.size(); i++) {
+            Kit kit = pageKits.get(i);
+            Component name = ColorUtil.parse(kit.getRawName());
             List<Component> lore = new ArrayList<>();
-            for (String line : kit.getLore()) {
-                lore.add(MM.deserialize(line));
-            }
+            for (String l : kit.getLore()) lore.add(ColorUtil.parse(l));
             lore.add(Component.empty());
-            lore.add(MM.deserialize("<yellow>▸ Left-Click to Preview Contents</yellow>"));
-            if (player.hasPermission("anima.kits.admin")) {
-                lore.add(MM.deserialize("<red>▸ Right-Click to Edit Configuration</red>"));
-            }
-
-            Component kitTitle = ColorUtil.parse(kit.getRawName()).decorate(TextDecoration.BOLD);
-            inventory.setItem(kitSlots[i], GuiItem.make(kit.getIconMaterial(), kitTitle, lore));
+            lore.add(MM.deserialize("<yellow>Left-click</yellow> <gray>→ view kit</gray>"));
+            lore.add(MM.deserialize("<yellow>Right-click</yellow> <gray>→ open editor</gray>"));
+            ItemStack icon = GuiItem.make(kit.getIconMaterial(), name, lore);
+            inventory.setItem(i, icon);
         }
 
-        inventory.setItem(45, GuiItem.make(Material.RED_BUNDLE, MM.deserialize("<gradient:#8B0000:#FF0000><bold>✘ Close Menu</bold></gradient>")));
+        // Bottom border
+        Material borderMat = parseMaterial(
+                plugin.getConfig().getString("gui.border-material", "BLACK_STAINED_GLASS_PANE"));
+        for (int i = KITS_PER_PAGE; i < INV_SIZE; i++) {
+            inventory.setItem(i, GuiItem.border(borderMat));
+        }
+
+        // Layout from image: 45: Red Bundle, 47: Red Pane, 49: Ender Chest, 51: Lime Pane, 53: Green Bundle
+
+        inventory.setItem(45, GuiItem.make(Material.RED_BUNDLE, MM.deserialize("<red><bold>✘ Close</bold></red>")));
 
         if (page > 0) {
-            inventory.setItem(47, GuiItem.make(Material.RED_STAINED_GLASS_PANE, MM.deserialize("<gradient:#8B0000:#FF8C00><bold>« Previous Page</bold></gradient>")));
-        } else {
-            inventory.setItem(47, blackPane);
+            inventory.setItem(47, GuiItem.make(Material.RED_STAINED_GLASS_PANE, MM.deserialize("<red>« Previous Page</red>")));
         }
 
-        if (to < kits.size()) {
-            inventory.setItem(51, GuiItem.make(Material.LIME_STAINED_GLASS_PANE, MM.deserialize("<gradient:#32CD32:#ADFF2F><bold>Next Page »</bold></gradient>")));
-        } else {
-            inventory.setItem(51, blackPane);
+        inventory.setItem(49, GuiItem.make(Material.ENDER_CHEST, MM.deserialize("<light_purple><bold>Kit Statistics</bold></light_purple>"),
+                List.of(MM.deserialize("<gray>Total Kits: <white>" + allKits.size() + "</white></gray>"),
+                        MM.deserialize("<gray>Page: <white>" + (page + 1) + "/" + totalPages + "</white></gray>"))));
+
+        if (to < allKits.size()) {
+            inventory.setItem(51, GuiItem.make(Material.LIME_STAINED_GLASS_PANE, MM.deserialize("<green>Next Page »</green>")));
         }
 
-        if (player.hasPermission("anima.kits.admin")) {
-            inventory.setItem(53, GuiItem.make(Material.LIME_BUNDLE, MM.deserialize("<gradient:#006400:#32CD32><bold>✚ Create New Kit</bold></gradient>")));
-        } else {
-            inventory.setItem(53, blackPane);
-        }
+        inventory.setItem(53, GuiItem.make(Material.LIME_BUNDLE, MM.deserialize("<green><bold>Refresh</bold></green>")));
     }
+
+    // ── Events ─────────────────────────────────────────────────────
 
     @EventHandler
     public void onClick(InventoryClickEvent event) {
         if (!event.getInventory().equals(inventory)) return;
-        if (!event.getWhoClicked().equals(player)) return;
-
+        if (!(event.getWhoClicked() instanceof Player clicker)) return;
+        if (!clicker.equals(player)) return;
         event.setCancelled(true);
+
         int slot = event.getRawSlot();
         if (slot < 0 || slot >= INV_SIZE) return;
 
-        if (slot == 45) {
-            player.closeInventory();
-            return;
-        }
-
-        if (slot == 47 && page > 0) {
-            page--;
-            populate();
-            return;
-        }
-
+        // Pagination & Actions
+        if (slot == 45) { player.closeInventory(); return; }
+        if (slot == 47 && page > 0) { page--; refresh(); return; }
         if (slot == 51) {
-            if ((page + 1) * kitSlots.length < plugin.getKitManager().getAllKits().size()) {
-                page++;
-                populate();
+            List<Kit> allKits = new ArrayList<>(plugin.getKitManager().getAllKits());
+            if ((page + 1) * KITS_PER_PAGE < allKits.size()) {
+                page++; refresh();
             }
             return;
         }
+        if (slot == 53) { refresh(); return; }
 
-        if (slot == 53 && player.hasPermission("anima.kits.admin")) {
-            HandlerList.unregisterAll(this);
-            player.closeInventory();
-            ChatInputSession.sendCreatePrompt(plugin, player);
-            new ChatInputSession(plugin, player,
-                name -> {
-                    Kit newKit = plugin.getKitManager().createKit(name);
-                    new KitEditorGui(plugin, player, newKit, 0).open();
-                },
-                () -> new KitBrowserGui(plugin, player).open()
-            ).await();
-            return;
-        }
-
-        int slotIndex = -1;
-        for (int i = 0; i < kitSlots.length; i++) {
-            if (kitSlots[i] == slot) {
-                slotIndex = i;
-                break;
-            }
-        }
-
-        if (slotIndex != -1) {
-            int kitIndex = (page * kitSlots.length) + slotIndex;
+        // Kit click
+        if (slot < KITS_PER_PAGE) {
             List<Kit> kits = new ArrayList<>(plugin.getKitManager().getAllKits());
-            if (kitIndex >= kits.size()) return;
+            int idx = page * KITS_PER_PAGE + slot;
+            if (idx >= kits.size()) return;
+            Kit kit = kits.get(idx);
 
-            Kit kit = kits.get(kitIndex);
-
-            if (event.isRightClick() && player.hasPermission("anima.kits.admin")) {
-                HandlerList.unregisterAll(this);
-                new KitEditorGui(plugin, player, kit, 0).open();
-            } else {
-                HandlerList.unregisterAll(this);
-                new KitDisplayGui(plugin, player, kit).open();
+            boolean rightClick = event.isRightClick();
+            if (rightClick && player.hasPermission("anima.kits.open")) {
+                // Open editor
+                KitEditorGui editor = new KitEditorGui(plugin, player, kit, 0);
+                editor.open();
+            } else if (player.hasPermission("anima.kits.display")) {
+                // Open display (read-only)
+                KitDisplayGui display = new KitDisplayGui(plugin, player, kit);
+                display.open();
             }
         }
     }
 
     @EventHandler
     public void onClose(InventoryCloseEvent event) {
-        if (event.getInventory().equals(inventory)) {
-            HandlerList.unregisterAll(this);
-        }
+        if (!event.getInventory().equals(inventory)) return;
+        if (!event.getPlayer().equals(player)) return;
+        plugin.getKitManager().unregisterBrowser(player);
+        HandlerList.unregisterAll(this);
+    }
+
+    // ── Helpers ────────────────────────────────────────────────────
+
+    private Material parseMaterial(String name) {
+        try { return Material.valueOf(name.toUpperCase()); }
+        catch (Exception e) { return Material.BLACK_STAINED_GLASS_PANE; }
     }
 }

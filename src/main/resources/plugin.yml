@@ -17,9 +17,6 @@ commands:
     usage: "/anima kits [subcommand]"
     aliases: [ ak, animakits ]
     permission: anima.kits.use
-  animakits-cancel-input:
-    description: "Internal command to cancel chat input prompts"
-    permission: anima.kits.use
 
 permissions:
   anima.kits.*:
