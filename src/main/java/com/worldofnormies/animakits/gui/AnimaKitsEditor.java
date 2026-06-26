@@ -243,8 +243,9 @@ public class AnimaKitsEditor implements Listener {
                 player.closeInventory();
                 player.sendMessage(MM.deserialize(
                     "<gradient:#4FC3F7:#1565C0><bold>⏱ Set Claim Time Duration</bold></gradient>\n" +
-                    "<gray>Type the availability duration inside chat in seconds (or format <white>H:M:S</white>).\n" +
-                    "Use <white>0</white> to clear values. Type <white>//cancel</white> to abort.</gray>"));
+                    "<gray>Type the claim window duration.\n" +
+                    "Formats: <white>30s · 5m · 2h · 1d · 1d12h30m · H:M:S · 3600</white>\n" +
+                    "Use <white>0</white> to clear. Type <white>//cancel</white> to abort.</gray>"));
                 new ChatInputSession(plugin, player,
                         input -> {
                             if (input.equalsIgnoreCase("//cancel")) {
@@ -318,8 +319,9 @@ public class AnimaKitsEditor implements Listener {
             player.closeInventory();
             player.sendMessage(MM.deserialize(
                 "<gradient:#CE93D8:#6A1B9A><bold>⏱ Set Cooldown</bold></gradient>\n" +
-                "<gray>Type the time duration value inside chat in seconds.\n" +
-                "Use <white>0</white> to clear values. Type <white>//cancel</white> to abort.</gray>"));
+                "<gray>Type the cooldown duration.\n" +
+                "Formats: <white>30s · 5m · 2h · 1d · 1d12h30m · 3600</white>\n" +
+                "Use <white>0</white> to clear. Type <white>//cancel</white> to abort.</gray>"));
             new ChatInputSession(plugin, player,
                     input -> {
                         if (input.equalsIgnoreCase("//cancel")) {
@@ -451,4 +453,35 @@ public class AnimaKitsEditor implements Listener {
         if (meta != null) { meta.displayName(Component.space()); item.setItemMeta(meta); }
         return item;
     }
+    /** Parses duration string: plain seconds, -1 = permanent, compound 1d2h30m45s. Returns -2 on error. */
+    private long parseDurationEditor(String raw) {
+        if (raw == null || raw.isBlank()) return -2;
+        String t = raw.trim();
+        if (t.equals("-1")) return -1;
+        try { return Long.parseLong(t); } catch (NumberFormatException ignored) {}
+        java.util.regex.Matcher m = java.util.regex.Pattern
+                .compile("(?:(\\d+)d)?(?:(\\d+)h)?(?:(\\d+)m)?(?:(\\d+)s)?",
+                        java.util.regex.Pattern.CASE_INSENSITIVE).matcher(t);
+        if (!m.matches()) return -2;
+        long days  = m.group(1) != null ? Long.parseLong(m.group(1)) : 0;
+        long hours = m.group(2) != null ? Long.parseLong(m.group(2)) : 0;
+        long mins  = m.group(3) != null ? Long.parseLong(m.group(3)) : 0;
+        long secs  = m.group(4) != null ? Long.parseLong(m.group(4)) : 0;
+        long total = days * 86400L + hours * 3600L + mins * 60L + secs;
+        return total > 0 ? total : -2;
+    }
+
+    private String formatDurationEditor(long seconds) {
+        if (seconds <= 0)  return "None";
+        if (seconds == -1) return "Permanent";
+        long d = seconds / 86400, h = (seconds % 86400) / 3600,
+             m = (seconds % 3600) / 60, s = seconds % 60;
+        StringBuilder sb = new StringBuilder();
+        if (d > 0) sb.append(d).append("d ");
+        if (h > 0) sb.append(h).append("h ");
+        if (m > 0) sb.append(m).append("m ");
+        if (s > 0) sb.append(s).append("s");
+        return sb.toString().trim();
+    }
+
 }
