@@ -426,12 +426,12 @@ public class AnimaKitsCommand implements CommandExecutor {
         if (targets == null) return true;
 
         long durationSecs = parseDuration(args[5]);
-        String durStr = durationSecs == -1 ? "permanently" : "for " + args[5];
+        String durStr = durationSecs == -1 ? "Permanent" : formatDuration(durationSecs);
 
         if (targets.size() == 1) {
             plugin.getPermissionManager().grant(targets.get(0).getUniqueId(), perm, durationSecs);
             MessageUtil.sendMsg(sender, "perm-granted",
-                    Map.of("perm", perm, "player", targets.get(0).getName(), "duration", " " + durStr));
+                    Map.of("perm", perm, "player", targets.get(0).getName(), "duration", durStr));
         } else {
             for (Player target : targets) {
                 plugin.getPermissionManager().grant(target.getUniqueId(), perm, durationSecs);
@@ -534,7 +534,7 @@ public class AnimaKitsCommand implements CommandExecutor {
         String kitName = kit.getPlainName();
         String permNode = PermissionManager.CLAIM_PREFIX + kitName;
         long durationSecs = (durationArg != null) ? parseDuration(durationArg) : -1L;
-        String durStr = durationSecs == -1 ? "permanently" : "for " + durationArg;
+        String durStr = durationSecs == -1 ? "Permanent" : formatDuration(durationSecs);
         boolean isSelector = args[3].startsWith("@");
 
         for (Player target : targets) {
@@ -549,7 +549,7 @@ public class AnimaKitsCommand implements CommandExecutor {
         if (targets.size() == 1 && !isSelector) {
             if (grant) {
                 MessageUtil.sendMsg(sender, "perm-granted",
-                        Map.of("perm", permNode, "player", targets.get(0).getName(), "duration", " " + durStr));
+                        Map.of("perm", permNode, "player", targets.get(0).getName(), "duration", durStr));
             } else {
                 MessageUtil.sendMsg(sender, "perm-revoked",
                         Map.of("perm", permNode, "player", targets.get(0).getName()));
@@ -612,7 +612,7 @@ public class AnimaKitsCommand implements CommandExecutor {
         String kitName = kit.getPlainName();
         String permNode = "anima.kits.claimfree." + kitName;
         long durationSecs = (durationArg != null) ? parseDuration(durationArg) : -1L;
-        String durStr = durationSecs == -1 ? "permanently" : "for " + durationArg;
+        String durStr = durationSecs == -1 ? "Permanent" : formatDuration(durationSecs);
         boolean isSelector = args[3].startsWith("@");
 
         for (Player target : targets) {
@@ -627,7 +627,7 @@ public class AnimaKitsCommand implements CommandExecutor {
         if (targets.size() == 1 && !isSelector) {
             if (grant) {
                 MessageUtil.sendMsg(sender, "perm-granted",
-                        Map.of("perm", permNode, "player", targets.get(0).getName(), "duration", " " + durStr));
+                        Map.of("perm", permNode, "player", targets.get(0).getName(), "duration", durStr));
             } else {
                 MessageUtil.sendMsg(sender, "perm-revoked",
                         Map.of("perm", permNode, "player", targets.get(0).getName()));
@@ -775,27 +775,31 @@ public class AnimaKitsCommand implements CommandExecutor {
 
     private boolean handleSetCooldown(CommandSender sender, String[] args) {
         if (!requirePerm(sender, "anima.kits.setcooldown")) return true;
-        if (args.length < 4) { usage(sender, "/anima kits setcooldown <kit> <time_seconds>"); return true; }
-        // Last arg is time; everything from args[2] to second-to-last is the kit name
+        if (args.length < 4) {
+            usage(sender, "/anima kits setcooldown <kit> <time>  (e.g. 30s  5m  2h  1d  1d12h30m)");
+            return true;
+        }
         String timeArg = args[args.length - 1];
         String kitName = joinArgsRange(args, 2, args.length - 1);
         Kit kit = requireKit(sender, kitName);
         if (kit == null) return true;
-        try {
-            long time = Long.parseLong(timeArg);
-            kit.setCooldown(time);
-            plugin.getKitManager().saveKits();
-            MessageUtil.send(sender, MM.deserialize("<green>Cooldown for kit <white>" + kit.getPlainName() + "</white> set to <white>" + time + "</white> seconds.</green>"));
-        } catch (NumberFormatException e) {
-            MessageUtil.err(sender, "Cooldown must be a number (seconds).");
+        long time = parseDuration(timeArg);
+        if (time == -2) {
+            MessageUtil.sendMsg(sender, "cooldown-invalid", Map.of("input", timeArg));
+            return true;
         }
+        if (time == -1) time = 0; // permanent makes no sense for cooldown — treat as clear
+        kit.setCooldown(time);
+        plugin.getKitManager().saveKits();
+        MessageUtil.sendMsg(sender, "cooldown-set", Map.of(
+                "kit",  kit.getPlainName(),
+                "time", time == 0 ? "None" : formatDuration(time)));
         return true;
     }
 
     private boolean handleSingleClaim(CommandSender sender, String[] args) {
         if (!requirePerm(sender, "anima.kits.singleclaim")) return true;
         if (args.length < 4) { usage(sender, "/anima kits singleclaim <kit> <true|false>"); return true; }
-        // Last arg is true/false; everything from args[2] to second-to-last is the kit name
         String boolArg = args[args.length - 1];
         String kitName = joinArgsRange(args, 2, args.length - 1);
         Kit kit = requireKit(sender, kitName);
@@ -803,7 +807,9 @@ public class AnimaKitsCommand implements CommandExecutor {
         boolean val = Boolean.parseBoolean(boolArg);
         kit.setSingleClaim(val);
         plugin.getKitManager().saveKits();
-        MessageUtil.send(sender, MM.deserialize("<green>Single claim for kit <white>" + kit.getPlainName() + "</white> set to <white>" + val + "</white>.</green>"));
+        MessageUtil.sendMsg(sender, "singleclaim-set", Map.of(
+                "kit",   kit.getPlainName(),
+                "value", val ? "<green>ON</green>" : "<red>OFF</red>"));
         return true;
     }
 
@@ -893,15 +899,56 @@ public class AnimaKitsCommand implements CommandExecutor {
         }
     }
 
+    /**
+     * Parses a duration string into total seconds.
+     * Supported formats (case-insensitive, combinable):
+     *   plain integer  → seconds       e.g. "3600"
+     *   -1             → permanent
+     *   1d             → 1 day
+     *   2h             → 2 hours
+     *   30m            → 30 minutes
+     *   45s            → 45 seconds
+     *   1d2h30m45s     → compound
+     * Returns -1 for permanent, -2 if the input is unparseable.
+     */
     private long parseDuration(String raw) {
-        if (raw.equals("-1")) return -1;
-        long multiplier = 1;
-        String stripped = raw;
-        if (raw.endsWith("m"))      { multiplier = 60;    stripped = raw.substring(0, raw.length() - 1); }
-        else if (raw.endsWith("h")) { multiplier = 3600;  stripped = raw.substring(0, raw.length() - 1); }
-        else if (raw.endsWith("d")) { multiplier = 86400; stripped = raw.substring(0, raw.length() - 1); }
-        try { return Long.parseLong(stripped) * multiplier; }
-        catch (NumberFormatException e) { return 3600; }
+        if (raw == null || raw.isBlank()) return -2;
+        String trimmed = raw.trim();
+        if (trimmed.equals("-1")) return -1;
+
+        // Plain integer → raw seconds
+        try { return Long.parseLong(trimmed); } catch (NumberFormatException ignored) {}
+
+        // Compound format: optional digits followed by d/h/m/s units
+        java.util.regex.Matcher m = java.util.regex.Pattern
+                .compile("(?:(\\d+)d)?(?:(\\d+)h)?(?:(\\d+)m)?(?:(\\d+)s)?",
+                        java.util.regex.Pattern.CASE_INSENSITIVE)
+                .matcher(trimmed);
+
+        if (!m.matches()) return -2;
+
+        long days    = m.group(1) != null ? Long.parseLong(m.group(1)) : 0;
+        long hours   = m.group(2) != null ? Long.parseLong(m.group(2)) : 0;
+        long minutes = m.group(3) != null ? Long.parseLong(m.group(3)) : 0;
+        long seconds = m.group(4) != null ? Long.parseLong(m.group(4)) : 0;
+        long total   = days * 86400L + hours * 3600L + minutes * 60L + seconds;
+        return total > 0 ? total : -2;
+    }
+
+    /** Human-readable representation of a duration in seconds. */
+    private String formatDuration(long seconds) {
+        if (seconds <= 0)  return "None";
+        if (seconds == -1) return "Permanent";
+        long d = seconds / 86400;
+        long h = (seconds % 86400) / 3600;
+        long m = (seconds % 3600) / 60;
+        long s = seconds % 60;
+        StringBuilder sb = new StringBuilder();
+        if (d > 0) sb.append(d).append("d ");
+        if (h > 0) sb.append(h).append("h ");
+        if (m > 0) sb.append(m).append("m ");
+        if (s > 0) sb.append(s).append("s");
+        return sb.toString().trim();
     }
 
     private void giveKit(Player player, Kit kit, int times) {
