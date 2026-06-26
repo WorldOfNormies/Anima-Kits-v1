@@ -210,9 +210,11 @@ public class ChatInputSession implements Listener {
         player.sendMessage(MM.deserialize(
             "<gradient:#54DAF4:#545EB6><bold>━━━━ AnimaKits · Set Cooldown ━━━━</bold></gradient>"));
         player.sendMessage(MM.deserialize(
-            "<gray>Enter cooldown restrictions in <white>seconds</white>.</gray>"));
+            "<gray>Enter the cooldown duration for this kit.</gray>"));
         player.sendMessage(MM.deserialize(
-            "<dark_gray>  Examples: <white>300</white> = 5 min · <white>3600</white> = 1 hr · <white>0</white> = none</dark_gray>"));
+            "<dark_gray>  Formats: <white>30s · 5m · 2h · 1d · 1d12h30m · 3600</white></dark_gray>"));
+        player.sendMessage(MM.deserialize(
+            "<dark_gray>  Use <white>0</white> to clear the cooldown.</dark_gray>"));
         player.sendMessage(Component.empty());
         player.sendMessage(MM.deserialize(
             "<yellow>✎ Type the numeric value and press <white>Enter</white>.</yellow>"));
