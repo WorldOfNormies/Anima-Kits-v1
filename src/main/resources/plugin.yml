@@ -16,115 +16,121 @@ commands:
     description: "Main AnimaKits command"
     usage: "/anima kits [subcommand]"
     aliases: [ ak, animakits ]
-    permission: anima.kits.use
 
 permissions:
+  # --- Admin Master Node ---
   anima.kits.*:
     description: "Grants access to ALL AnimaKits commands and features."
     default: op
     children:
-      anima.kits.use: true
-      anima.kits.display: true
-      anima.kits.edit.add: true
-      anima.kits.edit.remove: true
-      anima.kits.edit.rename: true
-      anima.kits.lore.edit: true
+      anima.kits.add: true
+      anima.kits.delete: true
+      anima.kits.rename: true
       anima.kits.lore.add: true
+      anima.kits.lore.edit: true
       anima.kits.lore.remove: true
-      anima.kits.open: true
       anima.kits.clonekit: true
       anima.kits.give: true
       anima.kits.giveall: true
       anima.kits.reload: true
-      anima.kits.help: true
       anima.kits.permission.add: true
       anima.kits.permission.remove: true
       anima.kits.permission.show: true
-      anima.kits.claim.*: true
-      anima.kits.list: true
+      anima.kits.permission.claim: true
+      anima.kits.permission.claimfree: true
       anima.kits.setcooldown: true
       anima.kits.singleclaim: true
 
+  # --- Default Player Access Nodes ---
   anima.kits.use:
-    description: "Open the main Kits GUI menu."
+    description: "Allows opening the visual kit claim browser menus."
+    default: true
+
+  anima.kits.claim:
+    description: "Allows running the direct kit claim command syntax."
+    default: true
+
+  anima.kits.claim.*:
+    description: "Allows claiming any existing kit by default."
+    default: true
+
+  anima.kits.list:
+    description: "Allows viewing text list of available authorized kits."
+    default: true
+
+  anima.kits.help:
+    description: "Allows viewing the basic player help instructions overview."
+    default: true
+
+  # --- Restricted Admin Action Nodes ---
+  anima.kits.add:
+    description: "Create a brand new kit framework."
     default: op
 
-  anima.kits.display:
-    description: "Display (view-only) any kit's contents."
+  anima.kits.delete:
+    description: "Permanently delete an existing kit structure."
     default: op
 
-  anima.kits.edit.add:
-    description: "Add (create) a new kit."
-    default: op
-
-  anima.kits.edit.remove:
-    description: "Remove/delete an existing kit."
-    default: op
-
-  anima.kits.edit.rename:
-    description: "Rename an existing kit."
-    default: op
-
-  anima.kits.lore.edit:
-    description: "Edit a specific lore line on a kit."
+  anima.kits.rename:
+    description: "Modify an existing kit's profile display identity."
     default: op
 
   anima.kits.lore.add:
-    description: "Add a new lore line to a kit."
+    description: "Append a fresh line of text lore to a kit."
+    default: op
+
+  anima.kits.lore.edit:
+    description: "Modify a single line of index lore on a kit."
     default: op
 
   anima.kits.lore.remove:
-    description: "Remove a lore line from a kit."
-    default: op
-
-  anima.kits.open:
-    description: "Directly open the edit GUI of a specific kit."
+    description: "Strip a line of index lore away from a kit."
     default: op
 
   anima.kits.clonekit:
-    description: "Clone an existing kit into a new one."
+    description: "Duplicate a kit directly to a new template."
     default: op
 
   anima.kits.give:
-    description: "Give a kit to a specific player."
+    description: "Force drop a specific kit onto a single player."
     default: op
 
   anima.kits.giveall:
-    description: "Give a kit to all online players."
+    description: "Force distribute a kit to every active online connection."
     default: op
 
   anima.kits.reload:
-    description: "Reload the AnimaKits plugin configuration."
-    default: op
-
-  anima.kits.help:
-    description: "View the AnimaKits help menu."
+    description: "Reload all internal config parameters dynamically."
     default: op
 
   anima.kits.permission.add:
-    description: "Grant a timed or permanent AnimaKits permission to a player."
+    description: "Grant temporary or absolute generic nodes to profiles."
     default: op
 
   anima.kits.permission.remove:
-    description: "Revoke an AnimaKits permission from a player."
+    description: "Revoke nodes from profiles manually."
     default: op
 
   anima.kits.permission.show:
-    description: "Show all AnimaKits permissions assigned to a player."
+    description: "Inspect active kit nodes applied onto a player profile."
     default: op
 
-  anima.kits.claim.*:
-    description: "Claim any kit if user has the permission."
+  anima.kits.permission.claim:
+    description: "Grant or revoke temporary or absolute specific kit claim access nodes."
     default: op
 
-  anima.kits.list:
-    description: "List all kits."
+  anima.kits.permission.claimfree:
+    description: "Grant or revoke temporary or absolute kit cooldown bypass nodes."
     default: op
 
   anima.kits.setcooldown:
-    description: "Set a kit's cooldown."
+    description: "Set an absolute cooldown window time limit on kits."
     default: op
 
   anima.kits.singleclaim:
-    description: "Set a kit's singleclaim status."
+    description: "Toggle one-time-only claim limitations on kits."
+    default: op
+
+  anima.kits.onjoinnew:
+    description: "Set or clear the starter kit given to new players on first join."
     default: op

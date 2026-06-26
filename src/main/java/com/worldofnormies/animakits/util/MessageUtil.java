@@ -54,7 +54,7 @@ public final class MessageUtil {
 
     public static void sendPrefixed(CommandSender sender, String miniMessage) {
         String prefix = plugin.getConfig().getString("general.prefix",
-                "<gradient:#54DAF4:#545EB6>AnimaKits</gradient> <dark_gray>»</dark_gray>");
+                "<gradient:#54DAF4:#545EB6>Anima Kits</gradient> <dark_gray>»</dark_gray>");
         send(sender, prefix + " " + miniMessage);
     }
 

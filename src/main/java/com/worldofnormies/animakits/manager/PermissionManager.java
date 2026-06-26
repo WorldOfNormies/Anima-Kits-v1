@@ -14,15 +14,25 @@ import java.util.*;
  * Expiry of -1 means permanent.
  *
  * Per-kit claim permissions follow the node pattern:
- *   anima.kits.claim.<kitName>
+ * anima.kits.claim.<kitName>
+ * Custom bypass cooldown permissions follow the node pattern:
+ * anima.kits.claimfree.<kitName>
  *
  * Use {@link #grantClaimPermission} / {@link #revokeClaimPermission} / {@link #hasClaimPermission}
- * as convenience wrappers for those nodes.
+ * as convenience wrappers for those specific nodes.
+ *
+ * GLOBAL PERMISSIONS: Use {@link #grantGlobal} to grant a permission to ALL players,
+ * including ones who haven't joined yet. These are applied on PlayerJoinEvent via
+ * {@link #applyGlobalsToPlayer(UUID)}. This is what powers @a / @e selector grants
+ * so new players automatically receive the same permission when they first join.
  */
 public class PermissionManager {
 
     /** Prefix used for per-kit claim permission nodes stored in this manager. */
     public static final String CLAIM_PREFIX = "anima.kits.claim.";
+
+    /** Special UUID key used in permissions.yml to store global (all-player) permissions. */
+    private static final UUID GLOBAL_KEY = new UUID(0, 0);
 
     private final AnimaKitsPlugin plugin;
     private final File file;
@@ -100,10 +110,61 @@ public class PermissionManager {
 
     /** Returns all perm → expiry entries for a player (expired ones removed lazily). */
     public Map<String, Long> getAll(UUID player) {
-        Map<String, Long> perms = data.getOrDefault(player, Collections.emptyMap());
+        Map<String, Long> perms = data.get(player);
+        if (perms == null) return Collections.emptyMap();
         long now = Instant.now().getEpochSecond();
         perms.entrySet().removeIf(e -> e.getValue() != -1 && now > e.getValue());
         return Collections.unmodifiableMap(perms);
+    }
+
+    // -----------------------------------------------------------------------
+    // Global permissions (apply to ALL players, including future joiners)
+    // -----------------------------------------------------------------------
+
+    /**
+     * Grant a permission globally — it will apply to every player, including ones
+     * who haven't joined yet. Call {@link #applyGlobalsToPlayer(UUID)} on PlayerJoinEvent.
+     */
+    public void grantGlobal(String perm, long durationSeconds) {
+        grant(GLOBAL_KEY, perm, durationSeconds);
+    }
+
+    /** Revoke a global permission. Does NOT remove it from players who already received it. */
+    public boolean revokeGlobal(String perm) {
+        return revoke(GLOBAL_KEY, perm);
+    }
+
+    /** Returns true if this perm is set globally. */
+    public boolean hasGlobal(String perm) {
+        return has(GLOBAL_KEY, perm);
+    }
+
+    /** Returns all current global permissions. */
+    public Map<String, Long> getAllGlobals() {
+        return getAll(GLOBAL_KEY);
+    }
+
+    /**
+     * Apply all current global permissions to a specific player (call on PlayerJoinEvent).
+     * Copies the global perm+expiry to the player's own entry so it shows in /perm show
+     * and is checked normally by {@link #has}.
+     */
+    public void applyGlobalsToPlayer(UUID player) {
+        Map<String, Long> globals = data.get(GLOBAL_KEY);
+        if (globals == null || globals.isEmpty()) return;
+        long now = Instant.now().getEpochSecond();
+        Map<String, Long> playerPerms = data.computeIfAbsent(player, k -> new HashMap<>());
+        boolean changed = false;
+        for (Map.Entry<String, Long> e : globals.entrySet()) {
+            // Skip expired globals
+            if (e.getValue() != -1 && now > e.getValue()) continue;
+            // Only set if the player doesn't already have this perm (don't overwrite a longer expiry)
+            if (!playerPerms.containsKey(e.getKey())) {
+                playerPerms.put(e.getKey(), e.getValue());
+                changed = true;
+            }
+        }
+        if (changed) save();
     }
 
     // -----------------------------------------------------------------------
@@ -145,7 +206,24 @@ public class PermissionManager {
     public boolean hasClaimPermission(UUID player, String kitName) {
         // Wildcard stored claim covers all kits
         if (has(player, "anima.kits.claim.*")) return true;
+        // Check global wildcard
+        if (hasGlobal("anima.kits.claim.*")) return true;
+        if (hasGlobal(CLAIM_PREFIX + kitName)) return true;
         return has(player, CLAIM_PREFIX + kitName);
+    }
+
+    /**
+     * Check whether a player holds a valid permission to bypass a kit's cooldown limits.
+     *
+     * @param player  the player's UUID
+     * @param kitName plain kit name
+     * @return {@code true} if the player holds a valid cooldown bypass node
+     */
+    public boolean hasClaimFreePermission(UUID player, String kitName) {
+        if (has(player, "anima.kits.claimfree.*")) return true;
+        if (hasGlobal("anima.kits.claimfree.*")) return true;
+        if (hasGlobal("anima.kits.claimfree." + kitName)) return true;
+        return has(player, "anima.kits.claimfree." + kitName);
     }
 
     /**

@@ -1,83 +1,67 @@
-# ╔══════════════════════════════════════════════════════╗
-# ║           AnimaKits Configuration File              ║
-# ║  Supports MiniMessage tags, &codes, and &#RRGGBB   ║
-# ╚══════════════════════════════════════════════════════╝
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#                     AnimaKits Configuration
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 general:
-  prefix: "<gradient:#54DAF4:#545EB6><bold>AnimaKits</bold></gradient> <dark_gray>»</dark_gray>"
-  # Date/time format for timed permissions display
   date-format: "dd/MM/yyyy HH:mm"
+  prefix: "<gradient:#54DAF4:#545EB6><bold>[AnimaKits]</bold></gradient> "
 
-gui:
-  # Title shown in the main kits browser
-  main-title: "<gradient:#54DAF4:#545EB6><bold>✦ Kit Browser ✦</bold></gradient>"
-  # Title shown inside a kit's editor / viewer
-  kit-editor-title: "<gradient:#54DAF4:#545EB6><bold>Editing: {kit}</bold></gradient>"
-  kit-display-title: "<gradient:#54DAF4:#545EB6><bold>Viewing: {kit}</bold></gradient>"
-  # How many kits to show per page in the browser
-  kits-per-page: 45
-  # Items per page inside a kit editor
-  items-per-page: 45
-  # Border material (any valid Material name)
-  border-material: BLACK_STAINED_GLASS_PANE
-  border-name: " "
-  # Navigation button materials
-  prev-page-material: ARROW
-  next-page-material: ARROW
-  prev-page-name: "<gray>« Previous Page</gray>"
-  next-page-name: "<gray>Next Page »</gray>"
+# Kit to automatically give to brand-new players on their very first join.
+# Set via: /anima kits onjoinnew <kit name>
+# Clear via: /anima kits onjoinnew clear
+# Leave blank to disable.
+join-kit: ""
 
 messages:
-  # ── Kit Management ──────────────────────────────────────────────
-  kit-created: "<green>✔ Kit <white>{kit}</white> created successfully!</green>"
-  kit-deleted: "<red>✘ Kit <white>{kit}</white> has been deleted.</red>"
-  kit-renamed: "<green>✔ Kit <white>{old}</white> renamed to <white>{new}</white>.</green>"
-  kit-cloned: "<green>✔ Kit <white>{old}</white> cloned into <white>{new}</white>.</green>"
-  kit-not-found: "<red>✘ No kit named <white>{kit}</white> was found.</red>"
-  kit-already-exists: "<red>✘ A kit named <white>{kit}</white> already exists.</red>"
+  # --- System Core Responses ---
+  no-permission: "<gradient:#FF4B4B:#FF8585><bold>✕ Error:</bold> You do not have permission to execute this operation.</gradient>"
+  player-not-found: "<gradient:#FF4B4B:#FF8585><bold>✕ Error:</bold> No online player found matching</gradient> <bold><white>'<player>'</white></bold><gradient:#FF4B4B:#FF8585>.</gradient>"
+  usage-error: "<gradient:#FF4B4B:#FF8585><bold>✕ Syntax:</bold> Incorrect usage template.</gradient> <gray>Correct format:</gray> <gradient:#54DAF4:#545EB6><usage></gradient>"
+  reload: "<gradient:#54DAF4:#545EB6><bold>✓ System:</bold> Plugin configuration settings have been successfully reloaded!</gradient>"
 
-  # ── Lore ────────────────────────────────────────────────────────
-  lore-added: "<green>✔ Lore line added to <white>{kit}</white>.</green>"
-  lore-edited: "<green>✔ Lore line <white>{line}</white> of <white>{kit}</white> updated.</green>"
-  lore-removed: "<red>✘ Lore line <white>{line}</white> removed from <white>{kit}</white>.</red>"
-  lore-invalid-line: "<red>✘ Invalid line number. Use a number between 1 and {max}.</red>"
+  # --- Kit Creator Management ---
+  name-empty: "<gradient:#FF4B4B:#FF8585><bold>✕ Error:</bold> The kit name field cannot be left blank.</gradient>"
+  name-too-long: "<gradient:#FF4B4B:#FF8585><bold>✕ Error:</bold> Maximum name length exceeded (Limit: 64 characters).</gradient>"
+  kit-already-exists: "<gradient:#FF4B4B:#FF8585><bold>✕ Error:</bold> A kit configuration named</gradient> <bold><white>'<kit>'</white></bold> <gradient:#FF4B4B:#FF8585>already exists.</gradient>"
+  kit-not-found: "<gradient:#FF4B4B:#FF8585><bold>✕ Error:</bold> Could not find any kit configuration matching</gradient> <bold><white>'<kit>'</white></bold><gradient:#FF4B4B:#FF8585>.</gradient>"
+  kit-created: "<gradient:#54DAF4:#545EB6><bold>✓ Success:</bold> New kit framework</gradient> <bold><white><kit></white></bold> <gradient:#54DAF4:#545EB6>has been created.</gradient>"
+  kit-deleted: "<gradient:#FF4B4B:#FF8585><bold>✕ Deleted:</bold> The kit configuration</gradient> <bold><white><kit></white></bold> <gradient:#FF4B4B:#FF8585>has been permanently erased.</gradient>"
+  kit-renamed: "<gradient:#54DAF4:#545EB6><bold>✓ Success:</bold> Kit has been renamed from</gradient> <bold><red><old></red></bold> <gradient:#54DAF4:#545EB6>➔</gradient> <bold><green><new></green></bold><gradient:#54DAF4:#545EB6>.</gradient>"
 
-  # ── Give ────────────────────────────────────────────────────────
-  kit-given: "<green>✔ Gave kit <white>{kit}</white> ×{amount} to <white>{player}</white>.</green>"
-  kit-given-all: "<green>✔ Gave kit <white>{kit}</white> ×{amount} to all <white>{count}</white> online player(s).</green>"
-  kit-received: "<green>✔ You received kit <white>{kit}</white> ×{amount}.</green>"
-  player-not-found: "<red>✘ Player <white>{player}</white> is not online.</red>"
+  # --- Kit Distribution Actions ---
+  kit-received: "<gradient:#54DAF4:#545EB6><bold>✦ Claim:</bold> You have received kit</gradient> <bold><white><kit></white></bold> <gray>•</gray> <gradient:#54DAF4:#545EB6><bold>x<amount></bold></gradient>"
+  join-kit-received: "<gradient:#54DAF4:#545EB6><bold>✦ Welcome!</bold> You have been given the starter kit</gradient> <bold><white><kit></white></bold><gradient:#54DAF4:#545EB6>. Enjoy your adventure!</gradient>"
+  kit-given: "<gradient:#54DAF4:#545EB6><bold>✦ Dispatch:</bold> Successfully transferred</gradient> <bold><white>x<amount></white></bold> <gradient:#54DAF4:#545EB6>of kit</gradient> <bold><yellow><kit></yellow></bold> <gradient:#54DAF4:#545EB6>to player</gradient> <bold><white><player></white></bold><gradient:#54DAF4:#545EB6>.</gradient>"
+  kit-given-all: "<gradient:#54DAF4:#545EB6><bold>✦ Global:</bold> Dispatched</gradient> <bold><white>x<amount></white></bold> <gradient:#54DAF4:#545EB6>of kit</gradient> <bold><yellow><kit></yellow></bold> <gradient:#54DAF4:#545EB6>to all</gradient> <bold><white><count></white></bold> <gradient:#54DAF4:#545EB6>online players.</gradient>"
 
-  # ── Permissions ─────────────────────────────────────────────────
-  perm-granted: "<green>✔ Granted <white>{perm}</white> to <white>{player}</white>{duration}.</green>"
-  perm-revoked: "<red>✘ Revoked <white>{perm}</white> from <white>{player}</white>.</red>"
-  perm-show-header: "<gradient:#54DAF4:#545EB6>Permissions for {player}:</gradient>"
-  perm-show-entry: "  <gray>• <white>{perm}</white> – expires: <aqua>{expires}</aqua></gray>"
-  perm-show-empty: "  <gray>No AnimaKits permissions assigned.</gray>"
-  perm-invalid: "<red>✘ <white>{perm}</white> is not a valid AnimaKits permission.</red>"
+  # --- Lore Modification Responses ---
+  lore-added: "<gradient:#54DAF4:#545EB6><bold>✓ Lore:</bold> Added a new line of lore text successfully to kit</gradient> <bold><white><kit></white></bold><gradient:#54DAF4:#545EB6>.</gradient>"
+  lore-edited: "<gradient:#54DAF4:#545EB6><bold>✓ Lore:</bold> Successfully updated lore line index</gradient> <bold><yellow>#<line></yellow></bold> <gradient:#54DAF4:#545EB6>on kit</gradient> <bold><white><kit></white></bold><gradient:#54DAF4:#545EB6>.</gradient>"
+  lore-removed: "<gradient:#FF4B4B:#FF8585><bold>✕ Lore:</bold> Removed lore line index</gradient> <bold><yellow>#<line></yellow></bold> <gradient:#FF4B4B:#FF8585>from kit</gradient> <bold><white><kit></white></bold><gradient:#FF4B4B:#FF8585>.</gradient>"
+  lore-invalid-line: "<gradient:#FF4B4B:#FF8585><bold>✕ Error:</bold> Invalid line number provided. (Valid structural range: 1 to</gradient> <bold><white><max></white></bold><gradient:#FF4B4B:#FF8585>).</gradient>"
+  kit-cloned: "<gradient:#54DAF4:#545EB6><bold>✓ Template:</bold> Successfully duplicated kit template</gradient> <bold><white><old></white></bold> <gradient:#54DAF4:#545EB6>onto new clone</gradient> <bold><yellow><new></yellow></bold><gradient:#54DAF4:#545EB6>.</gradient>"
 
-  # ── General ─────────────────────────────────────────────────────
-  reload: "<green>✔ AnimaKits config reloaded.</green>"
-  no-permission: "<red>✘ You do not have permission to do that.</red>"
-  usage-error: "<red>✘ Usage: <white>{usage}</white></red>"
+  # --- Stored Database Permission Responses ---
+  perm-invalid: "<gradient:#FF4B4B:#FF8585><bold>✕ Error:</bold></gradient> <bold><white>'<perm>'</white></bold> <gradient:#FF4B4B:#FF8585>is not a recognized or valid plugin permission node.</gradient>"
+  perm-granted: "<gradient:#54DAF4:#545EB6><bold>✓ Granted</bold></gradient> <gray>|</gray> <yellow><perm></yellow> <gray>→</gray> <white><player></white><gray><duration></gray>"
+  perm-revoked: "<gradient:#FF4B4B:#FF8585><bold>✕ Revoked</bold></gradient> <gray>|</gray> <yellow><perm></yellow> <gray>→</gray> <white><player></white>"
+  perm-show-header: "<gradient:#54DAF4:#545EB6><bold>━━━━━━━ Active Kit Profile: <player> ━━━━━━━</bold></gradient>"
+  perm-show-empty: "<gray>   ▪ There are no active custom kit permissions assigned to this profile.</gray>"
+  perm-show-entry: "  <gradient:#54DAF4:#545EB6>➔</gradient> <yellow><perm></yellow> <dark_gray>·</dark_gray> <gray>Expires: <white><expires></white></gray>"
 
-  # ── Name Input (chat prompt shown while awaiting kit name) ──────
+  # ── Chat Name Prompts ──────
   name-prompt: |
-    <gradient:#54DAF4:#545EB6><bold>✦ AnimaKits — Set Kit Name ✦</bold></gradient>
-    <gray>Type the new name in chat, then press <white>Enter</white>.</gray>
-    <gray>Type <red>cancel</red> to abort.</gray>
-
-    <yellow>Colour Codes & Gradients:</yellow>
-    <gray>  Legacy codes:   <white>&a Green  &c Red  &b Aqua  &6 Gold  &l Bold  &o Italic</white></gray>
-    <gray>  Hex colour:     <white>&#FF5500 (Birdflop-style)</white></gray>
-    <gray>  MiniMessage:    <white><red>…</red>  <bold>…</bold>  <italic>…</italic></white></gray>
-    <gray>  Gradient:       <white><gradient:#54DAF4:#545EB6>My Kit Name</gradient></white></gray>
-
-    <yellow>Examples:</yellow>
-    <gray>  <white>&6&lGolden Kit</white>   → <gold><bold>Golden Kit</bold></gold></gray>
-    <gray>  <white><gradient:#54DAF4:#545EB6>Rainbow Kit</gradient></white>   → gradient blue-to-purple text</gray>
-    <gray>  <white>&#FF5500Lava Kit</white>   → <color:#FF5500>Lava Kit</color></gray>
-
-  name-cancelled: "<gray>Kit name entry cancelled.</gray>"
-  name-too-long: "<red>✘ Name is too long (max 64 characters).</red>"
-  name-empty: "<red>✘ Name cannot be empty.</red>"
+    <gradient:#54DAF4:#545EB6><bold>━━━━ AnimaKits · Rename Kit ━━━━</bold></gradient>
+    <gradient:#54DAF4:#545EB6><bold>⚠ ATTENTION:</bold></gradient> <gray>To apply formatting, you must include the backslashes (<white>\\</white>) exactly as shown:</gray>
+    
+    <dark_gray>▪ </dark_gray><yellow>\<gradient:#hex1:#hex2\></yellow><gray> ➔ </gray>\<gradient:#FF5500:#FFCC00\>Vip Kit
+    <dark_gray>▪ </dark_gray><yellow>\<rainbow\></yellow><gray> ➔ </gray>\<rainbow\>Arcade Kit
+    <dark_gray>▪ </dark_gray><yellow>\<bold\></yellow><gray> ➔ </gray>\<bold\>Heavy Kit
+    <dark_gray>▪ </dark_gray><yellow>\<italic\></yellow><gray> ➔ </gray>\<italic\>Swift Kit
+    <dark_gray>▪ </dark_gray><yellow>\<underline\></yellow><gray> ➔ </gray>\<underline\>God Kit
+    <dark_gray>▪ </dark_gray><yellow>\<colorname\></yellow><gray> ➔ </gray>\<red\>Ruby Kit
+    <dark_gray>▪ </dark_gray><yellow>\<#hexcolorcode\></yellow><gray> ➔ </gray>\<#A8FF33\>Lime Kit
+    
+    <yellow>✎ Type the new kit name in chat and press <white>Enter</white>.</yellow>
+    <dark_gray>Type <white>//cancel</white> or press <white>Escape</white> to abort.</dark_gray>
+    <gradient:#54DAF4:#545EB6><bold>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</bold></gradient>

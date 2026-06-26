@@ -15,6 +15,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 
@@ -207,10 +208,18 @@ public class AnimaClaimMainGUI implements Listener {
     public void onClick(InventoryClickEvent event) {
         if (!event.getInventory().equals(inventory)) return;
         if (!event.getWhoClicked().equals(player)) return;
-        event.setCancelled(true);
 
         int slot = event.getRawSlot();
-        if (slot < 0 || slot >= INV_SIZE) return;
+        if (slot < 0) return;
+
+        if (slot < INV_SIZE) {
+            event.setCancelled(true);
+        } else {
+            if (event.getClick().isShiftClick()) {
+                event.setCancelled(true);
+            }
+            return;
+        }
 
         // Slot 45: Close
         if (slot == 45) {
@@ -346,6 +355,13 @@ public class AnimaClaimMainGUI implements Listener {
                 plugin.getPlayerManager().setCooldown(uuid, kit.getId(), kit.getCooldown());
             player.sendMessage(MM.deserialize("<gradient:#44FF88:#00CC55>✔ You claimed <white>" + kit.getPlainName() + "</white>!</gradient>"));
             populate();
+        }
+    }
+
+    @EventHandler
+    public void onDrag(InventoryDragEvent event) {
+        if (event.getInventory().equals(inventory)) {
+            event.setCancelled(true);
         }
     }
 

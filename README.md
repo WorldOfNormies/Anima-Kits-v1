@@ -1,160 +1,201 @@
 # AnimaKits
 
-> A powerful, feature-rich kit management plugin for Paper servers — with gradient support, multi-page GUIs, and Bedrock compatibility.
+> A powerful kit management plugin for Paper/Spigot servers — gradient names, multi-page GUIs, timed permissions, and Bedrock support out of the box.
+
+**Author:** World Of Normies  
+**API Version:** 1.21  
+**Aliases:** `/ak`, `/animakits`
 
 ---
 
 ## Compatibility
 
-| Build | Minecraft Version | Java | Gradle |
+| Build | Minecraft | Java | Gradle |
 |---|---|---|---|
-| **26.1.2** | 26.1.0 · 26.1.1 · **26.1.2** | JDK 26+ | 9.4.0+ |
-| **1.21.x** | 1.21.0 → **1.21.4** | JDK 21+ | 8.5+ / 9.x |
+| 26.1.2 | 26.1.0 · 26.1.1 · 26.1.2 | JDK 26+ | 9.4+ |
+| 1.21.x | 1.21.0 → 1.21.4 | JDK 21+ | 8.5+ / 9.x |
 
-> **Note:** Both builds target [PaperMC](https://papermc.io/downloads/paper). Compatible forks (Purpur, Folia, etc.) are also supported.
+Targets [PaperMC](https://papermc.io/downloads/paper). Compatible forks (Purpur, Folia, etc.) work too.
+
+**Optional soft-dependencies:** Floodgate · Geyser-Spigot · PlaceholderAPI
 
 ---
 
 ## Features
 
-- **Gradient Support** — Full MiniMessage and Birdflop `&#RRGGBB` gradient support in kit names and lore lines.
-- **Multi-page GUIs** — Browse large kit libraries and edit kit contents across paginated menus.
-- **Bedrock Support** — Native form menus for Bedrock players via [GeyserMC](https://geysermc.org/) and [Floodgate](https://github.com/GeyserMC/Floodgate).
-- **Timed Permissions** — Grant temporary, time-limited access to any AnimaKits permission node.
-- **Drag-and-Drop Editing** — Place or remove items directly inside the kit editor GUI; changes save on close.
-- **Live GUI Refresh** — All open kit browsers update in real-time when kits are created, renamed, or deleted.
-- **Clone & Rename** — Duplicate any kit with a single command, preserving items and lore.
-
----
-
-## Installation
-
-1. Download the correct JAR for your server version from the [Releases](../../releases) page.
-2. Drop it into your server's `plugins/` folder.
-3. Restart or reload your server.
-4. Edit `plugins/AnimaKits/config.yml` to customise messages, GUI titles, and colours.
-
-### Optional Dependencies
-
-| Plugin | Purpose |
+| Feature | Details |
 |---|---|
-| [Geyser](https://geysermc.org/) + [Floodgate](https://github.com/GeyserMC/Floodgate) | Bedrock player support |
-| [PlaceholderAPI](https://www.spigotmc.org/resources/placeholderapi.6245/) | Placeholder support |
+| **Gradient names & lore** | Full MiniMessage + `&#RRGGBB` hex support in kit names and lore |
+| **Multi-page GUIs** | Paginated kit browser and editor — drag-and-drop items, saves on close |
+| **Bedrock support** | Native Bedrock form menus via GeyserMC + Floodgate |
+| **Timed permissions** | Grant/revoke any permission node with an optional expiry (`30s · 5m · 1h · 1d · -1`) |
+| **Global `@a` grants** | Permissions assigned via selector automatically apply to future players on join |
+| **Multi-word kit names** | Spaces, gradients, and special characters all work in kit IDs across every command |
+| **Clone & rename** | Duplicate any kit in one command, preserving all items and lore |
+| **Live GUI refresh** | All open browsers update in real-time when kits are created, renamed, or deleted |
 
 ---
 
 ## Commands
 
+### Player Commands
+
+| Command | Description | Permission | Default |
+|---|---|---|---|
+| `/anima kits` | Open the graphical kit claim browser | `anima.kits.use` | Everyone |
+| `/anima kits claim` | Open the visual claim catalog | `anima.kits.claim` | Everyone |
+| `/anima kits claim <kit>` | Claim a specific kit directly | `anima.kits.claim.<kit>` | Everyone |
+| `/anima kits list` | List all available kits | `anima.kits.list` | Everyone |
+| `/anima kits help` | Show the player help guide | `anima.kits.help` | Everyone |
+
+### Admin Commands
+
 | Command | Description | Permission |
 |---|---|---|
-| `/anima kits` | Open the main kit browser GUI. | `anima.kits.use` |
-| `/anima kits display <kit>` | View a kit's contents (read-only). | `anima.kits.display` |
-| `/anima kits edit add <name>` | Create a new kit. | `anima.kits.edit.add` |
-| `/anima kits edit remove <kit>` | Delete a kit. | `anima.kits.edit.remove` |
-| `/anima kits edit rename <kit> <new>` | Rename a kit. | `anima.kits.edit.rename` |
-| `/anima kits lore add <kit> <text>` | Add a lore line to a kit. | `anima.kits.lore.add` |
-| `/anima kits lore edit <kit> <#> <text>` | Edit a specific lore line. | `anima.kits.lore.edit` |
-| `/anima kits lore remove <kit> <#>` | Remove a lore line. | `anima.kits.lore.remove` |
-| `/anima kits open <kit>` | Open the kit editor directly. | `anima.kits.open` |
-| `/anima kits clonekit <kit> <new>` | Clone an existing kit. | `anima.kits.clonekit` |
-| `/anima kits give <player> <kit> <amount>` | Give a kit to a specific player. | `anima.kits.give` |
-| `/anima kits giveall <kit> <amount>` | Give a kit to all online players. | `anima.kits.giveall` |
-| `/anima kits claim <kit>` | Claim a kit. | `anima.kits.claim.<kit>` |
-| `/anima kits list` | List all available kits. | `anima.kits.list` |
-| `/anima kits setcooldown <kit> <seconds>` | Set a kit's cooldown. | `anima.kits.setcooldown` |
-| `/anima kits singleclaim <kit> <true|false>` | Set a kit's singleclaim status. | `anima.kits.singleclaim` |
-| `/anima kits reload` | Reload the plugin configuration. | `anima.kits.reload` |
-| `/anima kits help` | Display the help menu. | `anima.kits.help` |
-| `/anima kits permission add <perm> <player> <time>` | Grant a timed permission. | `anima.kits.permission.add` |
-| `/anima kits permission remove <perm> <player>` | Revoke a permission. | `anima.kits.permission.remove` |
-| `/anima kits permission show <player>` | Show all permissions for a player. | `anima.kits.permission.show` |
+| `/anima kits` | Open the interactive kit creator GUI | `anima.kits.add` |
+| `/anima kits add <name>` | Create a new empty kit | `anima.kits.add` |
+| `/anima kits delete <kit>` | Permanently delete a kit | `anima.kits.delete` |
+| `/anima kits rename <kit> <new name>` | Rename a kit (supports multi-word names) | `anima.kits.rename` |
+| `/anima kits clonekit <kit> <new name>` | Duplicate a kit to a new name | `anima.kits.clonekit` |
+| `/anima kits lore add <kit> <text>` | Append a lore line to a kit | `anima.kits.lore.add` |
+| `/anima kits lore edit <kit> <#> <text>` | Edit an existing lore line | `anima.kits.lore.edit` |
+| `/anima kits lore remove <kit> <#>` | Remove a lore line by index | `anima.kits.lore.remove` |
+| `/anima kits give <player\|selector> <kit> <n>` | Give a kit to a player (supports selectors) | `anima.kits.give` |
+| `/anima kits giveall <kit> <n>` | Give a kit to all online players | `anima.kits.giveall` |
+| `/anima kits onjoinnew <kit>` | Set the starter kit given to new players on first join | `anima.kits.onjoinnew` |
+| `/anima kits onjoinnew clear` | Disable the first-join starter kit | `anima.kits.onjoinnew` |
+| `/anima kits onjoinnew` | Check what kit is currently configured | `anima.kits.onjoinnew` |
+| `/anima kits setcooldown <kit> <seconds>` | Set a cooldown on a kit | `anima.kits.setcooldown` |
+| `/anima kits singleclaim <kit> <true\|false>` | Toggle one-time-only claim limit | `anima.kits.singleclaim` |
+| `/anima kits reload` | Reload all plugin config files | `anima.kits.reload` |
 
-> **Aliases:** `/anima`, `/ak`, `/animakits`
+**Master admin wildcard:** `anima.kits.*` (default: OP)
 
----
+### Permission Commands
 
-## Permissions
-
-| Node | Description | Default |
+| Command | Description | Permission |
 |---|---|---|
-| `anima.kits.*` | Grants access to **all** AnimaKits features. | `op` |
-| `anima.kits.use` | Open the main kit browser GUI. | `op` |
-| `anima.kits.display` | View kit contents (read-only). | `op` |
-| `anima.kits.edit.add` | Create new kits. | `op` |
-| `anima.kits.edit.remove` | Delete kits. | `op` |
-| `anima.kits.edit.rename` | Rename kits. | `op` |
-| `anima.kits.lore.add` | Add lore lines to kits. | `op` |
-| `anima.kits.lore.edit` | Edit existing lore lines. | `op` |
-| `anima.kits.lore.remove` | Remove lore lines. | `op` |
-| `anima.kits.open` | Open the kit editor GUI directly. | `op` |
-| `anima.kits.clonekit` | Clone kits. | `op` |
-| `anima.kits.give` | Give a kit to a specific player. | `op` |
-| `anima.kits.giveall` | Give a kit to all online players. | `op` |
-| `anima.kits.claim.<kit>` | Claim a specific kit. | `op` |
-| `anima.kits.list` | List all available kits. | `op` |
-| `anima.kits.setcooldown` | Set kit cooldowns. | `op` |
-| `anima.kits.singleclaim` | Toggle single claim status. | `op` |
-| `anima.kits.reload` | Reload the plugin. | `op` |
-| `anima.kits.help` | View the help menu. | `op` |
-| `anima.kits.permission.add` | Grant timed permissions to players. | `op` |
-| `anima.kits.permission.remove` | Revoke permissions from players. | `op` |
-| `anima.kits.permission.show` | View a player's permission list. | `op` |
+| `/anima kits permission add <node> <player\|@a> <time\|-1>` | Grant any permission node | `anima.kits.permission.add` |
+| `/anima kits permission remove <node> <player\|@a>` | Revoke a permission node | `anima.kits.permission.remove` |
+| `/anima kits permission show <player>` | View all active permissions for a player | `anima.kits.permission.show` |
+| `/anima kits permission claim <player\|@a> <kit> <true\|false> [time]` | Grant/revoke kit claim access | `anima.kits.permission.claim` |
+| `/anima kits permission claimfree <player\|@a> <kit> <true\|false> [time]` | Grant/revoke cooldown bypass | `anima.kits.permission.claimfree` |
+
+
+#### Duration Format
+
+| Value | Meaning |
+|---|---|
+| `-1` | Permanent |
+| `30s` | 30 seconds |
+| `5m` | 5 minutes |
+| `1h` | 1 hour |
+| `12h` | 12 hours |
+| `1d` | 1 day |
+| `7d` | 7 days |
+
+#### Global Selector Grants (`@a`, `@e`, `@p`, `@r`)
+
+When you use a selector like `@a`, the permission is applied to all **currently online** players **and** stored as a global entry. Any player who joins the server in the future will automatically receive that permission when they connect.
+
+```
+/anima kits permission claim @a VIP Kit true -1
+```
+
+> ✓ All online players receive access immediately.  
+> ✓ Every new player who joins later gets it automatically on join.  
+> ✓ A confirmation message is shown: *"Global grant stored — new players joining will automatically receive this permission."*
+
+To remove a global grant and stop it applying to new players:
+
+```
+/anima kits permission claim @a VIP Kit false
+```
 
 ---
 
-## Colour & Gradient Support
+## Multi-Word Kit Names
 
-Kit names and lore lines support all three colour formats simultaneously:
+Kit names with spaces work across **every** command. Tab completion is fully aware of multi-word names and will suggest word-by-word, then offer the next expected argument once the name is complete.
 
-| Format | Example | Result |
-|---|---|---|
-| Legacy codes | `&6&lGolden Kit` | Bold gold text |
-| Hex (Birdflop) | `&#FF5500Lava Kit` | Orange hex colour |
-| MiniMessage | `<gradient:#54DAF4:#545EB6>My Kit</gradient>` | Blue-to-purple gradient |
+```
+/anima kits rename Empty dude VIP Starter Kit
+/anima kits lore add VIP Starter Kit Welcome to the VIP experience!
+/anima kits permission claim @a VIP Starter Kit true -1
+/anima kits delete VIP Starter Kit
+```
 
 ---
 
-## Technical Notes
+## Formatting Guide
 
-**Click Mapping in the Kit Browser**
+Full MiniMessage formatting is supported in kit names and lore. When typing in-game via command, include tags as-is. When using the chat rename prompt (GUI), prefix tags with a backslash `\` so the server processes them correctly.
 
-Minecraft does not forward `Ctrl+Click` to the server for inventory slots outside creative mode. AnimaKits uses the following alternative mappings inside the kit browser:
+### Gradients
+
+```
+<gradient:#FF5500:#FFCC00>Warrior Kit</gradient>
+<gradient:#54DAF4:#545EB6:#A8FF33>Elite Season Kit</gradient>
+<rainbow>Arcade Fun Kit</rainbow>
+```
+
+### Solid Colors
+
+```
+<red>Ruby Kit</red>
+<gold>Gold Kit</gold>
+<#A8FF33>Lime Kit</#A8FF33>
+&#FF5500Lava Kit
+```
+
+### Style Modifiers
+
+```
+<bold>Heavy Kit</bold>          (&l)
+<italic>Swift Kit</italic>      (&o)
+<underline>God Kit</underline>  (&n)
+```
+
+### Combining Styles
+
+```
+/anima kits add <gradient:#54DAF4:#545EB6><bold>Season 3 Elite</bold></gradient>
+/anima kits lore add Season 3 Elite <bold><red>⚠ WARNING:</red></bold> <italic>One-Time Claim Only!</italic>
+```
+
+---
+
+## GUI Controls
 
 | Click | Action |
 |---|---|
-| Left-click | View kit (read-only display) |
+| Left-click | View kit items (read-only) |
 | Right-click | Open kit editor |
-| Shift + Right-click | Delete kit |
 | Shift + Left-click | Clone kit |
+| Shift + Right-click | Delete kit |
+| Middle Mouse Click | Different actions based on GUI|
 
-**Bedrock Players**
-
-Bedrock players connected via Geyser and Floodgate receive native Bedrock form menus (powered by the Cumulus API) instead of the Java inventory GUI, providing a seamless cross-platform experience.
-
-**Data Storage**
-
-Kits are stored in `plugins/AnimaKits/kits.yml`. Timed permissions are stored separately in `plugins/AnimaKits/permissions.yml`. Both files are reloaded via `/anima kits reload` without a server restart.
+> **Note:** Minecraft does not forward `Ctrl+Click` to the server outside creative mode — use Shift+Click instead.
 
 ---
 
-## Building from Source
+## Bedrock (Geyser + Floodgate)
 
-Two GitHub Actions workflows are included:
-
-```bash 
-# Trigger a release build (creates a GitHub Release automatically)
-git tag v1.0.0
-git push origin v1.0.0
-```
-
-| Workflow | Target Paper | Java Required | Gradle Required |
-|---|---|---|---|
-| `build26_1_2.yml` | 26.1.2 | JDK 26 | 9.4.0+ |
-| `build1_21_x.yml` | 1.21.4 | JDK 21 | 8.5+ |
+Bedrock players connected via GeyserMC and Floodgate receive native Bedrock form menus powered by the Cumulus API instead of the Java inventory GUI. No extra configuration is needed — install Floodgate and Geyser and it works automatically.
 
 ---
+
+## Data Storage
+
+| File | Contents |
+|---|---|
+| `plugins/AnimaKits/config.yml` | Messages, prefix, date format |
+| `plugins/AnimaKits/kits.yml` | All kit definitions (items, lore, cooldowns) |
+| `plugins/AnimaKits/permissions.yml` | Per-player and global timed permission entries |
+
+All files are hot-reloaded with `/anima kits reload` — no server restart needed.
 
 ## Credits
 
-Created by **World Of Normies**.  
-Website: [github.com/worldofnormies/AnimaKits](https://github.com/worldofnormies/AnimaKits)
+Created by **World Of Normies**  
+[github.com/worldofnormies/AnimaKits](https://github.com/worldofnormies/Anima-Kits)

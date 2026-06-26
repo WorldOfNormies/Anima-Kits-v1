@@ -21,6 +21,8 @@ public class Kit {
     private Material iconMaterial;
     private long cooldown; // in seconds
     private boolean singleClaim;
+    private boolean claimFree;
+    private long claimDuration; // in seconds
 
     public Kit(UUID id, String rawName) {
         this.id = id;
@@ -30,6 +32,8 @@ public class Kit {
         this.iconMaterial = Material.CHEST;
         this.cooldown = 0;
         this.singleClaim = false;
+        this.claimFree = false;
+        this.claimDuration = 0;
     }
 
     // ── Identity ───────────────────────────────────────────────────
@@ -69,4 +73,10 @@ public class Kit {
 
     public boolean isSingleClaim() { return singleClaim; }
     public void    setSingleClaim(boolean singleClaim) { this.singleClaim = singleClaim; }
+
+    public boolean isClaimFree() { return claimFree; }
+    public void    setClaimFree(boolean claimFree) { this.claimFree = claimFree; }
+
+    public long    getClaimDuration() { return claimDuration; }
+    public void    setClaimDuration(long claimDuration) { this.claimDuration = claimDuration; }
 }

@@ -36,13 +36,27 @@ public final class ColorUtil {
 
     public static Component parse(String input) {
         if (input == null || input.isEmpty()) return Component.empty();
+
+        // If it looks like MiniMessage but doesn't have legacy codes, try MM first
+        if (input.contains("<") && input.contains(">") && !input.contains("&")) {
+            try {
+                return MM.deserialize(input);
+            } catch (Exception ignored) {}
+        }
+
         String converted = hexToMiniMessage(input);
         converted = convertAmpersand(converted);
-        try {
-            return MM.deserialize(converted);
-        } catch (Exception e) {
-            return LEGACY.deserialize(converted);
+
+        // After converting hex and ampersands, if it has tags, it might be mixed
+        if (converted.contains("<") && converted.contains(">")) {
+            try {
+                return MM.deserialize(converted);
+            } catch (Exception e) {
+                return LEGACY.deserialize(converted);
+            }
         }
+
+        return LEGACY.deserialize(converted);
     }
 
     public static String toLegacy(Component component) {
@@ -55,8 +69,13 @@ public final class ColorUtil {
 
     public static String strip(String input) {
         if (input == null) return "";
+        // Strip § color codes (Bukkit legacy)
         String s = ChatColor.stripColor(input);
+        // Strip & legacy codes (&a, &l, &1, etc.) that haven't been translated yet
+        s = s.replaceAll("&[0-9a-fk-orA-FK-OR]", "");
+        // Strip &#RRGGBB hex codes
         s = HEX_PATTERN.matcher(s).replaceAll("");
+        // Strip MiniMessage tags like <red>, <gradient:#aaa:#bbb>, </red>, etc.
         s = s.replaceAll("<[^>]*>", "");
         return s.trim();
     }

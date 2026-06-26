@@ -13,32 +13,38 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/** 
+/**
  * AnimaKitsTabCompleter – provides context-aware tab completion for /anima.
+ * Filters completion profiles internally to keep standard users locked to player tools.
  */
 public class AnimaKitsTabCompleter implements TabCompleter {
 
     private static final List<String> SUB1 = List.of("kits", "kit");
 
-    private static final List<String> SUB2 = List.of(
+    private static final List<String> ADMIN_SUB2 = List.of(
             "claim", "add", "delete", "rename", "lore", "clonekit",
             "give", "giveall", "reload", "help", "permission",
-            "list", "setcooldown", "singleclaim");
+            "list", "setcooldown", "singleclaim", "onjoinnew");
+
+    private static final List<String> PLAYER_SUB2 = List.of("claim", "list", "help");
 
     private static final List<String> LORE_ACTIONS   = List.of("add", "edit", "remove");
-    private static final List<String> PERM_ACTIONS   = List.of("add", "remove", "show");
+    private static final List<String> PERM_ACTIONS   = List.of("add", "remove", "show", "claim", "claimfree");
 
     private static final List<String> AMOUNTS        = List.of("1", "2", "3", "5", "10", "64");
-    private static final List<String> DURATIONS      = List.of("-1", "30s", "1m", "5m", "30m",
-            "1h", "6h", "12h", "1d", "7d", "30d");
+    private static final List<String> DURATIONS      = List.of("-1", "30s", "5m", "30m", "1h", "12h", "1d", "7d");
+    private static final List<String> BOOLEAN_VALUES = List.of("true", "false");
 
     private static final List<String> KNOWN_PERMS = List.of(
-            "anima.kits.use", "anima.kits.add", "anima.kits.delete",
+            "anima.kits.*", "anima.kits.use", "anima.kits.add", "anima.kits.delete",
             "anima.kits.rename", "anima.kits.lore.add", "anima.kits.lore.edit",
             "anima.kits.lore.remove", "anima.kits.clonekit", "anima.kits.give",
             "anima.kits.giveall", "anima.kits.reload", "anima.kits.help",
             "anima.kits.permission.add", "anima.kits.permission.remove",
-            "anima.kits.permission.show", "anima.kits.claim", "anima.kits.*");
+            "anima.kits.permission.show", "anima.kits.permission.claim",
+            "anima.kits.permission.claimfree", "anima.kits.claim", "anima.kits.claim.*",
+            "anima.kits.list", "anima.kits.setcooldown", "anima.kits.singleclaim"
+    );
 
     private final AnimaKitsPlugin plugin;
 
@@ -47,98 +53,212 @@ public class AnimaKitsTabCompleter implements TabCompleter {
     }
 
     @Override
-    public List<String> onTabComplete(CommandSender sender, Command command,
-                                      String alias, String[] args) {
-        if (args.length == 1) return filter(args[0], SUB1);
-        if (args.length == 2) return filter(args[1], SUB2);
+    public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
+        if (args.length == 1) {
+            return filter(args[0], SUB1);
+        }
 
-        String sub2 = args[1].toLowerCase();
-        return switch (sub2) {
-            case "claim"       -> args.length == 3 ? kitNames(args[2]) : List.of();
-            case "add"         -> List.of();
-            case "delete"      -> args.length == 3 ? kitNames(args[2]) : List.of();
-            case "rename"      -> args.length == 3 ? kitNames(args[2]) : List.of();
-            case "lore"        -> completeLore(args);
-            case "clonekit"    -> completeCloneKit(args);
-            case "give"        -> completeGive(args);
-            case "giveall"     -> completeGiveAll(args);
-            case "permission"  -> completePermission(args);
-            case "setcooldown" -> args.length == 3 ? kitNames(args[2]) : List.of();
-            case "singleclaim" -> completeSingleClaim(args);
-            default            -> List.of();
-        };
+        if (args.length == 2 && SUB1.contains(args[0].toLowerCase())) {
+            if (sender.hasPermission("anima.kits.add") || sender.hasPermission("anima.kits.*")) {
+                return filter(args[1], ADMIN_SUB2);
+            }
+            return filter(args[1], PLAYER_SUB2);
+        }
+
+        if (args.length > 2 && SUB1.contains(args[0].toLowerCase())) {
+            String sub2 = args[1].toLowerCase();
+            return switch (sub2) {
+                case "claim"        -> handleClaimTab(sender, args);
+                case "delete"       -> handleMultiWordKitTab(sender, args, 2, null);
+                case "setcooldown"  -> handleMultiWordKitTab(sender, args, 2, DURATIONS);
+                case "singleclaim"  -> handleMultiWordKitTab(sender, args, 2, BOOLEAN_VALUES);
+                case "onjoinnew"    -> handleMultiWordKitTab(sender, args, 2, null);
+                case "rename"       -> args.length == 3 ? adminKitNames(sender, args[2]) : List.of();
+                case "clonekit"     -> args.length == 3 ? adminKitNames(sender, args[2]) : List.of();
+                case "lore"         -> handleLoreTab(sender, args);
+                case "give"         -> handleGiveTab(sender, args);
+                case "giveall"      -> handleGiveAllTab(sender, args);
+                case "permission"   -> handlePermissionTab(sender, args);
+                default             -> List.of();
+            };
+        }
+
+        return List.of();
     }
 
-    private List<String> completeLore(String[] args) {
+    private List<String> handleClaimTab(CommandSender sender, String[] args) {
+        if (args.length != 3) return List.of();
+        if (!(sender instanceof Player player)) return List.of();
+
+        List<String> rawIds = plugin.getKitManager().getKitIds();
+        if (player.hasPermission("anima.kits.*") || player.hasPermission("anima.kits.claim.*")) {
+            return filter(args[2], rawIds);
+        }
+
+        List<String> authorized = new ArrayList<>();
+        for (String id : rawIds) {
+            if (player.hasPermission("anima.kits.claim." + id) || 
+                plugin.getPermissionManager().hasClaimPermission(player.getUniqueId(), id)) {
+                authorized.add(id);
+            }
+        }
+        return filter(args[2], authorized);
+    }
+
+    private List<String> handleLoreTab(CommandSender sender, String[] args) {
+        if (!sender.hasPermission("anima.kits.lore.add") && !sender.hasPermission("anima.kits.*")) {
+            return List.of();
+        }
         if (args.length == 3) return filter(args[2], LORE_ACTIONS);
+        
         String action = args[2].toLowerCase();
-        if (args.length == 4) return kitNames(args[3]);
-        if (args.length == 5 && !action.equals("add")) return loreLineNumbers(args[3]);
+        if (args.length == 4) return adminKitNames(sender, args[3]);
+        
+        if (args.length == 5 && (action.equals("edit") || action.equals("remove"))) {
+            return filter(args[4], loreLineNumbers(args[3]));
+        }
         return List.of();
     }
 
-    private List<String> completeCloneKit(String[] args) {
-        if (args.length == 3) return kitNames(args[2]);
-        return List.of();
-    }
-
-    private List<String> completeGive(String[] args) {
-        if (args.length == 3) return onlinePlayers(args[2]);
-        if (args.length == 4) return kitNames(args[3]);
+    private List<String> handleGiveTab(CommandSender sender, String[] args) {
+        if (!sender.hasPermission("anima.kits.give") && !sender.hasPermission("anima.kits.*")) {
+            return List.of();
+        }
+        if (args.length == 3) return targetSelectablePlayers(args[2]);
+        if (args.length == 4) return adminKitNames(sender, args[3]);
         if (args.length == 5) return filter(args[4], AMOUNTS);
         return List.of();
     }
 
-    private List<String> completeGiveAll(String[] args) {
-        if (args.length == 3) return kitNames(args[2]);
-        if (args.length == 4) return filter(args[3], AMOUNTS);
-        return List.of();
+    private List<String> handleGiveAllTab(CommandSender sender, String[] args) {
+        if (!sender.hasPermission("anima.kits.giveall") && !sender.hasPermission("anima.kits.*")) {
+            return List.of();
+        }
+        return handleMultiWordKitTab(sender, args, 2, AMOUNTS);
     }
 
-    private List<String> completeSingleClaim(String[] args) {
-        if (args.length == 3) return kitNames(args[2]);
-        if (args.length == 4) return filter(args[3], List.of("true", "false"));
-        return List.of();
+    /**
+     * Smart tab completion for commands where the kit name starts at {@code kitArgStart}
+     * and is optionally followed by a final value (boolean, duration, amount, etc.).
+     * Handles multi-word kit names by suggesting the next word of matching kit names,
+     * then suggesting {@code finalOptions} once a full kit name has been typed.
+     */
+    private List<String> handleMultiWordKitTab(CommandSender sender, String[] args, int kitArgStart, List<String> finalOptions) {
+        if (!sender.hasPermission("anima.kits.*") && !sender.hasPermission("anima.kits.add")) {
+            return List.of();
+        }
+        List<String> kitIds = plugin.getKitManager().getKitIds();
+        String typed = joinArgsUpTo(args, kitArgStart, args.length); // everything typed so far in kit position
+        String typedMinusLast = joinArgsUpTo(args, kitArgStart, args.length - 1);
+        String lastArg = args[args.length - 1];
+
+        boolean exactMatch = kitIds.stream().anyMatch(id -> id.equalsIgnoreCase(typed));
+        boolean prevExact  = !typedMinusLast.isEmpty() &&
+                kitIds.stream().anyMatch(id -> id.equalsIgnoreCase(typedMinusLast));
+
+        if (exactMatch && finalOptions != null) {
+            return filter(lastArg, finalOptions);
+        }
+        if (prevExact && finalOptions != null) {
+            return filter(lastArg, finalOptions);
+        }
+
+        // Still building the kit name — suggest the next word
+        String partialTyped = typed.toLowerCase();
+        List<String> nextWords = new ArrayList<>();
+        for (String id : kitIds) {
+            if (id.toLowerCase().startsWith(partialTyped)) {
+                String[] parts = id.split(" ");
+                int wordCount = typed.isEmpty() ? 0 : typed.split(" ").length;
+                if (wordCount < parts.length) {
+                    nextWords.add(parts[wordCount]);
+                }
+            }
+        }
+        return new ArrayList<>(new java.util.LinkedHashSet<>(nextWords));
     }
 
-    private List<String> completePermission(String[] args) {
-        if (args.length == 3) return filter(args[2], PERM_ACTIONS);
+    private List<String> handlePermissionTab(CommandSender sender, String[] args) {
+        if (args.length == 3) {
+            return filter(args[2], PERM_ACTIONS);
+        }
+
         String action = args[2].toLowerCase();
         return switch (action) {
             case "add" -> {
                 if (args.length == 4) yield filter(args[3], KNOWN_PERMS);
-                if (args.length == 5) yield onlinePlayers(args[4]);
+                if (args.length == 5) yield targetSelectablePlayers(args[4]);
                 if (args.length == 6) yield filter(args[5], DURATIONS);
                 yield List.of();
             }
             case "remove" -> {
                 if (args.length == 4) yield filter(args[3], KNOWN_PERMS);
-                if (args.length == 5) yield onlinePlayers(args[4]);
+                if (args.length == 5) yield targetSelectablePlayers(args[4]);
                 yield List.of();
             }
             case "show" -> {
-                if (args.length == 4) yield onlinePlayers(args[3]);
+                if (args.length == 4) yield targetSelectablePlayers(args[3]);
                 yield List.of();
+            }
+            case "claim", "claimfree" -> {
+                if (args.length == 4) yield targetSelectablePlayers(args[3]);
+                // args[4..] = kit name (multi-word), then true/false, then optional duration
+                List<String> kitIds = plugin.getKitManager().getKitIds();
+                String lastArg = args[args.length - 1];
+                String typedMinusLast = joinArgsUpTo(args, 4, args.length - 1);
+                String typedMinustwo  = joinArgsUpTo(args, 4, args.length - 2);
+                String secondLast     = args.length > 5 ? args[args.length - 2] : "";
+                boolean isBool = secondLast.equalsIgnoreCase("true") || secondLast.equalsIgnoreCase("false");
+
+                // Kit name + bool already typed → suggest duration
+                if (!typedMinustwo.isEmpty() && kitIds.stream().anyMatch(id -> id.equalsIgnoreCase(typedMinustwo)) && isBool) {
+                    yield filter(lastArg, DURATIONS);
+                }
+                // Kit name already typed → suggest true/false
+                if (!typedMinusLast.isEmpty() && kitIds.stream().anyMatch(id -> id.equalsIgnoreCase(typedMinusLast))) {
+                    yield filter(lastArg, BOOLEAN_VALUES);
+                }
+                // Still typing kit name — suggest next word of matching kits
+                String partialTyped = joinArgsUpTo(args, 4, args.length).toLowerCase();
+                List<String> nextWords = new ArrayList<>();
+                for (String id : kitIds) {
+                    if (id.toLowerCase().startsWith(partialTyped)) {
+                        String[] parts = id.split(" ");
+                        int wordCount = partialTyped.isEmpty() ? 0 : partialTyped.split(" ").length;
+                        if (wordCount < parts.length) nextWords.add(parts[wordCount]);
+                    }
+                }
+                yield new ArrayList<>(new java.util.LinkedHashSet<>(nextWords));
             }
             default -> List.of();
         };
     }
 
-    private List<String> kitNames(String partial) {
-        KitManager km = plugin.getKitManager();
-        return filter(partial, km.getKitIds());
+    private List<String> adminKitNames(CommandSender sender, String partial) {
+        if (!sender.hasPermission("anima.kits.*") && !sender.hasPermission("anima.kits.add")) {
+            return List.of();
+        }
+        return filter(partial, plugin.getKitManager().getKitIds());
     }
 
-    private List<String> onlinePlayers(String partial) {
-        List<String> names = new ArrayList<>();
+    /**
+     * Generates active online player targets alongside native target selector hooks.
+     */
+    private List<String> targetSelectablePlayers(String partial) {
+        List<String> suggestions = new ArrayList<>();
+        suggestions.add("@a");
+        suggestions.add("@p");
+        suggestions.add("@r");
+        suggestions.add("@e");
+        
         for (Player p : Bukkit.getOnlinePlayers()) {
-            names.add(p.getName());
+            suggestions.add(p.getName());
         }
-        return filter(partial, names);
+        return filter(partial, suggestions);
     }
 
     private List<String> loreLineNumbers(String kitId) {
-        var kit = plugin.getKitManager().getKitByName(kitId);
+        var kit = plugin.getKitManager().getKitByPlainName(kitId);
         if (kit == null) return List.of();
         List<String> nums = new ArrayList<>();
         for (int i = 1; i <= kit.getLore().size(); i++) {
@@ -152,5 +272,24 @@ public class AnimaKitsTabCompleter implements TabCompleter {
         StringUtil.copyPartialMatches(partial, options, result);
         Collections.sort(result);
         return result;
+    }
+
+    private String joinArgs(String[] args, int from) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = from; i < args.length; i++) {
+            if (i > from) sb.append(' ');
+            sb.append(args[i]);
+        }
+        return sb.toString().trim();
+    }
+
+    /** Join args[from] up to (but not including) args[to]. */
+    private String joinArgsUpTo(String[] args, int from, int to) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = from; i < to && i < args.length; i++) {
+            if (i > from) sb.append(' ');
+            sb.append(args[i]);
+        }
+        return sb.toString().trim();
     }
 }

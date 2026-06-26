@@ -63,6 +63,8 @@ public class KitManager {
             kit.setIconMaterial(Material.getMaterial(ks.getString("icon", "CHEST")));
             kit.setCooldown(ks.getLong("cooldown", 0));
             kit.setSingleClaim(ks.getBoolean("single-claim", false));
+            kit.setClaimFree(ks.getBoolean("claim-free", false));
+            kit.setClaimDuration(ks.getLong("claim-duration", 0));
 
             List<String> lore = ks.getStringList("lore");
             kit.setLore(lore);
@@ -88,6 +90,8 @@ public class KitManager {
             kitsConfig.set(path + ".icon", kit.getIconMaterial().name());
             kitsConfig.set(path + ".cooldown", kit.getCooldown());
             kitsConfig.set(path + ".single-claim", kit.isSingleClaim());
+            kitsConfig.set(path + ".claim-free", kit.isClaimFree());
+            kitsConfig.set(path + ".claim-duration", kit.getClaimDuration());
             kitsConfig.set(path + ".lore", kit.getLore());
             kitsConfig.set(path + ".items", kit.getItems());
         }
@@ -133,6 +137,12 @@ public class KitManager {
         Kit clone = new Kit(UUID.randomUUID(), newRawName);
         clone.setLore(new ArrayList<>(src.getLore()));
         clone.setItems(new ArrayList<>(src.getItems()));
+        clone.setIconMaterial(src.getIconMaterial());
+        clone.setCooldown(src.getCooldown());
+        clone.setSingleClaim(src.isSingleClaim());
+        clone.setClaimFree(src.isClaimFree());
+        clone.setClaimDuration(src.getClaimDuration());
+        
         kits.put(clone.getId(), clone);
         saveKits();
         refreshAllBrowsers();

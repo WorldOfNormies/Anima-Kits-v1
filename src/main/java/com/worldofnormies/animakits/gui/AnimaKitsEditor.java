@@ -10,6 +10,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
+import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
@@ -26,7 +27,7 @@ import java.util.List;
 public class AnimaKitsEditor implements Listener {
 
     private static final MiniMessage MM       = MiniMessage.miniMessage();
-    private static final int          INV_SIZE = 54;
+    private static final int         INV_SIZE = 54;
 
     // Center editable item bounding slots based on Edit Kit GUI_2.png side framing
     private static final int[] EDIT_SLOTS = {
@@ -65,10 +66,14 @@ public class AnimaKitsEditor implements Listener {
     }
 
     public void open() {
-        Component title = MM.deserialize(
-                "<gradient:#FFD700:#FF8C00:#FF4500><bold>[ </bold></gradient>" +
-                "<gradient:#FF6AFF:#AA00FF><bold>" + kit.getPlainName() + " Edit</bold></gradient>" +
-                "<gradient:#FFD700:#FF8C00:#FF4500><bold> ] PAGE " + (page + 1) + "</bold></gradient>");
+        Component title = MM.deserialize("<gradient:#FFD700:#FF8C00:#FF4500><bold>[ </bold></gradient>")
+                .append(com.worldofnormies.animakits.util.ColorUtil.parse(kit.getRawName()))
+                .append(MM.deserialize("<gradient:#FF6AFF:#AA00FF><bold> Edit</bold></gradient>"))
+                .append(MM.deserialize("<gradient:#FFD700:#FF8C00:#FF4500><bold> ]</bold></gradient>"));
+
+        if (page > 0) {
+            title = title.append(MM.deserialize("<gradient:#FFD700:#FF8C00:#FF4500><bold> PAGE " + (page + 1) + "</bold></gradient>"));
+        }
 
         inventory = Bukkit.createInventory(null, INV_SIZE, title);
         populate();
@@ -80,19 +85,12 @@ public class AnimaKitsEditor implements Listener {
         inventory.clear();
 
         // ── 1. Frame / Alternating Border Glass Pattern ──
-        // Mapping out the precise layout from Edit Kit GUI_2.png
         Material[] borderPattern = {
-            // Row 1 (Actions left blank)
             Material.AIR, Material.MAGENTA_STAINED_GLASS_PANE, Material.AIR, Material.MAGENTA_STAINED_GLASS_PANE, Material.AIR, Material.MAGENTA_STAINED_GLASS_PANE, Material.AIR, Material.MAGENTA_STAINED_GLASS_PANE, Material.AIR,
-            // Row 2
             Material.PURPLE_STAINED_GLASS_PANE, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.PURPLE_STAINED_GLASS_PANE,
-            // Row 3
             Material.MAGENTA_STAINED_GLASS_PANE, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.MAGENTA_STAINED_GLASS_PANE,
-            // Row 4
             Material.PURPLE_STAINED_GLASS_PANE, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.PURPLE_STAINED_GLASS_PANE,
-            // Row 5
             Material.MAGENTA_STAINED_GLASS_PANE, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.MAGENTA_STAINED_GLASS_PANE,
-            // Row 6 (Actions & custom glass left blank)
             Material.AIR, Material.PURPLE_STAINED_GLASS_PANE, Material.AIR, Material.PURPLE_STAINED_GLASS_PANE, Material.AIR, Material.PURPLE_STAINED_GLASS_PANE, Material.AIR, Material.PURPLE_STAINED_GLASS_PANE, Material.AIR
         };
 
@@ -105,26 +103,29 @@ public class AnimaKitsEditor implements Listener {
         // ── 2. Control Bar Interactive Configurations (Row 1) ──
         inventory.setItem(SLOT_PLAYER_HEAD, GuiItem.make(
                 Material.PLAYER_HEAD,
-                MM.deserialize("<gradient:#4FC3F7:#1565C0><bold>👤 Assign Kit Permission</bold></gradient>"),
+                MM.deserialize("<gradient:#4FC3F7:#1565C0><bold>👤 Kit Claim & Permissions</bold></gradient>"),
                 List.of(
-                    MM.deserialize("<gray>Grant a player access to claim this kit.</gray>"),
+                    MM.deserialize("<gray>Claim Free: " + (kit.isClaimFree() ? "<green><bold>TRUE</bold></green>" : "<red><bold>FALSE</bold></red>") + "</gray>"),
+                    MM.deserialize("<gray>Time Duration To Claim: <white>" + formatTime(kit.getClaimDuration()) + "</white></gray>"),
                     Component.empty(),
-                    MM.deserialize("<gradient:#4FC3F7:#1565C0>⬡ Click</gradient><gray> to enter a player's name in chat.</gray>"),
-                    MM.deserialize("<dark_gray>Type <white>//cancel</white> to abort.</dark_gray>")
+                    MM.deserialize("<gradient:#4FC3F7:#1565C0>⬡ Left-Click</gradient><gray> to enter player name or selectors (@a/@e).</gray>"),
+                    MM.deserialize("<gradient:#4FC3F7:#1565C0>⬡ Right-Click</gradient><gray> to toggle Claim Free status.</gray>"),
+                    MM.deserialize("<gradient:#4FC3F7:#1565C0>⬡ Middle-Click</gradient><gray> to set claim time duration.</gray>"),
+                    MM.deserialize("<dark_gray>Type <white>//cancel</white> to abort input windows.</dark_gray>")
                 )));
 
         inventory.setItem(SLOT_NAME_TAG, GuiItem.make(
                 Material.NAME_TAG,
                 MM.deserialize("<gradient:#FFD700:#FFA500><bold>✎ Rename Kit</bold></gradient>"),
                 List.of(
-                    MM.deserialize("<gray>Current name: <white>" + kit.getPlainName() + "</white></gray>"),
+                    MM.deserialize("<gray>Current name: </gray>").append(com.worldofnormies.animakits.util.ColorUtil.parse(kit.getRawName())),
                     Component.empty(),
                     MM.deserialize("<gradient:#FFD700:#FFA500>⬡ Click</gradient><gray> to modify the text layout.</gray>"),
                     MM.deserialize("<dark_gray>Type <white>//cancel</white> to abort.</dark_gray>")
                 )));
 
         inventory.setItem(SLOT_ICON_CHEST, GuiItem.make(
-                Material.CHEST,
+                kit.getIconMaterial(),
                 MM.deserialize("<gradient:#FFB300:#FB8C00><bold>📦 Change Kit Icon</bold></gradient>"),
                 List.of(
                     MM.deserialize("<gray>Current Icon Material: <white>" + kit.getIconMaterial().name() + "</white></gray>"),
@@ -199,6 +200,8 @@ public class AnimaKitsEditor implements Listener {
         if (!event.getWhoClicked().equals(player)) return;
 
         int slot = event.getRawSlot();
+        if (slot < 0) return;
+        if (slot >= INV_SIZE) return;
 
         for (int editSlot : EDIT_SLOTS) {
             if (editSlot == slot) return;
@@ -206,9 +209,78 @@ public class AnimaKitsEditor implements Listener {
 
         event.setCancelled(true);
 
+        if (slot == SLOT_PLAYER_HEAD) {
+            saveCurrentPage();
+            ClickType click = event.getClick();
+
+            if (click.isLeftClick()) {
+                closing = true;
+                HandlerList.unregisterAll(this);
+                player.closeInventory();
+                player.sendMessage(MM.deserialize(
+                    "<gradient:#4FC3F7:#1565C0><bold>👤 Assign Kit Permission</bold></gradient>\n" +
+                    "<gray>Type a Specific player name or targets (<white>@a</white>, <white>@e</white>, etc.) you want to allow to claim this kit.\n" +
+                    "Type <white>//cancel</white> to abort.</gray>"));
+                new ChatInputSession(plugin, player,
+                        input -> {
+                            if (input.equalsIgnoreCase("//cancel")) {
+                                new AnimaKitsEditor(plugin, player, kit, page).open();
+                                return;
+                            }
+                            String targetName = input.trim();
+                            Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "lp user " + targetName + " permission set anima.kits.claim." + kit.getPlainName());
+                            player.sendMessage(MM.deserialize("<gradient:#44FF88:#00CC55>✔ Assigned claim node permission to <white>" + targetName + "</white>!</gradient>"));
+                            new AnimaKitsEditor(plugin, player, kit, page).open();
+                        },
+                        () -> new AnimaKitsEditor(plugin, player, kit, page).open()
+                ).await();
+            } else if (click.isRightClick()) {
+                kit.setClaimFree(!kit.isClaimFree());
+                populate();
+            } else if (click == ClickType.MIDDLE) {
+                closing = true;
+                HandlerList.unregisterAll(this);
+                player.closeInventory();
+                player.sendMessage(MM.deserialize(
+                    "<gradient:#4FC3F7:#1565C0><bold>⏱ Set Claim Time Duration</bold></gradient>\n" +
+                    "<gray>Type the availability duration inside chat in seconds (or format <white>H:M:S</white>).\n" +
+                    "Use <white>0</white> to clear values. Type <white>//cancel</white> to abort.</gray>"));
+                new ChatInputSession(plugin, player,
+                        input -> {
+                            if (input.equalsIgnoreCase("//cancel")) {
+                                new AnimaKitsEditor(plugin, player, kit, page).open();
+                                return;
+                            }
+                            try {
+                                long secs = 0;
+                                if (input.contains(":")) {
+                                    String[] parts = input.split(":");
+                                    if (parts.length == 3) {
+                                        secs = Long.parseLong(parts[0]) * 3600L + Long.parseLong(parts[1]) * 60L + Long.parseLong(parts[2]);
+                                    } else if (parts.length == 2) {
+                                        secs = Long.parseLong(parts[0]) * 60L + Long.parseLong(parts[1]);
+                                    }
+                                } else {
+                                    secs = Long.parseLong(input.trim());
+                                }
+                                kit.setClaimDuration(Math.max(0, secs));
+                                plugin.getKitManager().saveKits();
+                                player.sendMessage(MM.deserialize("<gradient:#44FF88:#00CC55>✔ Claim window duration set to <white>" + formatTime(kit.getClaimDuration()) + "</white>.</gradient>"));
+                            } catch (NumberFormatException e) {
+                                player.sendMessage(MM.deserialize("<red>✘ Invalid duration layout configuration.</red>"));
+                            }
+                            new AnimaKitsEditor(plugin, player, kit, page).open();
+                        },
+                        () -> new AnimaKitsEditor(plugin, player, kit, page).open()
+                ).await();
+            }
+            return;
+        }
+
         if (slot == SLOT_ICON_CHEST) {
             ItemStack hand = player.getInventory().getItemInMainHand();
             if (hand.getType() != Material.AIR) {
+                saveCurrentPage();
                 kit.setIconMaterial(hand.getType());
                 populate();
             }
@@ -216,33 +288,9 @@ public class AnimaKitsEditor implements Listener {
         }
 
         if (slot == SLOT_SINGLE_CLAIM) {
+            saveCurrentPage();
             kit.setSingleClaim(!kit.isSingleClaim());
             populate();
-            return;
-        }
-
-        if (slot == SLOT_PLAYER_HEAD) {
-            saveCurrentPage();
-            closing = true;
-            HandlerList.unregisterAll(this);
-            player.closeInventory();
-            player.sendMessage(MM.deserialize(
-                "<gradient:#4FC3F7:#1565C0><bold>👤 Assign Kit Permission</bold></gradient>\n" +
-                "<gray>Type the precise <white>Username</white> of the player you wish to grant access to.\n" +
-                "Type <white>//cancel</white> to abort.</gray>"));
-            new ChatInputSession(plugin, player,
-                    input -> {
-                        if (input.equalsIgnoreCase("//cancel")) {
-                            new AnimaKitsEditor(plugin, player, kit, page).open();
-                            return;
-                        }
-                        String targetName = input.trim();
-                        Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "lp user " + targetName + " permission set anima.kits.claim." + kit.getPlainName());
-                        player.sendMessage(MM.deserialize("<gradient:#44FF88:#00CC55>✔ Assigned claim node permission to <white>" + targetName + "</white>!</gradient>"));
-                        new AnimaKitsEditor(plugin, player, kit, page).open();
-                    },
-                    () -> new AnimaKitsEditor(plugin, player, kit, page).open()
-            ).await();
             return;
         }
 
@@ -346,9 +394,14 @@ public class AnimaKitsEditor implements Listener {
     public void onDrag(InventoryDragEvent event) {
         if (!event.getInventory().equals(inventory)) return;
         for (int slot : event.getRawSlots()) {
+            if (slot >= INV_SIZE) continue;
+
             boolean valid = false;
             for (int editSlot : EDIT_SLOTS) {
-                if (editSlot == slot) { valid = true; break; }
+                if (editSlot == slot) {
+                    valid = true;
+                    break;
+                }
             }
             if (!valid) {
                 event.setCancelled(true);
@@ -382,6 +435,14 @@ public class AnimaKitsEditor implements Listener {
         for (ItemStack is : allItems) {
             kit.addItem(is != null ? is : new ItemStack(Material.AIR));
         }
+    }
+
+    private String formatTime(long seconds) {
+        if (seconds <= 0) return "None";
+        long h = seconds / 3600;
+        long m = (seconds % 3600) / 60;
+        long s = seconds % 60;
+        return String.format("%02d:%02d:%02d", h, m, s);
     }
 
     private ItemStack makePane(Material material) {

@@ -15,6 +15,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -35,12 +36,12 @@ public class AnimaKitsMainGUI implements Listener {
     private Inventory inventory;
 
     private static final int[] CONTENT_SLOTS = {
-        11, 12, 13, 14, 15,
-        20, 21, 22, 23, 24,
-        29, 30, 31, 32, 33,
-        38, 39, 40, 41, 42
+        10, 11, 12, 13, 14, 15, 16,
+        19, 20, 21, 22, 23, 24, 25,
+        28, 29, 30, 31, 32, 33, 34,
+        37, 38, 39, 40, 41, 42, 43
     };
-    private static final int KITS_PER_PAGE = CONTENT_SLOTS.length; // 20
+    private static final int KITS_PER_PAGE = CONTENT_SLOTS.length; // 28
     private static final int INV_SIZE = 54;
 
     public AnimaKitsMainGUI(AnimaKitsPlugin plugin, Player player) {
@@ -75,14 +76,14 @@ public class AnimaKitsMainGUI implements Listener {
 
         // ── 1. Frame Setup matching image_3f280d.png (Purple Glass Borders) ──
         Material[] borderPattern = {
-            Material.PURPLE_STAINED_GLASS_PANE, Material.PURPLE_STAINED_GLASS_PANE, Material.AIR, Material.PURPLE_STAINED_GLASS_PANE, Material.AIR, Material.PURPLE_STAINED_GLASS_PANE, Material.PURPLE_STAINED_GLASS_PANE, Material.AIR, Material.PURPLE_STAINED_GLASS_PANE,
-            Material.PURPLE_STAINED_GLASS_PANE, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.PURPLE_STAINED_GLASS_PANE,
-            Material.PURPLE_STAINED_GLASS_PANE, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.PURPLE_STAINED_GLASS_PANE,
-            Material.PURPLE_STAINED_GLASS_PANE, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.PURPLE_STAINED_GLASS_PANE,
-            Material.PURPLE_STAINED_GLASS_PANE, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.PURPLE_STAINED_GLASS_PANE,
-            Material.AIR, Material.PURPLE_STAINED_GLASS_PANE, Material.AIR, Material.PURPLE_STAINED_GLASS_PANE, Material.PURPLE_STAINED_GLASS_PANE, Material.AIR, Material.PURPLE_STAINED_GLASS_PANE, Material.AIR, Material.AIR
+            Material.LIGHT_BLUE_STAINED_GLASS_PANE, Material.BLUE_STAINED_GLASS_PANE, Material.AIR, Material.BLUE_STAINED_GLASS_PANE, Material.AIR, Material.BLUE_STAINED_GLASS_PANE, Material.AIR, Material.BLUE_STAINED_GLASS_PANE, Material.LIGHT_BLUE_STAINED_GLASS_PANE,
+            Material.BLUE_STAINED_GLASS_PANE, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.BLUE_STAINED_GLASS_PANE,
+            Material.LIGHT_BLUE_STAINED_GLASS_PANE, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.LIGHT_BLUE_STAINED_GLASS_PANE,
+            Material.BLUE_STAINED_GLASS_PANE, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.BLUE_STAINED_GLASS_PANE,
+            Material.LIGHT_BLUE_STAINED_GLASS_PANE, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.AIR, Material.LIGHT_BLUE_STAINED_GLASS_PANE,
+            Material.AIR, Material.BLUE_STAINED_GLASS_PANE, Material.AIR, Material.BLUE_STAINED_GLASS_PANE, Material.LIGHT_BLUE_STAINED_GLASS_PANE, Material.BLUE_STAINED_GLASS_PANE, Material.AIR, Material.BLUE_STAINED_GLASS_PANE, Material.AIR
         };
-
+        
         for (int i = 0; i < INV_SIZE; i++) {
             if (borderPattern[i] != Material.AIR) {
                 inventory.setItem(i, makePane(borderPattern[i]));
@@ -103,7 +104,7 @@ public class AnimaKitsMainGUI implements Listener {
             lore.add(MM.deserialize("<gradient:#FFD700:#FFA500>⬡ <bold>Left-click</bold></gradient><gray> → View Kit Contents</gray>"));
             lore.add(MM.deserialize("<gradient:#4FC3F7:#1565C0>✎ <bold>Right-click</bold></gradient><gray> → Open Kit Editor</gray>"));
             lore.add(MM.deserialize("<gradient:#A5D6A7:#2E7D32>✦ <bold>Shift + Left</bold></gradient><gray> → Give / Give All</gray>"));
-            lore.add(MM.deserialize("<gradient:#EF9A9A:#B71C1C>✘ <bold>Shift + Q / Middle</bold></gradient><gray> → Delete Kit</gray>"));
+            lore.add(MM.deserialize("<gradient:#EF9A9A:#B71C1C>✘ <bold>Shift + Middle</bold></gradient><gray> → Delete Kit</gray>"));
             lore.add(MM.deserialize("<gradient:#CE93D8:#6A1B9A>⎘ <bold>Shift + Right</bold></gradient><gray> → Clone Kit</gray>"));
             lore.add(Component.empty());
             lore.add(MM.deserialize("<dark_gray>Cooldown: <gray>" + (kit.getCooldown() == 0 ? "<green>None" : "<yellow>" + kit.getCooldown() + "s") + "</gray>"));
@@ -120,7 +121,7 @@ public class AnimaKitsMainGUI implements Listener {
         eyeLore.add(MM.deserialize("<gradient:#54DAF4:#545EB6><bold>── Kit Overview Registry ──</bold></gradient>"));
         eyeLore.add(Component.empty());
         eyeLore.add(MM.deserialize("<gradient:#FFD700:#FFA500>⬡ <bold>Left-click</bold></gradient><gray> → List all kits & timers in chat</gray>"));
-        inventory.setItem(2, GuiItem.make(Material.EYE_OF_ENDER,
+        inventory.setItem(2, GuiItem.make(Material.ENDER_EYE,
                 MM.deserialize("<gradient:#00FFCC:#0099AA><bold>👁 Global Kits Registry</bold></gradient>"), eyeLore));
 
         // Slot 4 – Ender Chest = Overall configuration totals, statistics, pages info & creation engine
@@ -135,7 +136,7 @@ public class AnimaKitsMainGUI implements Listener {
                 MM.deserialize("<gradient:#CC88FF:#6600CC><bold>✦ Kit Performance Statistics</bold></gradient>"), infoLore));
 
         // Slot 7 – Bookshelf = Static menu UI Structuring info layout
-        inventory.setItem(7, GuiItem.make(Material.BOOKSHELF,
+        inventory.setItem(6, GuiItem.make(Material.BOOKSHELF,
                 MM.deserialize("<gradient:#F5B041:#DC7633><bold>🕮 System Organizer Framework</bold></gradient>"),
                 List.of(MM.deserialize("<gray>Standardized configuration interface grid template.</gray>"))));
 
@@ -162,10 +163,18 @@ public class AnimaKitsMainGUI implements Listener {
         if (!event.getInventory().equals(inventory)) return;
         if (!(event.getWhoClicked() instanceof Player clicker)) return;
         if (!clicker.equals(player)) return;
-        event.setCancelled(true);
 
         int slot = event.getRawSlot();
-        if (slot < 0 || slot >= INV_SIZE) return;
+        if (slot < 0) return;
+
+        if (slot < INV_SIZE) {
+            event.setCancelled(true);
+        } else {
+            if (event.getClick().isShiftClick()) {
+                event.setCancelled(true);
+            }
+            return;
+        }
 
         if (slot == 45) {
             player.closeInventory();
@@ -262,6 +271,13 @@ public class AnimaKitsMainGUI implements Listener {
                 }
                 break;
             }
+        }
+    }
+
+    @EventHandler
+    public void onDrag(InventoryDragEvent event) {
+        if (event.getInventory().equals(inventory)) {
+            event.setCancelled(true);
         }
     }
 

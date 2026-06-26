@@ -59,6 +59,11 @@ public class PlayerManager {
                     data.claims.add(UUID.fromString(kitUuidStr));
                 }
 
+                List<String> joinKitList = section.getStringList("joinKitsReceived");
+                for (String kitUuidStr : joinKitList) {
+                    try { data.joinKitsReceived.add(UUID.fromString(kitUuidStr)); } catch (IllegalArgumentException ignored) {}
+                }
+
                 players.put(uuid, data);
             } catch (IllegalArgumentException ignored) {}
         }
@@ -82,6 +87,14 @@ public class PlayerManager {
                     claimStrings.add(kitId.toString());
                 }
                 config.set(path + ".claims", claimStrings);
+            }
+
+            if (!data.joinKitsReceived.isEmpty()) {
+                List<String> joinStrings = new ArrayList<>();
+                for (UUID kitId : data.joinKitsReceived) {
+                    joinStrings.add(kitId.toString());
+                }
+                config.set(path + ".joinKitsReceived", joinStrings);
             }
         }
         try {
@@ -116,8 +129,7 @@ public class PlayerManager {
     }
 
     public boolean hasClaimed(UUID player, UUID kitId) {
-        PlayerData data = players.get(player);
-        return data != null && data.claims.contains(kitId);
+        PlayerData data = players.get(player);\n        return data != null && data.claims.contains(kitId);
     }
 
     public void markClaimed(UUID player, UUID kitId) {
@@ -133,8 +145,21 @@ public class PlayerManager {
         }
     }
 
+    /** Returns true if this player has already received the on-first-join kit for the given kit ID. */
+    public boolean hasReceivedJoinKit(UUID player, UUID kitId) {
+        PlayerData data = players.get(player);
+        return data != null && data.joinKitsReceived.contains(kitId);
+    }
+
+    /** Mark that this player has received the on-first-join kit — will never be given again. */
+    public void markJoinKitReceived(UUID player, UUID kitId) {
+        players.computeIfAbsent(player, k -> new PlayerData()).joinKitsReceived.add(kitId);
+        save();
+    }
+
     private static class PlayerData {
         final Map<UUID, Long> cooldowns = new HashMap<>();
         final Set<UUID> claims = new HashSet<>();
+        final Set<UUID> joinKitsReceived = new HashSet<>();
     }
 }

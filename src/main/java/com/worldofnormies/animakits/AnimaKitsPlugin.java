@@ -2,6 +2,7 @@ package com.worldofnormies.animakits;
 
 import com.worldofnormies.animakits.commands.AnimaKitsCommand;
 import com.worldofnormies.animakits.commands.AnimaKitsTabCompleter;
+import com.worldofnormies.animakits.listener.PlayerJoinListener;
 import com.worldofnormies.animakits.manager.KitManager;
 import com.worldofnormies.animakits.manager.PermissionManager;
 import com.worldofnormies.animakits.manager.PlayerManager;
@@ -48,6 +49,9 @@ public final class AnimaKitsPlugin extends JavaPlugin {
             cmd.setExecutor(commandExecutor);
             cmd.setTabCompleter(tabCompleter);
         }
+
+        // Listeners
+        getServer().getPluginManager().registerEvents(new PlayerJoinListener(this), this);
 
         getLogger().info("AnimaKits enabled! Created by World Of Normies.");
     }
