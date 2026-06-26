@@ -23,8 +23,8 @@ public class PlayerManager {
     /**
      * Data structure:
      * playerUUID -> {
-     *   "cooldowns" -> { kitUUID -> expiryTimestamp },
-     *   "claims" -> [ kitUUID1, kitUUID2, ... ]
+     * "cooldowns" -> { kitUUID -> expiryTimestamp },
+     * "claims" -> [ kitUUID1, kitUUID2, ... ]
      * }
      */
     private final Map<UUID, PlayerData> players = new ConcurrentHashMap<>();
@@ -129,7 +129,8 @@ public class PlayerManager {
     }
 
     public boolean hasClaimed(UUID player, UUID kitId) {
-        PlayerData data = players.get(player);\n        return data != null && data.claims.contains(kitId);
+        PlayerData data = players.get(player);
+        return data != null && data.claims.contains(kitId);
     }
 
     public void markClaimed(UUID player, UUID kitId) {

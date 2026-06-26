@@ -6,6 +6,7 @@ import com.worldofnormies.animakits.gui.AnimaKitsMainGUI;
 import com.worldofnormies.animakits.kit.Kit;
 import com.worldofnormies.animakits.manager.PermissionManager;
 import com.worldofnormies.animakits.util.MessageUtil;
+import com.worldofnormies.animaitemedit.ItemEditCommand;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
@@ -21,7 +22,7 @@ import java.time.ZoneId;
 import java.util.*;
 
 /**
- * AnimaKitsCommand – handles all /anima kits [...] subcommands with target selector support.
+ * AnimaKitsCommand – handles all /anima kits [...] and /anima itemedit [...] subcommands.
  */
 public class AnimaKitsCommand implements CommandExecutor {
 
@@ -55,15 +56,26 @@ public class AnimaKitsCommand implements CommandExecutor {
     );
 
     private final AnimaKitsPlugin plugin;
+    private final ItemEditCommand itemEditCommand;
 
     public AnimaKitsCommand(AnimaKitsPlugin plugin) {
         this.plugin = plugin;
+        this.itemEditCommand = new ItemEditCommand(plugin);
     }
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        if (args.length == 0) {
+            showMainUsage(sender);
+            return true;
+        }
 
-        if (args.length == 0 || !args[0].equalsIgnoreCase("kits")) {
+        // /anima itemedit <sub> ...
+        if (args[0].equalsIgnoreCase("itemedit")) {
+            return itemEditCommand.onCommand(sender, command, label, args);
+        }
+
+        if (!args[0].equalsIgnoreCase("kits")) {
             showMainUsage(sender);
             return true;
         }
@@ -96,12 +108,12 @@ public class AnimaKitsCommand implements CommandExecutor {
     private boolean handleDefaultGUIRouting(CommandSender sender) {
         if (!requirePlayer(sender)) return true;
         Player player = (Player) sender;
-        
+
         if (player.hasPermission("anima.kits.add") || player.hasPermission("anima.kits.*")) {
             new AnimaKitsMainGUI(plugin, player).open();
             return true;
         }
-        
+
         if (player.hasPermission("anima.kits.use") || player.hasPermission("anima.kits.claim")) {
             new AnimaClaimMainGUI(plugin, player).open();
             return true;
@@ -111,17 +123,12 @@ public class AnimaKitsCommand implements CommandExecutor {
         return true;
     }
 
-    /**
-     * Resolves raw player inputs into a list of targets. Supports standard names and selectors.
-     */
     private List<Player> resolveTargets(CommandSender sender, String input) {
         List<Player> targets = new ArrayList<>();
         if (input.startsWith("@")) {
             try {
                 for (Entity entity : Bukkit.selectEntities(sender, input)) {
-                    if (entity instanceof Player p) {
-                        targets.add(p);
-                    }
+                    if (entity instanceof Player p) targets.add(p);
                 }
             } catch (IllegalArgumentException e) {
                 MessageUtil.err(sender, "Invalid target selector syntax: " + input);
@@ -144,8 +151,7 @@ public class AnimaKitsCommand implements CommandExecutor {
 
     private boolean handleAdd(CommandSender sender, String[] args) {
         if (!requirePerm(sender, "anima.kits.add")) return true;
-        String rawName;
-        if (args.length < 3) { rawName = "anima new kit"; } else { rawName = joinArgs(args, 2); }
+        String rawName = args.length < 3 ? "anima new kit" : joinArgs(args, 2);
         if (rawName.isEmpty()) { MessageUtil.sendMsg(sender, "name-empty"); return true; }
         if (rawName.length() > 64) { MessageUtil.sendMsg(sender, "name-too-long"); return true; }
         if (plugin.getKitManager().kitExists(rawName)) {
@@ -170,26 +176,16 @@ public class AnimaKitsCommand implements CommandExecutor {
     private boolean handleRename(CommandSender sender, String[] args) {
         if (!requirePerm(sender, "anima.kits.rename")) return true;
         if (args.length < 4) { usage(sender, "/anima kits rename <kit> <new-name>"); return true; }
-        // The old kit name can be multi-word. We find it by scanning all kits and seeing which
-        // one the typed args prefix matches, then treat remaining args as the new name.
-        // Try longest possible old name first (greedy match).
         List<String> kitIds = plugin.getKitManager().getKitIds();
-        String oldName = null;
-        String newRawName = null;
+        String oldName = null, newRawName = null;
         for (int split = args.length - 1; split >= 3; split--) {
             String candidate = joinArgsRange(args, 2, split);
             String remaining = joinArgs(args, split);
             if (!remaining.isEmpty() && kitIds.stream().anyMatch(id -> id.equalsIgnoreCase(candidate))) {
-                oldName = candidate;
-                newRawName = remaining;
-                break;
+                oldName = candidate; newRawName = remaining; break;
             }
         }
-        if (oldName == null) {
-            // Fallback: old name = args[2], new name = rest
-            oldName = args[2];
-            newRawName = joinArgs(args, 3);
-        }
+        if (oldName == null) { oldName = args[2]; newRawName = joinArgs(args, 3); }
         if (newRawName.isEmpty()) { MessageUtil.sendMsg(sender, "name-empty"); return true; }
         if (newRawName.length() > 64) { MessageUtil.sendMsg(sender, "name-too-long"); return true; }
         if (!plugin.getKitManager().renameKit(oldName, newRawName)) {
@@ -212,9 +208,8 @@ public class AnimaKitsCommand implements CommandExecutor {
     private boolean handleLoreAdd(CommandSender sender, String[] args) {
         if (!requirePerm(sender, "anima.kits.lore.add")) return true;
         if (args.length < 5) { usage(sender, "/anima kits lore add <kit> <text…>"); return true; }
-        // Kit name starts at args[3]; text follows. Find kit by greedy prefix match.
         List<String> kitIds = plugin.getKitManager().getKitIds();
-        String kitName = null; String line = null;
+        String kitName = null, line = null;
         for (int split = args.length - 1; split >= 4; split--) {
             String candidate = joinArgsRange(args, 3, split);
             String remaining = joinArgs(args, split);
@@ -233,8 +228,6 @@ public class AnimaKitsCommand implements CommandExecutor {
     private boolean handleLoreEdit(CommandSender sender, String[] args) {
         if (!requirePerm(sender, "anima.kits.lore.edit")) return true;
         if (args.length < 6) { usage(sender, "/anima kits lore edit <kit> <line#> <text…>"); return true; }
-        // Format: lore edit <kit…> <line#> <text…>
-        // Find kit by greedy match; line# is an integer, text is the rest
         List<String> kitIds = plugin.getKitManager().getKitIds();
         String kitName = null; int lineNum = -1; String text = null;
         outer:
@@ -262,7 +255,6 @@ public class AnimaKitsCommand implements CommandExecutor {
     private boolean handleLoreRemove(CommandSender sender, String[] args) {
         if (!requirePerm(sender, "anima.kits.lore.remove")) return true;
         if (args.length < 5) { usage(sender, "/anima kits lore remove <kit> <line#>"); return true; }
-        // Last arg is the line number; everything from args[3] to second-to-last is the kit name
         String lineArg = args[args.length - 1];
         String kitName = joinArgsRange(args, 3, args.length - 1);
         Kit kit = requireKit(sender, kitName);
@@ -281,9 +273,8 @@ public class AnimaKitsCommand implements CommandExecutor {
     private boolean handleClone(CommandSender sender, String[] args) {
         if (!requirePerm(sender, "anima.kits.clonekit")) return true;
         if (args.length < 4) { usage(sender, "/anima kits clonekit <kit> <new-name>"); return true; }
-        // Source kit name can be multi-word — find it by greedy prefix match
         List<String> kitIds = plugin.getKitManager().getKitIds();
-        String srcName = null; String newName = null;
+        String srcName = null, newName = null;
         for (int split = args.length - 1; split >= 3; split--) {
             String candidate = joinArgsRange(args, 2, split);
             String remaining = joinArgs(args, split);
@@ -306,19 +297,14 @@ public class AnimaKitsCommand implements CommandExecutor {
     private boolean handleGive(CommandSender sender, String[] args) {
         if (!requirePerm(sender, "anima.kits.give")) return true;
         if (args.length < 5) { usage(sender, "/anima kits give <player/selector> <kit> <amount>"); return true; }
-        
         List<Player> targets = resolveTargets(sender, args[2]);
         if (targets == null) return true;
-
-        // Last arg is amount; everything from args[3] to second-to-last is the kit name
         String amountArg = args[args.length - 1];
         String kitName = joinArgsRange(args, 3, args.length - 1);
         Kit kit = requireKit(sender, kitName);
         if (kit == null) return true;
-
         int amount = parseAmount(sender, amountArg);
         if (amount < 1) return true;
-
         for (Player target : targets) {
             giveKit(target, kit, amount);
             MessageUtil.sendMsg(target, "kit-received", Map.of("kit", kit.getPlainName(), "amount", String.valueOf(amount)));
@@ -334,7 +320,6 @@ public class AnimaKitsCommand implements CommandExecutor {
     private boolean handleGiveAll(CommandSender sender, String[] args) {
         if (!requirePerm(sender, "anima.kits.giveall")) return true;
         if (args.length < 4) { usage(sender, "/anima kits giveall <kit> <amount>"); return true; }
-        // Last arg is amount; everything from args[2] to second-to-last is the kit name
         String amountArg = args[args.length - 1];
         String kitName = joinArgsRange(args, 2, args.length - 1);
         Kit kit = requireKit(sender, kitName);
@@ -359,7 +344,6 @@ public class AnimaKitsCommand implements CommandExecutor {
 
     private boolean handleHelp(CommandSender sender) {
         if (!requirePerm(sender, "anima.kits.use")) return true;
-        
         if (sender.hasPermission("anima.kits.add") || sender.hasPermission("anima.kits.*")) {
             MessageUtil.send(sender, MM.deserialize("""
                     <gradient:#54DAF4:#545EB6><bold>━━━━━━━ AnimaKits Admin Help ━━━━━━━</bold></gradient>
@@ -373,18 +357,21 @@ public class AnimaKitsCommand implements CommandExecutor {
                     <yellow>/anima kits lore edit <kit> <#> <text></yellow> <gray>Edit an existing lore line</gray>
                     <yellow>/anima kits lore remove <kit> <#></yellow>  <gray>Remove a lore line</gray>
                     <yellow>/anima kits clonekit <kit> <new></yellow>   <gray>Clone an existing kit setup</gray>
-                    <yellow>/anima kits give <player/selector> <kit> <n></yellow> <gray>Give kit to target player(s) [Supports Selectors]</gray>
-                    <yellow>/anima kits giveall <kit> <n></yellow>      <gray>Give kit to all online entities</gray>
-                    <yellow>/anima kits setcooldown <kit> <secs></yellow><gray>Set cooldown timer on a kit</gray>
-                    <yellow>/anima kits singleclaim <kit> <t|f></yellow> <gray>Toggle unique single claim status</gray>
-                    <yellow>/anima kits permission ...</yellow>         <gray>Manage profile custom temporary flags</gray>
-                    <yellow>/anima kits reload</yellow>                 <gray>Reload master plugin configuration</gray>
-                    <gradient:#54DAF4:#545EB6><bold>━━━━ Colour & Gradient Guide ━━━━</bold></gradient>
-                    <gray>Legacy codes:  <white>&a Green  &c Red  &b Aqua  &6 Gold  &l Bold</white></gray>
-                    <gray>Hex colour:    <white>&#FF5500MyText</white>  → <color:#FF5500>MyText</color></gray>
-                    <gray>MiniMessage:   <white><red>Red</red>  <bold>Bold</bold>  <italic>Italic</italic></white></gray>
-                    <gray>Gradient:      <white><gradient:#54DAF4:#545EB6>My Kit Name</gradient></white></gray>
-                    <gray>Rainbow:       <white><rainbow>Rainbow Kit</rainbow></white></gray>
+                    <yellow>/anima kits give <player> <kit> <n></yellow> <gray>Give kit to player(s)</gray>
+                    <yellow>/anima kits giveall <kit> <n></yellow>      <gray>Give kit to all online</gray>
+                    <yellow>/anima kits setcooldown <kit> <secs></yellow><gray>Set cooldown timer</gray>
+                    <yellow>/anima kits singleclaim <kit> <t|f></yellow> <gray>Toggle single-claim</gray>
+                    <yellow>/anima kits permission ...</yellow>         <gray>Manage timed permission flags</gray>
+                    <yellow>/anima kits reload</yellow>                 <gray>Reload plugin configuration</gray>
+                    <gradient:#54DAF4:#545EB6><bold>━━━━ Item Edit Commands ━━━━</bold></gradient>
+                    <yellow>/anima itemedit prefix <set|remove|edit> [value]</yellow>
+                    <yellow>/anima itemedit suffix <set|remove|edit> [value]</yellow>
+                    <yellow>/anima itemedit rename <set|remove|edit> [name]</yellow>
+                    <yellow>/anima itemedit lore <add|remove|edit|clear> [line] [text]</yellow>
+                    <yellow>/anima itemedit enchant <add|remove|edit> <enchant> [level]</yellow>
+                    <yellow>/anima itemedit unbreakable <true|false></yellow>
+                    <yellow>/anima itemedit gloweffect <true|false></yellow>
+                    <yellow>/anima itemedit repair</yellow>
                     <gradient:#54DAF4:#545EB6><bold>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</bold></gradient>
                     """));
         } else {
@@ -402,10 +389,7 @@ public class AnimaKitsCommand implements CommandExecutor {
     }
 
     private boolean handlePermission(CommandSender sender, String[] args) {
-        if (args.length < 3) {
-            usage(sender, "/anima kits permission <add|remove|show|claim|claimfree> [args]");
-            return true;
-        }
+        if (args.length < 3) { usage(sender, "/anima kits permission <add|remove|show|claim|claimfree> [args]"); return true; }
         return switch (args[2].toLowerCase()) {
             case "add"       -> handlePermAdd(sender, args);
             case "remove"    -> handlePermRemove(sender, args);
@@ -421,23 +405,16 @@ public class AnimaKitsCommand implements CommandExecutor {
         if (args.length < 6) { usage(sender, "/anima kits permission add <perm> <player/selector> <time|-1>"); return true; }
         String perm = args[3];
         if (!VALID_PERMS.contains(perm)) { MessageUtil.sendMsg(sender, "perm-invalid", Map.of("perm", perm)); return true; }
-
         List<Player> targets = resolveTargets(sender, args[4]);
         if (targets == null) return true;
-
         long durationSecs = parseDuration(args[5]);
-        String durStr = durationSecs == -1 ? "permanently" : "for " + args[5];
-
+        String durStr = durationSecs == -1 ? "Permanent" : formatDuration(durationSecs);
         if (targets.size() == 1) {
             plugin.getPermissionManager().grant(targets.get(0).getUniqueId(), perm, durationSecs);
-            MessageUtil.sendMsg(sender, "perm-granted",
-                    Map.of("perm", perm, "player", targets.get(0).getName(), "duration", " " + durStr));
+            MessageUtil.sendMsg(sender, "perm-granted", Map.of("perm", perm, "player", targets.get(0).getName(), "duration", durStr));
         } else {
-            for (Player target : targets) {
-                plugin.getPermissionManager().grant(target.getUniqueId(), perm, durationSecs);
-            }
-            MessageUtil.send(sender, MM.deserialize(
-                "<gradient:#54DAF4:#545EB6><bold>✓ Granted</bold></gradient> <gray>|</gray> <yellow>" + perm + "</yellow> <gray>→</gray> <white>" + targets.size() + " players</white> <gray>" + durStr + "</gray>"));
+            for (Player target : targets) plugin.getPermissionManager().grant(target.getUniqueId(), perm, durationSecs);
+            MessageUtil.send(sender, MM.deserialize("<gradient:#54DAF4:#545EB6><bold>✓ Granted</bold></gradient> <gray>|</gray> <yellow>" + perm + "</yellow> <gray>→</gray> <white>" + targets.size() + " players</white> <gray>" + durStr + "</gray>"));
         }
         return true;
     }
@@ -446,10 +423,8 @@ public class AnimaKitsCommand implements CommandExecutor {
         if (!requirePerm(sender, "anima.kits.permission.remove")) return true;
         if (args.length < 5) { usage(sender, "/anima kits permission remove <perm> <player/selector>"); return true; }
         String perm = args[3];
-
         List<Player> targets = resolveTargets(sender, args[4]);
         if (targets == null) return true;
-
         if (targets.size() == 1) {
             Player target = targets.get(0);
             if (!plugin.getPermissionManager().revoke(target.getUniqueId(), perm)) {
@@ -459,11 +434,8 @@ public class AnimaKitsCommand implements CommandExecutor {
             }
         } else {
             int revoked = 0;
-            for (Player target : targets) {
-                if (plugin.getPermissionManager().revoke(target.getUniqueId(), perm)) revoked++;
-            }
-            MessageUtil.send(sender, MM.deserialize(
-                "<gradient:#FF4B4B:#FF8585><bold>✕ Revoked</bold></gradient> <gray>|</gray> <yellow>" + perm + "</yellow> <gray>→</gray> <white>" + revoked + " / " + targets.size() + " players</white>"));
+            for (Player target : targets) if (plugin.getPermissionManager().revoke(target.getUniqueId(), perm)) revoked++;
+            MessageUtil.send(sender, MM.deserialize("<gradient:#FF4B4B:#FF8585><bold>✕ Revoked</bold></gradient> <gray>|</gray> <yellow>" + perm + "</yellow> <gray>→</gray> <white>" + revoked + " / " + targets.size() + " players</white>"));
         }
         return true;
     }
@@ -471,20 +443,10 @@ public class AnimaKitsCommand implements CommandExecutor {
     private boolean handlePermShow(CommandSender sender, String[] args) {
         if (!requirePerm(sender, "anima.kits.permission.show")) return true;
         if (args.length < 4) { usage(sender, "/anima kits permission show <player>"); return true; }
-
         List<Player> targets = resolveTargets(sender, args[3]);
         if (targets == null) return true;
-
-        // Permission show is a diagnostic command — only allow single player target
-        if (targets.size() > 1) {
-            MessageUtil.err(sender, "Permission show only works on a single player, not selectors.");
-            return true;
-        }
-
-        DateTimeFormatter fmt = DateTimeFormatter.ofPattern(
-                plugin.getConfig().getString("general.date-format", "dd/MM/yyyy HH:mm"))
-                .withZone(ZoneId.systemDefault());
-
+        if (targets.size() > 1) { MessageUtil.err(sender, "Permission show only works on a single player."); return true; }
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern(plugin.getConfig().getString("general.date-format", "dd/MM/yyyy HH:mm")).withZone(ZoneId.systemDefault());
         Player target = targets.get(0);
         Map<String, Long> perms = plugin.getPermissionManager().getAll(target.getUniqueId());
         MessageUtil.sendMsg(sender, "perm-show-header", Map.of("player", target.getName()));
@@ -501,244 +463,117 @@ public class AnimaKitsCommand implements CommandExecutor {
 
     private boolean handlePermClaim(CommandSender sender, String[] args) {
         if (!requirePerm(sender, "anima.kits.permission.claim")) return true;
-        if (args.length < 6) {
-            usage(sender, "/anima kits permission claim <player/selector> <kit> <true|false> [duration]");
-            return true;
-        }
-
+        if (args.length < 6) { usage(sender, "/anima kits permission claim <player/selector> <kit> <true|false> [duration]"); return true; }
         List<Player> targets = resolveTargets(sender, args[3]);
         if (targets == null) return true;
-
-        int boolIdx = -1;
-        String durationArg = null;
-        String lastArg = args[args.length - 1];
-        String secondLast = args.length >= 2 ? args[args.length - 2] : "";
-        if ((secondLast.equalsIgnoreCase("true") || secondLast.equalsIgnoreCase("false"))
-                && !lastArg.equalsIgnoreCase("true") && !lastArg.equalsIgnoreCase("false")) {
-            boolIdx = args.length - 2;
-            durationArg = lastArg;
-        } else if (lastArg.equalsIgnoreCase("true") || lastArg.equalsIgnoreCase("false")) {
-            boolIdx = args.length - 1;
-        }
-
-        if (boolIdx < 5) {
-            usage(sender, "/anima kits permission claim <player/selector> <kit> <true|false> [duration]");
-            return true;
-        }
-
+        int boolIdx = -1; String durationArg = null;
+        String lastArg = args[args.length - 1], secondLast = args.length >= 2 ? args[args.length - 2] : "";
+        if ((secondLast.equalsIgnoreCase("true") || secondLast.equalsIgnoreCase("false")) && !lastArg.equalsIgnoreCase("true") && !lastArg.equalsIgnoreCase("false")) { boolIdx = args.length - 2; durationArg = lastArg; }
+        else if (lastArg.equalsIgnoreCase("true") || lastArg.equalsIgnoreCase("false")) { boolIdx = args.length - 1; }
+        if (boolIdx < 5) { usage(sender, "/anima kits permission claim <player/selector> <kit> <true|false> [duration]"); return true; }
         String kitNameRaw = joinArgsRange(args, 4, boolIdx);
         Kit kit = requireKit(sender, kitNameRaw);
         if (kit == null) return true;
-
         boolean grant = Boolean.parseBoolean(args[boolIdx]);
-        String kitName = kit.getPlainName();
-        String permNode = PermissionManager.CLAIM_PREFIX + kitName;
+        String kitName = kit.getPlainName(), permNode = PermissionManager.CLAIM_PREFIX + kitName;
         long durationSecs = (durationArg != null) ? parseDuration(durationArg) : -1L;
-        String durStr = durationSecs == -1 ? "permanently" : "for " + durationArg;
+        String durStr = durationSecs == -1 ? "Permanent" : formatDuration(durationSecs);
         boolean isSelector = args[3].startsWith("@");
-
         for (Player target : targets) {
-            if (grant) {
-                plugin.getPermissionManager().grantClaimPermission(target.getUniqueId(), kitName, durationSecs);
-            } else {
-                plugin.getPermissionManager().revokeClaimPermission(target.getUniqueId(), kitName);
-            }
+            if (grant) plugin.getPermissionManager().grantClaimPermission(target.getUniqueId(), kitName, durationSecs);
+            else plugin.getPermissionManager().revokeClaimPermission(target.getUniqueId(), kitName);
         }
-
-        // Send a single summary message — never one line per player
         if (targets.size() == 1 && !isSelector) {
-            if (grant) {
-                MessageUtil.sendMsg(sender, "perm-granted",
-                        Map.of("perm", permNode, "player", targets.get(0).getName(), "duration", " " + durStr));
-            } else {
-                MessageUtil.sendMsg(sender, "perm-revoked",
-                        Map.of("perm", permNode, "player", targets.get(0).getName()));
-            }
+            if (grant) MessageUtil.sendMsg(sender, "perm-granted", Map.of("perm", permNode, "player", targets.get(0).getName(), "duration", durStr));
+            else MessageUtil.sendMsg(sender, "perm-revoked", Map.of("perm", permNode, "player", targets.get(0).getName()));
         } else {
-            if (grant) {
-                MessageUtil.send(sender, MM.deserialize(
-                    "<gradient:#54DAF4:#545EB6><bold>✓ Granted</bold></gradient> <gray>|</gray> <yellow>" + permNode + "</yellow> <gray>→</gray> <white>" + targets.size() + " players</white> <gray>" + durStr + "</gray>"));
-            } else {
-                MessageUtil.send(sender, MM.deserialize(
-                    "<gradient:#FF4B4B:#FF8585><bold>✕ Revoked</bold></gradient> <gray>|</gray> <yellow>" + permNode + "</yellow> <gray>→</gray> <white>" + targets.size() + " players</white>"));
-            }
+            if (grant) MessageUtil.send(sender, MM.deserialize("<gradient:#54DAF4:#545EB6><bold>✓ Granted</bold></gradient> <gray>|</gray> <yellow>" + permNode + "</yellow> <gray>→</gray> <white>" + targets.size() + " players</white> <gray>" + durStr + "</gray>"));
+            else MessageUtil.send(sender, MM.deserialize("<gradient:#FF4B4B:#FF8585><bold>✕ Revoked</bold></gradient> <gray>|</gray> <yellow>" + permNode + "</yellow> <gray>→</gray> <white>" + targets.size() + " players</white>"));
         }
-
-        // Store global entry when selector used so future joiners get it too
         if (isSelector) {
-            if (grant) {
-                plugin.getPermissionManager().grantGlobal(permNode, durationSecs);
-                MessageUtil.send(sender, MM.deserialize(
-                    "<gray><italic>Global grant stored — new players joining will automatically receive this permission.</italic></gray>"));
-            } else {
-                plugin.getPermissionManager().revokeGlobal(permNode);
-            }
+            if (grant) { plugin.getPermissionManager().grantGlobal(permNode, durationSecs); MessageUtil.send(sender, MM.deserialize("<gray><italic>Global grant stored — new players joining will automatically receive this permission.</italic></gray>")); }
+            else plugin.getPermissionManager().revokeGlobal(permNode);
         }
         return true;
     }
 
     private boolean handlePermClaimFree(CommandSender sender, String[] args) {
         if (!requirePerm(sender, "anima.kits.permission.claimfree")) return true;
-        if (args.length < 6) {
-            usage(sender, "/anima kits permission claimfree <player/selector> <kit> <true|false> [duration]");
-            return true;
-        }
-
+        if (args.length < 6) { usage(sender, "/anima kits permission claimfree <player/selector> <kit> <true|false> [duration]"); return true; }
         List<Player> targets = resolveTargets(sender, args[3]);
         if (targets == null) return true;
-
-        int boolIdx = -1;
-        String durationArg = null;
-        String lastArg = args[args.length - 1];
-        String secondLast = args.length >= 2 ? args[args.length - 2] : "";
-        if ((secondLast.equalsIgnoreCase("true") || secondLast.equalsIgnoreCase("false"))
-                && !lastArg.equalsIgnoreCase("true") && !lastArg.equalsIgnoreCase("false")) {
-            boolIdx = args.length - 2;
-            durationArg = lastArg;
-        } else if (lastArg.equalsIgnoreCase("true") || lastArg.equalsIgnoreCase("false")) {
-            boolIdx = args.length - 1;
-        }
-
-        if (boolIdx < 5) {
-            usage(sender, "/anima kits permission claimfree <player/selector> <kit> <true|false> [duration]");
-            return true;
-        }
-
+        int boolIdx = -1; String durationArg = null;
+        String lastArg = args[args.length - 1], secondLast = args.length >= 2 ? args[args.length - 2] : "";
+        if ((secondLast.equalsIgnoreCase("true") || secondLast.equalsIgnoreCase("false")) && !lastArg.equalsIgnoreCase("true") && !lastArg.equalsIgnoreCase("false")) { boolIdx = args.length - 2; durationArg = lastArg; }
+        else if (lastArg.equalsIgnoreCase("true") || lastArg.equalsIgnoreCase("false")) { boolIdx = args.length - 1; }
+        if (boolIdx < 5) { usage(sender, "/anima kits permission claimfree <player/selector> <kit> <true|false> [duration]"); return true; }
         String kitNameRaw = joinArgsRange(args, 4, boolIdx);
         Kit kit = requireKit(sender, kitNameRaw);
         if (kit == null) return true;
-
         boolean grant = Boolean.parseBoolean(args[boolIdx]);
-        String kitName = kit.getPlainName();
-        String permNode = "anima.kits.claimfree." + kitName;
+        String kitName = kit.getPlainName(), permNode = "anima.kits.claimfree." + kitName;
         long durationSecs = (durationArg != null) ? parseDuration(durationArg) : -1L;
-        String durStr = durationSecs == -1 ? "permanently" : "for " + durationArg;
+        String durStr = durationSecs == -1 ? "Permanent" : formatDuration(durationSecs);
         boolean isSelector = args[3].startsWith("@");
-
         for (Player target : targets) {
-            if (grant) {
-                plugin.getPermissionManager().grant(target.getUniqueId(), permNode, durationSecs);
-            } else {
-                plugin.getPermissionManager().revoke(target.getUniqueId(), permNode);
-            }
+            if (grant) plugin.getPermissionManager().grant(target.getUniqueId(), permNode, durationSecs);
+            else plugin.getPermissionManager().revoke(target.getUniqueId(), permNode);
         }
-
-        // Single summary message
         if (targets.size() == 1 && !isSelector) {
-            if (grant) {
-                MessageUtil.sendMsg(sender, "perm-granted",
-                        Map.of("perm", permNode, "player", targets.get(0).getName(), "duration", " " + durStr));
-            } else {
-                MessageUtil.sendMsg(sender, "perm-revoked",
-                        Map.of("perm", permNode, "player", targets.get(0).getName()));
-            }
+            if (grant) MessageUtil.sendMsg(sender, "perm-granted", Map.of("perm", permNode, "player", targets.get(0).getName(), "duration", durStr));
+            else MessageUtil.sendMsg(sender, "perm-revoked", Map.of("perm", permNode, "player", targets.get(0).getName()));
         } else {
-            if (grant) {
-                MessageUtil.send(sender, MM.deserialize(
-                    "<gradient:#54DAF4:#545EB6><bold>✓ Granted</bold></gradient> <gray>|</gray> <yellow>" + permNode + "</yellow> <gray>→</gray> <white>" + targets.size() + " players</white> <gray>" + durStr + "</gray>"));
-            } else {
-                MessageUtil.send(sender, MM.deserialize(
-                    "<gradient:#FF4B4B:#FF8585><bold>✕ Revoked</bold></gradient> <gray>|</gray> <yellow>" + permNode + "</yellow> <gray>→</gray> <white>" + targets.size() + " players</white>"));
-            }
+            if (grant) MessageUtil.send(sender, MM.deserialize("<gradient:#54DAF4:#545EB6><bold>✓ Granted</bold></gradient> <gray>|</gray> <yellow>" + permNode + "</yellow> <gray>→</gray> <white>" + targets.size() + " players</white> <gray>" + durStr + "</gray>"));
+            else MessageUtil.send(sender, MM.deserialize("<gradient:#FF4B4B:#FF8585><bold>✕ Revoked</bold></gradient> <gray>|</gray> <yellow>" + permNode + "</yellow> <gray>→</gray> <white>" + targets.size() + " players</white>"));
         }
-
         if (isSelector) {
-            if (grant) {
-                plugin.getPermissionManager().grantGlobal(permNode, durationSecs);
-                MessageUtil.send(sender, MM.deserialize(
-                    "<gray><italic>Global grant stored — new players joining will automatically receive this permission.</italic></gray>"));
-            } else {
-                plugin.getPermissionManager().revokeGlobal(permNode);
-            }
+            if (grant) { plugin.getPermissionManager().grantGlobal(permNode, durationSecs); MessageUtil.send(sender, MM.deserialize("<gray><italic>Global grant stored — new players joining will automatically receive this permission.</italic></gray>")); }
+            else plugin.getPermissionManager().revokeGlobal(permNode);
         }
         return true;
     }
 
     private boolean handleOnJoinNew(CommandSender sender, String[] args) {
         if (!requirePerm(sender, "anima.kits.onjoinnew")) return true;
-
-        // /anima kits onjoinnew           → show current setting
-        // /anima kits onjoinnew <kit>     → set the join kit
-        // /anima kits onjoinnew clear     → remove the join kit
-
         if (args.length < 3) {
             String current = plugin.getConfig().getString("join-kit", "");
-            if (current == null || current.isBlank()) {
-                MessageUtil.send(sender, MM.deserialize("<gray>No OnJoinNew starter kit is currently configured.</gray>"));
-            } else {
-                MessageUtil.send(sender, MM.deserialize(
-                    "<gradient:#54DAF4:#545EB6><bold>OnJoinNew Kit:</bold></gradient> <white>" + current + "</white>"));
-            }
+            if (current == null || current.isBlank()) MessageUtil.send(sender, MM.deserialize("<gray>No OnJoinNew starter kit is currently configured.</gray>"));
+            else MessageUtil.send(sender, MM.deserialize("<gradient:#54DAF4:#545EB6><bold>OnJoinNew Kit:</bold></gradient> <white>" + current + "</white>"));
             return true;
         }
-
         String input = joinArgs(args, 2);
-
         if (input.equalsIgnoreCase("clear") || input.equalsIgnoreCase("none") || input.equalsIgnoreCase("off")) {
-            plugin.getConfig().set("join-kit", "");
-            plugin.saveConfig();
-            MessageUtil.send(sender, MM.deserialize(
-                "<gradient:#FF4B4B:#FF8585><bold>✕ OnJoinNew:</bold></gradient> <gray>Starter kit on first join has been disabled.</gray>"));
+            plugin.getConfig().set("join-kit", ""); plugin.saveConfig();
+            MessageUtil.send(sender, MM.deserialize("<gradient:#FF4B4B:#FF8585><bold>✕ OnJoinNew:</bold></gradient> <gray>Starter kit on first join has been disabled.</gray>"));
             return true;
         }
-
         Kit kit = requireKit(sender, input);
         if (kit == null) return true;
-
-        plugin.getConfig().set("join-kit", kit.getPlainName());
-        plugin.saveConfig();
-        MessageUtil.send(sender, MM.deserialize(
-            "<gradient:#54DAF4:#545EB6><bold>✓ OnJoinNew:</bold></gradient> <gray>New players will receive kit</gray> <white>" + kit.getPlainName() + "</white> <gray>on their first join.</gray>"));
+        plugin.getConfig().set("join-kit", kit.getPlainName()); plugin.saveConfig();
+        MessageUtil.send(sender, MM.deserialize("<gradient:#54DAF4:#545EB6><bold>✓ OnJoinNew:</bold></gradient> <gray>New players will receive kit</gray> <white>" + kit.getPlainName() + "</white> <gray>on their first join.</gray>"));
         return true;
     }
 
     private boolean handleClaim(CommandSender sender, String[] args) {
         if (!requirePlayer(sender)) return true;
         Player player = (Player) sender;
-
-        if (args.length < 3) {
-            new AnimaClaimMainGUI(plugin, player).open();
-            return true;
-        }
-
+        if (args.length < 3) { new com.worldofnormies.animakits.gui.AnimaClaimMainGUI(plugin, player).open(); return true; }
         Kit kit = requireKit(sender, joinArgs(args, 2));
         if (kit == null) return true;
-
         String claimPerm = "anima.kits.claim." + kit.getPlainName();
-        boolean hasBukkitPerm = player.hasPermission(claimPerm)
-                || player.hasPermission("anima.kits.claim.*")
-                || player.hasPermission("anima.kits.*");
-        boolean hasStoredPerm = plugin.getPermissionManager()
-                .hasClaimPermission(player.getUniqueId(), kit.getPlainName());
-
-        if (!hasBukkitPerm && !hasStoredPerm) {
-            MessageUtil.sendMsg(sender, "no-permission");
-            return true;
-        }
-
+        boolean hasBukkitPerm = player.hasPermission(claimPerm) || player.hasPermission("anima.kits.claim.*") || player.hasPermission("anima.kits.*");
+        boolean hasStoredPerm = plugin.getPermissionManager().hasClaimPermission(player.getUniqueId(), kit.getPlainName());
+        if (!hasBukkitPerm && !hasStoredPerm) { MessageUtil.sendMsg(sender, "no-permission"); return true; }
         UUID uuid = player.getUniqueId();
-        if (kit.isSingleClaim() && plugin.getPlayerManager().hasClaimed(uuid, kit.getId())) {
-            MessageUtil.err(sender, "You have already claimed this kit once!");
-            return true;
-        }
-
+        if (kit.isSingleClaim() && plugin.getPlayerManager().hasClaimed(uuid, kit.getId())) { MessageUtil.err(sender, "You have already claimed this kit once!"); return true; }
         long cooldown = plugin.getPlayerManager().getRemainingCooldown(uuid, kit.getId());
         if (cooldown > 0) {
-            boolean hasClaimFree = player.hasPermission("anima.kits.claimfree." + kit.getPlainName())
-                    || player.hasPermission("anima.kits.claimfree.*")
-                    || plugin.getPermissionManager().hasClaimFreePermission(uuid, kit.getPlainName());
-            
-            if (!hasClaimFree) {
-                MessageUtil.err(sender, "You must wait " + cooldown + " more seconds before claiming this kit again.");
-                return true;
-            }
+            boolean hasClaimFree = player.hasPermission("anima.kits.claimfree." + kit.getPlainName()) || player.hasPermission("anima.kits.claimfree.*") || plugin.getPermissionManager().hasClaimFreePermission(uuid, kit.getPlainName());
+            if (!hasClaimFree) { MessageUtil.err(sender, "You must wait " + cooldown + " more seconds before claiming this kit again."); return true; }
         }
-
         giveKit(player, kit, 1);
         plugin.getPlayerManager().markClaimed(uuid, kit.getId());
-        if (kit.getCooldown() > 0) {
-            plugin.getPlayerManager().setCooldown(uuid, kit.getId(), kit.getCooldown());
-        }
+        if (kit.getCooldown() > 0) plugin.getPlayerManager().setCooldown(uuid, kit.getId(), kit.getCooldown());
         MessageUtil.sendMsg(player, "kit-received", Map.of("kit", kit.getPlainName(), "amount", "1"));
         return true;
     }
@@ -746,25 +581,13 @@ public class AnimaKitsCommand implements CommandExecutor {
     private boolean handleList(CommandSender sender) {
         if (!requirePerm(sender, "anima.kits.use")) return true;
         Collection<Kit> kits = plugin.getKitManager().getAllKits();
-        if (kits.isEmpty()) {
-            MessageUtil.send(sender, MM.deserialize("<red>No kits have been created yet.</red>"));
-            return true;
-        }
+        if (kits.isEmpty()) { MessageUtil.send(sender, MM.deserialize("<red>No kits have been created yet.</red>")); return true; }
         MessageUtil.send(sender, MM.deserialize("<gradient:#54DAF4:#545EB6><bold>━━━━━━━ Available Kits ━━━━━━━</bold></gradient>"));
         for (Kit kit : kits) {
             String claimPerm = "anima.kits.claim." + kit.getPlainName();
-            boolean hasPerm = sender.hasPermission("anima.kits.*") 
-                    || sender.hasPermission("anima.kits.claim.*") 
-                    || sender.hasPermission(claimPerm);
-            
-            if (sender instanceof Player p) {
-                if (!hasPerm) {
-                    hasPerm = plugin.getPermissionManager().hasClaimPermission(p.getUniqueId(), kit.getPlainName());
-                }
-            }
-
+            boolean hasPerm = sender.hasPermission("anima.kits.*") || sender.hasPermission("anima.kits.claim.*") || sender.hasPermission(claimPerm);
+            if (sender instanceof Player p) if (!hasPerm) hasPerm = plugin.getPermissionManager().hasClaimPermission(p.getUniqueId(), kit.getPlainName());
             if (!hasPerm) continue;
-
             String info = " <gray>• </gray>" + kit.getRawName() + " <gray>(ID: " + kit.getPlainName() + ")</gray>";
             if (kit.getCooldown() > 0) info += " <aqua>[" + kit.getCooldown() + "s CD]</aqua>";
             if (kit.isSingleClaim()) info += " <red>[Once]</red>";
@@ -775,27 +598,23 @@ public class AnimaKitsCommand implements CommandExecutor {
 
     private boolean handleSetCooldown(CommandSender sender, String[] args) {
         if (!requirePerm(sender, "anima.kits.setcooldown")) return true;
-        if (args.length < 4) { usage(sender, "/anima kits setcooldown <kit> <time_seconds>"); return true; }
-        // Last arg is time; everything from args[2] to second-to-last is the kit name
+        if (args.length < 4) { usage(sender, "/anima kits setcooldown <kit> <time>  (e.g. 30s  5m  2h  1d  1d12h30m)"); return true; }
         String timeArg = args[args.length - 1];
         String kitName = joinArgsRange(args, 2, args.length - 1);
         Kit kit = requireKit(sender, kitName);
         if (kit == null) return true;
-        try {
-            long time = Long.parseLong(timeArg);
-            kit.setCooldown(time);
-            plugin.getKitManager().saveKits();
-            MessageUtil.send(sender, MM.deserialize("<green>Cooldown for kit <white>" + kit.getPlainName() + "</white> set to <white>" + time + "</white> seconds.</green>"));
-        } catch (NumberFormatException e) {
-            MessageUtil.err(sender, "Cooldown must be a number (seconds).");
-        }
+        long time = parseDuration(timeArg);
+        if (time == -2) { MessageUtil.sendMsg(sender, "cooldown-invalid", Map.of("input", timeArg)); return true; }
+        if (time == -1) time = 0;
+        kit.setCooldown(time);
+        plugin.getKitManager().saveKits();
+        MessageUtil.sendMsg(sender, "cooldown-set", Map.of("kit", kit.getPlainName(), "time", time == 0 ? "None" : formatDuration(time)));
         return true;
     }
 
     private boolean handleSingleClaim(CommandSender sender, String[] args) {
         if (!requirePerm(sender, "anima.kits.singleclaim")) return true;
         if (args.length < 4) { usage(sender, "/anima kits singleclaim <kit> <true|false>"); return true; }
-        // Last arg is true/false; everything from args[2] to second-to-last is the kit name
         String boolArg = args[args.length - 1];
         String kitName = joinArgsRange(args, 2, args.length - 1);
         Kit kit = requireKit(sender, kitName);
@@ -803,105 +622,89 @@ public class AnimaKitsCommand implements CommandExecutor {
         boolean val = Boolean.parseBoolean(boolArg);
         kit.setSingleClaim(val);
         plugin.getKitManager().saveKits();
-        MessageUtil.send(sender, MM.deserialize("<green>Single claim for kit <white>" + kit.getPlainName() + "</white> set to <white>" + val + "</white>.</green>"));
+        MessageUtil.sendMsg(sender, "singleclaim-set", Map.of("kit", kit.getPlainName(), "value", val ? "<green>ON</green>" : "<red>OFF</red>"));
         return true;
     }
 
+    // ── Internals ─────────────────────────────────────────────────
+
     private boolean requirePlayer(CommandSender sender) {
-        if (!(sender instanceof Player)) {
-            MessageUtil.err(sender, "This command requires an in-game player.");
-            return false;
-        }
+        if (!(sender instanceof Player)) { MessageUtil.err(sender, "This command requires an in-game player."); return false; }
         return true;
     }
 
     private boolean requirePerm(CommandSender sender, String perm) {
-        if (!sender.hasPermission(perm) && !sender.hasPermission("anima.kits.*")) {
-            MessageUtil.sendMsg(sender, "no-permission");
-            return false;
-        }
+        if (!sender.hasPermission(perm) && !sender.hasPermission("anima.kits.*")) { MessageUtil.sendMsg(sender, "no-permission"); return false; }
         return true;
     }
 
     private Kit requireKit(CommandSender sender, String name) {
         Kit kit = plugin.getKitManager().getKitByPlainName(name);
-        if (kit == null) {
-            MessageUtil.sendMsg(sender, "kit-not-found", Map.of("kit", name));
-        }
+        if (kit == null) MessageUtil.sendMsg(sender, "kit-not-found", Map.of("kit", name));
         return kit;
     }
 
-    private void usage(CommandSender sender, String usage) {
-        MessageUtil.sendMsg(sender, "usage-error", Map.of("usage", usage));
-    }
+    private void usage(CommandSender sender, String usage) { MessageUtil.sendMsg(sender, "usage-error", Map.of("usage", usage)); }
 
     private void showMainUsage(CommandSender sender) {
         if (sender.hasPermission("anima.kits.add") || sender.hasPermission("anima.kits.*")) {
-            MessageUtil.send(sender, MM.deserialize(
-                "<gradient:#54DAF4:#545EB6><bold>━━━━ AnimaKits · Admin Commands ━━━━</bold></gradient>"));
+            MessageUtil.send(sender, MM.deserialize("<gradient:#54DAF4:#545EB6><bold>━━━━ AnimaKits · Admin Commands ━━━━</bold></gradient>"));
             MessageUtil.send(sender, MM.deserialize("<gray>➔ </gray><yellow>/anima kits <white>claim [kit]</white> <dark_gray>·</dark_gray> <gray>Open menu / claim a kit</gray>"));
             MessageUtil.send(sender, MM.deserialize("<gray>➔ </gray><yellow>/anima kits <white>add <name></white> <dark_gray>·</dark_gray> <gray>Create a new kit</gray>"));
             MessageUtil.send(sender, MM.deserialize("<gray>➔ </gray><yellow>/anima kits <white>delete <kit></white> <dark_gray>·</dark_gray> <gray>Delete an existing kit</gray>"));
             MessageUtil.send(sender, MM.deserialize("<gray>➔ </gray><yellow>/anima kits <white>rename <kit></white> <dark_gray>·</dark_gray> <gray>Rename a kit in chat</gray>"));
             MessageUtil.send(sender, MM.deserialize("<gray>➔ </gray><yellow>/anima kits <white>lore <add|edit|remove></white> <dark_gray>·</dark_gray> <gray>Manage kit lore</gray>"));
             MessageUtil.send(sender, MM.deserialize("<gray>➔ </gray><yellow>/anima kits <white>clonekit <kit> <new></white> <dark_gray>·</dark_gray> <gray>Clone a kit</gray>"));
-            MessageUtil.send(sender, MM.deserialize("<gray>➔ </gray><yellow>/anima kits <white>give <player/selector> <kit> [n]</white> <dark_gray>·</dark_gray> <gray>Give kit [Supports Target Selectors]</gray>"));
+            MessageUtil.send(sender, MM.deserialize("<gray>➔ </gray><yellow>/anima kits <white>give <player> <kit> [n]</white> <dark_gray>·</dark_gray> <gray>Give kit</gray>"));
             MessageUtil.send(sender, MM.deserialize("<gray>➔ </gray><yellow>/anima kits <white>giveall <kit> [n]</white> <dark_gray>·</dark_gray> <gray>Give kit to everyone</gray>"));
-            MessageUtil.send(sender, MM.deserialize("<gray>➔ </gray><yellow>/anima kits <white>permission <subcmd></white> <dark_gray>·</dark_gray> <gray>Timed nodes engine [Supports Selectors]</gray>"));
-            MessageUtil.send(sender, MM.deserialize("<gray>➔ </gray><yellow>/anima kits <white>reload</white> <dark_gray>·</dark_gray> <gray>Reload configuration parameters</gray>"));
-            MessageUtil.send(sender, MM.deserialize("<gray>➔ </gray><yellow>/anima kits <white>help</white> <dark_gray>·</dark_gray> <gray>Show help configuration layout</gray>"));
-            MessageUtil.send(sender, MM.deserialize(
-                "<gradient:#54DAF4:#545EB6><bold>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</bold></gradient>"));
+            MessageUtil.send(sender, MM.deserialize("<gray>➔ </gray><yellow>/anima kits <white>permission <subcmd></white> <dark_gray>·</dark_gray> <gray>Timed permission nodes</gray>"));
+            MessageUtil.send(sender, MM.deserialize("<gray>➔ </gray><yellow>/anima kits <white>reload</white> <dark_gray>·</dark_gray> <gray>Reload configuration</gray>"));
+            MessageUtil.send(sender, MM.deserialize("<gray>➔ </gray><yellow>/anima itemedit <white><sub> ...</white> <dark_gray>·</dark_gray> <gray>Edit held item properties</gray>"));
+            MessageUtil.send(sender, MM.deserialize("<gradient:#54DAF4:#545EB6><bold>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</bold></gradient>"));
         } else {
-            MessageUtil.send(sender, MM.deserialize(
-                "<gradient:#54DAF4:#545EB6><bold>━━━━ AnimaKits · Player Menu ━━━━</bold></gradient>"));
+            MessageUtil.send(sender, MM.deserialize("<gradient:#54DAF4:#545EB6><bold>━━━━ AnimaKits · Player Menu ━━━━</bold></gradient>"));
             MessageUtil.send(sender, MM.deserialize("<gray>➔ </gray><yellow>/anima kits <white>claim [kit]</white> <dark_gray>·</dark_gray> <gray>Open the graphical kit menu</gray>"));
             MessageUtil.send(sender, MM.deserialize("<gray>➔ </gray><yellow>/anima kits <white>list</white> <dark_gray>·</dark_gray> <gray>Display all your available kits</gray>"));
             MessageUtil.send(sender, MM.deserialize("<gray>➔ </gray><yellow>/anima kits <white>help</white> <dark_gray>·</dark_gray> <gray>Display info commands</gray>"));
-            MessageUtil.send(sender, MM.deserialize(
-                "<gradient:#54DAF4:#545EB6><bold>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</bold></gradient>"));
+            MessageUtil.send(sender, MM.deserialize("<gradient:#54DAF4:#545EB6><bold>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</bold></gradient>"));
         }
     }
 
     private String joinArgs(String[] args, int from) {
         StringBuilder sb = new StringBuilder();
-        for (int i = from; i < args.length; i++) {
-            if (i > from) sb.append(' ');
-            sb.append(args[i]);
-        }
+        for (int i = from; i < args.length; i++) { if (i > from) sb.append(' '); sb.append(args[i]); }
         return sb.toString().trim();
     }
 
-    /** Join args[from] up to (but not including) args[to]. */
     private String joinArgsRange(String[] args, int from, int to) {
         StringBuilder sb = new StringBuilder();
-        for (int i = from; i < to && i < args.length; i++) {
-            if (i > from) sb.append(' ');
-            sb.append(args[i]);
-        }
+        for (int i = from; i < to && i < args.length; i++) { if (i > from) sb.append(' '); sb.append(args[i]); }
         return sb.toString().trim();
     }
 
     private int parseAmount(CommandSender sender, String raw) {
-        try {
-            int n = Integer.parseInt(raw);
-            if (n < 1) throw new NumberFormatException();
-            return n;
-        } catch (NumberFormatException e) {
-            MessageUtil.err(sender, "Amount must be a positive integer.");
-            return -1;
-        }
+        try { int n = Integer.parseInt(raw); if (n < 1) throw new NumberFormatException(); return n; }
+        catch (NumberFormatException e) { MessageUtil.err(sender, "Amount must be a positive integer."); return -1; }
     }
 
     private long parseDuration(String raw) {
-        if (raw.equals("-1")) return -1;
-        long multiplier = 1;
-        String stripped = raw;
-        if (raw.endsWith("m"))      { multiplier = 60;    stripped = raw.substring(0, raw.length() - 1); }
-        else if (raw.endsWith("h")) { multiplier = 3600;  stripped = raw.substring(0, raw.length() - 1); }
-        else if (raw.endsWith("d")) { multiplier = 86400; stripped = raw.substring(0, raw.length() - 1); }
-        try { return Long.parseLong(stripped) * multiplier; }
-        catch (NumberFormatException e) { return 3600; }
+        if (raw == null || raw.isBlank()) return -2;
+        String trimmed = raw.trim();
+        if (trimmed.equals("-1")) return -1;
+        try { return Long.parseLong(trimmed); } catch (NumberFormatException ignored) {}
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("(?:(\\d+)d)?(?:(\\d+)h)?(?:(\\d+)m)?(?:(\\d+)s)?", java.util.regex.Pattern.CASE_INSENSITIVE).matcher(trimmed);
+        if (!m.matches()) return -2;
+        long days = m.group(1) != null ? Long.parseLong(m.group(1)) : 0, hours = m.group(2) != null ? Long.parseLong(m.group(2)) : 0, minutes = m.group(3) != null ? Long.parseLong(m.group(3)) : 0, seconds = m.group(4) != null ? Long.parseLong(m.group(4)) : 0;
+        long total = days * 86400L + hours * 3600L + minutes * 60L + seconds;
+        return total > 0 ? total : -2;
+    }
+
+    private String formatDuration(long seconds) {
+        if (seconds <= 0) return "None"; if (seconds == -1) return "Permanent";
+        long d = seconds / 86400, h = (seconds % 86400) / 3600, m = (seconds % 3600) / 60, s = seconds % 60;
+        StringBuilder sb = new StringBuilder();
+        if (d > 0) sb.append(d).append("d "); if (h > 0) sb.append(h).append("h "); if (m > 0) sb.append(m).append("m "); if (s > 0) sb.append(s).append("s");
+        return sb.toString().trim();
     }
 
     private void giveKit(Player player, Kit kit, int times) {
@@ -909,11 +712,7 @@ public class AnimaKitsCommand implements CommandExecutor {
             for (ItemStack item : kit.getItems()) {
                 if (item != null && item.getType() != org.bukkit.Material.AIR) {
                     HashMap<Integer, ItemStack> remaining = player.getInventory().addItem(item.clone());
-                    if (!remaining.isEmpty()) {
-                        for (ItemStack left : remaining.values()) {
-                            player.getWorld().dropItemNaturally(player.getLocation(), left);
-                        }
-                    }
+                    if (!remaining.isEmpty()) for (ItemStack left : remaining.values()) player.getWorld().dropItemNaturally(player.getLocation(), left);
                 }
             }
         }
