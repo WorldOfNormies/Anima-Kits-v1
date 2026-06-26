@@ -64,6 +64,9 @@ public class PlayerManager {
                     try { data.joinKitsReceived.add(UUID.fromString(kitUuidStr)); } catch (IllegalArgumentException ignored) {}
                 }
 
+                data.repairCooldown = section.getLong("repairCooldown", 0);
+                data.lastRepair = section.getLong("lastRepair", 0);
+
                 players.put(uuid, data);
             } catch (IllegalArgumentException ignored) {}
         }
@@ -95,6 +98,13 @@ public class PlayerManager {
                     joinStrings.add(kitId.toString());
                 }
                 config.set(path + ".joinKitsReceived", joinStrings);
+            }
+
+            if (data.repairCooldown > 0) {
+                config.set(path + ".repairCooldown", data.repairCooldown);
+            }
+            if (data.lastRepair > 0) {
+                config.set(path + ".lastRepair", data.lastRepair);
             }
         }
         try {
@@ -158,9 +168,31 @@ public class PlayerManager {
         save();
     }
 
+    public long getRepairCooldown(UUID player) {
+        PlayerData data = players.get(player);
+        return data != null ? data.repairCooldown : 0;
+    }
+
+    public void setRepairCooldown(UUID player, long seconds) {
+        players.computeIfAbsent(player, k -> new PlayerData()).repairCooldown = seconds;
+        save();
+    }
+
+    public long getLastRepair(UUID player) {
+        PlayerData data = players.get(player);
+        return data != null ? data.lastRepair : 0;
+    }
+
+    public void setLastRepair(UUID player, long timestamp) {
+        players.computeIfAbsent(player, k -> new PlayerData()).lastRepair = timestamp;
+        save();
+    }
+
     private static class PlayerData {
         final Map<UUID, Long> cooldowns = new HashMap<>();
         final Set<UUID> claims = new HashSet<>();
         final Set<UUID> joinKitsReceived = new HashSet<>();
+        long repairCooldown = 0;
+        long lastRepair = 0;
     }
 }

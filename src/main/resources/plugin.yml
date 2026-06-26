@@ -134,3 +134,56 @@ permissions:
   anima.kits.onjoinnew:
     description: "Set or clear the starter kit given to new players on first join."
     default: op
+
+  # --- Item Edit Nodes ---
+  anima.itemedit.*:
+    description: "Master permission for all item editing features."
+    default: op
+    children:
+      anima.itemedit.prefix: true
+      anima.itemedit.suffix: true
+      anima.itemedit.rename: true
+      anima.itemedit.lore: true
+      anima.itemedit.enchant: true
+      anima.itemedit.unbreakable: true
+      anima.itemedit.gloweffect: true
+      anima.itemedit.repair: true
+
+  anima.itemedit.use:
+    description: "Basic access to item editing (prefix, suffix, rename, repair)."
+    default: true
+    children:
+      anima.itemedit.prefix: true
+      anima.itemedit.suffix: true
+      anima.itemedit.rename: true
+      anima.itemedit.repair: true
+
+  anima.itemedit.prefix:
+    description: "Allows setting item prefixes."
+    default: op
+  anima.itemedit.suffix:
+    description: "Allows setting item suffixes."
+    default: op
+  anima.itemedit.rename:
+    description: "Allows renaming items."
+    default: op
+  anima.itemedit.lore:
+    description: "Allows editing item lore."
+    default: op
+  anima.itemedit.enchant:
+    description: "Allows enchanting items."
+    default: op
+  anima.itemedit.unbreakable:
+    description: "Allows setting items as unbreakable."
+    default: op
+  anima.itemedit.gloweffect:
+    description: "Allows toggling item glow effect."
+    default: op
+  anima.itemedit.repair:
+    description: "Allows repairing items."
+    default: op
+
+  # --- Rank Nodes ---
+  anima.rank.*:
+    description: "Master permission for all rank management features."
+    default: op

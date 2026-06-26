@@ -19,6 +19,7 @@ public final class AnimaKitsPlugin extends JavaPlugin {
     private KitManager kitManager;
     private PermissionManager permissionManager;
     private PlayerManager playerManager;
+    private com.worldofnormies.animaranks.RankManager rankManager;
 
     @Override
     public void onEnable() {
@@ -32,6 +33,7 @@ public final class AnimaKitsPlugin extends JavaPlugin {
         this.kitManager = new KitManager(this);
         this.permissionManager = new PermissionManager(this);
         this.playerManager = new PlayerManager(this);
+        this.rankManager = new com.worldofnormies.animaranks.RankManager(this);
 
         kitManager.loadKits();
         permissionManager.load();
@@ -52,6 +54,7 @@ public final class AnimaKitsPlugin extends JavaPlugin {
 
         // Listeners
         getServer().getPluginManager().registerEvents(new PlayerJoinListener(this), this);
+        getServer().getPluginManager().registerEvents(new com.worldofnormies.animaranks.RankListener(this), this);
 
         getLogger().info("AnimaKits enabled! Created by World Of Normies.");
     }
@@ -78,4 +81,5 @@ public final class AnimaKitsPlugin extends JavaPlugin {
     public KitManager getKitManager() { return kitManager; }
     public PermissionManager getPermissionManager() { return permissionManager; }
     public PlayerManager getPlayerManager() { return playerManager; }
+    public com.worldofnormies.animaranks.RankManager getRankManager() { return rankManager; }
 }

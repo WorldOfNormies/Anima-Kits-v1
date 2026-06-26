@@ -51,19 +51,36 @@ public class AnimaKitsCommand implements CommandExecutor {
             "anima.kits.list",
             "anima.kits.setcooldown",
             "anima.kits.singleclaim",
-            "anima.kits.onjoinnew"
+            "anima.kits.onjoinnew",
+            "anima.kits.permission.repaircooldown"
     );
 
     private final AnimaKitsPlugin plugin;
+    private final com.worldofnormies.animaitemedit.ItemEditCommand itemEditCommand;
+    private final com.worldofnormies.animaranks.AnimaRanksCommand rankCommand;
 
     public AnimaKitsCommand(AnimaKitsPlugin plugin) {
         this.plugin = plugin;
+        this.itemEditCommand = new com.worldofnormies.animaitemedit.ItemEditCommand(plugin);
+        this.rankCommand = new com.worldofnormies.animaranks.AnimaRanksCommand(plugin);
     }
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        if (args.length == 0) {
+            showMainUsage(sender);
+            return true;
+        }
 
-        if (args.length == 0 || !args[0].equalsIgnoreCase("kits")) {
+        if (args[0].equalsIgnoreCase("itemedit")) {
+            return itemEditCommand.onCommand(sender, command, label, args);
+        }
+
+        if (args[0].equalsIgnoreCase("rank") || args[0].equalsIgnoreCase("ranks")) {
+            return rankCommand.onCommand(sender, command, label, args);
+        }
+
+        if (!args[0].equalsIgnoreCase("kits")) {
             showMainUsage(sender);
             return true;
         }
@@ -85,6 +102,7 @@ public class AnimaKitsCommand implements CommandExecutor {
             case "reload"        -> handleReload(sender);
             case "help"          -> handleHelp(sender);
             case "permission"    -> handlePermission(sender, args);
+            case "rank", "ranks" -> rankCommand.onCommand(sender, command, label, args);
             case "list"          -> handleList(sender);
             case "setcooldown"   -> handleSetCooldown(sender, args);
             case "singleclaim"   -> handleSingleClaim(sender, args);
@@ -403,7 +421,7 @@ public class AnimaKitsCommand implements CommandExecutor {
 
     private boolean handlePermission(CommandSender sender, String[] args) {
         if (args.length < 3) {
-            usage(sender, "/anima kits permission <add|remove|show|claim|claimfree> [args]");
+            usage(sender, "/anima kits permission <add|remove|show|claim|claimfree|repaircooldown> [args]");
             return true;
         }
         return switch (args[2].toLowerCase()) {
@@ -412,8 +430,24 @@ public class AnimaKitsCommand implements CommandExecutor {
             case "show"      -> handlePermShow(sender, args);
             case "claim"     -> handlePermClaim(sender, args);
             case "claimfree" -> handlePermClaimFree(sender, args);
-            default          -> { usage(sender, "/anima kits permission <add|remove|show|claim|claimfree>"); yield true; }
+            case "repaircooldown" -> handleRepairCooldown(sender, args);
+            default          -> { usage(sender, "/anima kits permission <add|remove|show|claim|claimfree|repaircooldown>"); yield true; }
         };
+    }
+
+    private boolean handleRepairCooldown(CommandSender sender, String[] args) {
+        if (!requirePerm(sender, "anima.kits.permission.repaircooldown")) return true;
+        if (args.length < 5) { usage(sender, "/anima kits permission repaircooldown <player/selector> <time>"); return true; }
+        List<Player> targets = resolveTargets(sender, args[3]);
+        if (targets == null) return true;
+        long time = parseDuration(args[4]);
+        if (time == -2) { MessageUtil.err(sender, "Invalid duration: " + args[4]); return true; }
+        if (time == -1) time = 0;
+        for (Player target : targets) {
+            plugin.getPlayerManager().setRepairCooldown(target.getUniqueId(), time);
+        }
+        MessageUtil.send(sender, MM.deserialize("<gradient:#44FF88:#00CC55><bold>  ✓  </bold></gradient><gray>Repair cooldown set to <white>" + formatDuration(time) + "</white> for <white>" + targets.size() + " players</white>.</gray>"));
+        return true;
     }
 
     private boolean handlePermAdd(CommandSender sender, String[] args) {

@@ -71,6 +71,31 @@ Targets [PaperMC](https://papermc.io/downloads/paper). Compatible forks (Purpur,
 
 **Master admin wildcard:** `anima.kits.*` (default: OP)
 
+### Item Edit Commands
+
+| Command | Description | Permission | Default |
+|---|---|---|---|
+| `/anima itemedit prefix <set|remove|edit> [val]` | Set item name prefix | `anima.itemedit.prefix` | Everyone |
+| `/anima itemedit suffix <set|remove|edit> [val]` | Set item name suffix | `anima.itemedit.suffix` | Everyone |
+| `/anima itemedit rename <set|remove|edit> [val]` | Rename held item | `anima.itemedit.rename` | Everyone |
+| `/anima itemedit lore <add|remove|edit|clear>` | Modify item lore | `anima.itemedit.lore` | Admin |
+| `/anima itemedit enchant <add|remove|edit>` | Enchant held item | `anima.itemedit.enchant` | Admin |
+| `/anima itemedit unbreakable <true|false>` | Toggle unbreakable | `anima.itemedit.unbreakable` | Admin |
+| `/anima itemedit gloweffect <true|false>` | Toggle glow effect | `anima.itemedit.gloweffect` | Admin |
+| `/anima itemedit repair` | Fully repair held item | `anima.itemedit.repair` | Everyone |
+
+**Use wildcard:** `anima.itemedit.use` (Grants prefix, suffix, rename, repair)
+
+### Rank Commands
+
+| Command | Description | Permission |
+|---|---|---|
+| `/anima ranks` | Open the graphical ranks browser | `anima.rank.*` |
+| `/anima rank add <name> <h>` | Create a new rank with hierarchy `h` | `anima.rank.*` |
+| `/anima rank set prefix <rank> <val>` | Set rank name prefix | `anima.rank.*` |
+| `/anima rank set add <player> <rank>` | Assign a rank to a player | `anima.rank.*` |
+| `/anima rank promote <player> <rank>` | Promote a player to a new rank | `anima.rank.*` |
+
 ### Permission Commands
 
 | Command | Description | Permission |

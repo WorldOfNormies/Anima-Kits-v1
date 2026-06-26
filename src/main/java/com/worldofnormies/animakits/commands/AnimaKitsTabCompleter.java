@@ -29,7 +29,7 @@ public class AnimaKitsTabCompleter implements TabCompleter {
     private static final List<String> PLAYER_SUB2 = List.of("claim", "list", "help");
 
     private static final List<String> LORE_ACTIONS   = List.of("add", "edit", "remove");
-    private static final List<String> PERM_ACTIONS   = List.of("add", "remove", "show", "claim", "claimfree");
+    private static final List<String> PERM_ACTIONS   = List.of("add", "remove", "show", "claim", "claimfree", "repaircooldown");
 
     private static final List<String> AMOUNTS        = List.of("1", "2", "3", "5", "10", "64");
     private static final List<String> DURATIONS      = List.of("-1", "30s", "5m", "30m", "1h", "12h", "1d", "7d");
@@ -58,6 +58,11 @@ public class AnimaKitsTabCompleter implements TabCompleter {
             return filter(args[0], SUB1);
         }
 
+        // Route itemedit completions
+        if (args[0].equalsIgnoreCase("itemedit")) {
+            return com.worldofnormies.animaitemedit.ItemEditTabCompleter.complete(sender, args);
+        }
+
         if (args.length == 2 && SUB1.contains(args[0].toLowerCase())) {
             if (sender.hasPermission("anima.kits.add") || sender.hasPermission("anima.kits.*")) {
                 return filter(args[1], ADMIN_SUB2);
@@ -79,6 +84,8 @@ public class AnimaKitsTabCompleter implements TabCompleter {
                 case "give"         -> handleGiveTab(sender, args);
                 case "giveall"      -> handleGiveAllTab(sender, args);
                 case "permission"   -> handlePermissionTab(sender, args);
+                case "rank"         -> List.of(); // Placeholder for step 2
+                case "ranks"        -> List.of(); // Placeholder for step 2
                 default             -> List.of();
             };
         }
