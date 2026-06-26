@@ -51,8 +51,8 @@ public final class ItemEditUtil {
      * (defined as everything before the first space or dash separator).
      */
     public static ItemStack setPrefix(ItemStack item, String miniMessagePrefix) {
-        String baseName = getBaseName(item);
-        return setName(item, miniMessagePrefix + " " + baseName);
+        String currentName = getPlainDisplayName(item);
+        return setName(item, miniMessagePrefix + " " + currentName);
     }
 
     /** Removes the prefix (everything before and including the first " " space in the display name). */
@@ -66,8 +66,8 @@ public final class ItemEditUtil {
 
     /** Sets the display name to {@code currentVanillaName + " " + suffix}. */
     public static ItemStack setSuffix(ItemStack item, String miniMessageSuffix) {
-        String baseName = getBaseName(item);
-        return setName(item, baseName + " " + miniMessageSuffix);
+        String currentName = getPlainDisplayName(item);
+        return setName(item, currentName + " " + miniMessageSuffix);
     }
 
     /** Removes the suffix (the last word in the display name). */

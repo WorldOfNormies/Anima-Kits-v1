@@ -3,6 +3,8 @@ package com.worldofnormies.animakits.commands;
 import com.worldofnormies.animakits.AnimaKitsPlugin;
 import com.worldofnormies.animakits.manager.KitManager;
 import com.worldofnormies.animaitemedit.ItemEditTabCompleter;
+import com.worldofnormies.animaeconomy.AnimaEconomyTabCompleter;
+import com.worldofnormies.animaranks.AnimaRankTabCompleter;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -20,7 +22,7 @@ import java.util.List;
  */
 public class AnimaKitsTabCompleter implements TabCompleter {
 
-    private static final List<String> ROOT_SUBS = List.of("kits", "kit", "itemedit");
+    private static final List<String> ROOT_SUBS = List.of("kits", "kit", "itemedit", "balance", "pay", "economy", "tokens", "rank", "ranks");
     private static final List<String> SUB1       = List.of("kits", "kit");
 
     private static final List<String> ADMIN_SUB2 = List.of(
@@ -62,6 +64,15 @@ public class AnimaKitsTabCompleter implements TabCompleter {
         // Route itemedit completions to ItemEditTabCompleter
         if (args[0].equalsIgnoreCase("itemedit")) {
             return ItemEditTabCompleter.complete(sender, args);
+        }
+
+        if (args[0].equalsIgnoreCase("balance") || args[0].equalsIgnoreCase("pay") ||
+            args[0].equalsIgnoreCase("economy") || args[0].equalsIgnoreCase("tokens")) {
+            return AnimaEconomyTabCompleter.complete(args);
+        }
+
+        if (args[0].equalsIgnoreCase("rank") || args[0].equalsIgnoreCase("ranks")) {
+            return AnimaRankTabCompleter.complete(plugin.getRankManager(), args);
         }
 
         if (args.length == 2 && SUB1.contains(args[0].toLowerCase())) {
