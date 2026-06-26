@@ -32,7 +32,7 @@ public class ItemEditCommand {
             return true;
         }
 
-        if (!player.hasPermission("anima.kits.*") && !player.hasPermission("anima.kits.use")) {
+        if (!player.hasPermission("anima.itemedit.use") && !player.hasPermission("anima.itemedit.*") && !player.hasPermission("anima.ranks.admin")) {
             player.sendMessage(MM.deserialize("<red>✘ You do not have permission to use item editing.</red>"));
             return true;
         }
@@ -49,6 +49,8 @@ public class ItemEditCommand {
         }
 
         String sub = args[1].toLowerCase();
+
+        boolean isAdmin = player.hasPermission("anima.itemedit.*") || player.hasPermission("anima.ranks.admin");
 
         switch (sub) {
             case "prefix" -> {
@@ -128,6 +130,7 @@ public class ItemEditCommand {
                 }
             }
             case "enchant" -> {
+                if (!isAdmin) { player.sendMessage(MM.deserialize("<red>✘ You need staff permissions for enchantments.</red>")); return true; }
                 if (args.length < 3) { sendSubUsage(player, "enchant <add|remove|edit> <enchantment> [level]"); return true; }
                 String action = args[2].toLowerCase();
                 if (args.length < 4) { sendSubUsage(player, "enchant " + action + " <enchantment> [level]"); return true; }
@@ -153,12 +156,14 @@ public class ItemEditCommand {
                 }
             }
             case "unbreakable" -> {
+                if (!isAdmin) { player.sendMessage(MM.deserialize("<red>✘ You need staff permissions for unbreakable.</red>")); return true; }
                 if (args.length < 3) { sendSubUsage(player, "unbreakable <true|false>"); return true; }
                 boolean val = Boolean.parseBoolean(args[2]);
                 player.getInventory().setItemInMainHand(ItemEditUtil.setUnbreakable(held, val));
                 player.sendMessage(MM.deserialize("<gradient:#54DAF4:#545EB6>✓ Unbreakable set to <white>" + val + "</white>.</gradient>"));
             }
             case "gloweffect" -> {
+                if (!isAdmin) { player.sendMessage(MM.deserialize("<red>✘ You need staff permissions for glow effect.</red>")); return true; }
                 if (args.length < 3) { sendSubUsage(player, "gloweffect <true|false>"); return true; }
                 boolean val = Boolean.parseBoolean(args[2]);
                 player.getInventory().setItemInMainHand(ItemEditUtil.setGlow(held, val));
@@ -169,7 +174,13 @@ public class ItemEditCommand {
                     player.sendMessage(MM.deserialize("<red>✘ This item cannot be repaired.</red>"));
                     return true;
                 }
+                long cooldown = plugin.getRankManager().getRepairCooldown(player.getUniqueId());
+                if (cooldown > 0) {
+                    player.sendMessage(MM.deserialize("<red>✘ You must wait " + cooldown + "s before repairing again.</red>"));
+                    return true;
+                }
                 player.getInventory().setItemInMainHand(ItemEditUtil.repair(held));
+                plugin.getRankManager().setRepairLastUsed(player.getUniqueId());
                 player.sendMessage(MM.deserialize("<gradient:#54DAF4:#545EB6>✓ Item fully repaired.</gradient>"));
             }
             default -> sendUsage(player);

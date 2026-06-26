@@ -3,6 +3,9 @@ package com.worldofnormies.animakits;
 import com.worldofnormies.animakits.commands.AnimaKitsCommand;
 import com.worldofnormies.animakits.commands.AnimaKitsTabCompleter;
 import com.worldofnormies.animakits.listener.PlayerJoinListener;
+import com.worldofnormies.animaeconomy.AnimaEconomyManager;
+import com.worldofnormies.animaranks.RankListener;
+import com.worldofnormies.animaranks.RankManager;
 import com.worldofnormies.animakits.manager.KitManager;
 import com.worldofnormies.animakits.manager.PermissionManager;
 import com.worldofnormies.animakits.manager.PlayerManager;
@@ -19,6 +22,8 @@ public final class AnimaKitsPlugin extends JavaPlugin {
     private KitManager kitManager;
     private PermissionManager permissionManager;
     private PlayerManager playerManager;
+    private AnimaEconomyManager economyManager;
+    private RankManager rankManager;
 
     @Override
     public void onEnable() {
@@ -32,10 +37,21 @@ public final class AnimaKitsPlugin extends JavaPlugin {
         this.kitManager = new KitManager(this);
         this.permissionManager = new PermissionManager(this);
         this.playerManager = new PlayerManager(this);
+        this.economyManager = new AnimaEconomyManager(this);
+        this.rankManager = new RankManager(this);
 
         kitManager.loadKits();
         permissionManager.load();
         playerManager.load();
+        economyManager.load();
+        rankManager.load();
+
+        // Autosave Task
+        getServer().getScheduler().runTaskTimerAsynchronously(this, () -> {
+            economyManager.save();
+            rankManager.save();
+            playerManager.save();
+        }, 6000L, 6000L); // Every 5 minutes
 
         // Utilities
         MessageUtil.init(this);
@@ -52,12 +68,16 @@ public final class AnimaKitsPlugin extends JavaPlugin {
 
         // Listeners
         getServer().getPluginManager().registerEvents(new PlayerJoinListener(this), this);
+        getServer().getPluginManager().registerEvents(new RankListener(this, rankManager), this);
 
         getLogger().info("AnimaKits enabled! Created by World Of Normies.");
     }
 
     @Override
     public void onDisable() {
+        if (economyManager != null) economyManager.save();
+        if (rankManager != null) rankManager.save();
+        if (playerManager != null) playerManager.save();
         if (this.adventure != null) {
             this.adventure.close();
             this.adventure = null;
@@ -78,4 +98,6 @@ public final class AnimaKitsPlugin extends JavaPlugin {
     public KitManager getKitManager() { return kitManager; }
     public PermissionManager getPermissionManager() { return permissionManager; }
     public PlayerManager getPlayerManager() { return playerManager; }
+    public AnimaEconomyManager getEconomyManager() { return economyManager; }
+    public RankManager getRankManager() { return rankManager; }
 }

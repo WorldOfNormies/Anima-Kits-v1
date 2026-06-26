@@ -7,6 +7,8 @@ import com.worldofnormies.animakits.kit.Kit;
 import com.worldofnormies.animakits.manager.PermissionManager;
 import com.worldofnormies.animakits.util.MessageUtil;
 import com.worldofnormies.animaitemedit.ItemEditCommand;
+import com.worldofnormies.animaeconomy.AnimaEconomyCommand;
+import com.worldofnormies.animaranks.AnimaRankCommand;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
@@ -57,10 +59,14 @@ public class AnimaKitsCommand implements CommandExecutor {
 
     private final AnimaKitsPlugin plugin;
     private final ItemEditCommand itemEditCommand;
+    private final AnimaEconomyCommand economyCommand;
+    private final AnimaRankCommand rankCommand;
 
     public AnimaKitsCommand(AnimaKitsPlugin plugin) {
         this.plugin = plugin;
         this.itemEditCommand = new ItemEditCommand(plugin);
+        this.economyCommand = new AnimaEconomyCommand(plugin, plugin.getEconomyManager());
+        this.rankCommand = new AnimaRankCommand(plugin, plugin.getRankManager(), plugin.getEconomyManager());
     }
 
     @Override
@@ -73,6 +79,17 @@ public class AnimaKitsCommand implements CommandExecutor {
         // /anima itemedit <sub> ...
         if (args[0].equalsIgnoreCase("itemedit")) {
             return itemEditCommand.onCommand(sender, command, label, args);
+        }
+
+        // Economy subcommands
+        if (args[0].equalsIgnoreCase("balance") || args[0].equalsIgnoreCase("pay") ||
+            args[0].equalsIgnoreCase("economy") || args[0].equalsIgnoreCase("tokens")) {
+            return economyCommand.onCommand(sender, command, label, args);
+        }
+
+        // Rank subcommands
+        if (args[0].equalsIgnoreCase("rank") || args[0].equalsIgnoreCase("ranks")) {
+            return rankCommand.onCommand(sender, command, label, args);
         }
 
         if (!args[0].equalsIgnoreCase("kits")) {

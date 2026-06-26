@@ -180,7 +180,12 @@ public class AnimaKitsEditor implements Listener {
             int idx = from + i;
             if (idx < allItems.size() && allItems.get(idx) != null
                     && allItems.get(idx).getType() != org.bukkit.Material.AIR) {
-                inventory.setItem(EDIT_SLOTS[i], wrapItemWithEditorHints(allItems.get(idx).clone()));
+                ItemStack item = allItems.get(idx).clone();
+                // If glow is on, ensure enchants are visible in lore
+                if (item.getItemMeta() != null && item.getItemMeta().hasItemFlag(ItemFlag.HIDE_ENCHANTS)) {
+                    item = addEnchantLore(item);
+                }
+                inventory.setItem(EDIT_SLOTS[i], wrapItemWithEditorHints(item));
             }
         }
 
@@ -273,9 +278,12 @@ public class AnimaKitsEditor implements Listener {
         if (isEditSlot) {
             ClickType click = event.getClick();
             // Allow regular drag/place (non-shift non-special clicks) through for item management
-            if (click == ClickType.SHIFT_LEFT || click == ClickType.SHIFT_RIGHT || click == ClickType.MIDDLE) {
+            if (click.isShiftClick()) {
                 event.setCancelled(true);
                 handleItemSlotAction(slot, editSlotIndex, click);
+            } else if (click == ClickType.MIDDLE) {
+                // If it's middle but not shift, we still cancel it as it was requested to be disabled
+                event.setCancelled(true);
             }
             // Allow normal left/right clicks and drags for placing/taking items
             return;
@@ -286,6 +294,7 @@ public class AnimaKitsEditor implements Listener {
 
         // ── Player Head ──
         if (slot == SLOT_PLAYER_HEAD) {
+            if (!event.getClick().isShiftClick()) return;
             saveCurrentPage();
             ClickType click = event.getClick();
             if (click.isLeftClick()) {
@@ -341,10 +350,11 @@ public class AnimaKitsEditor implements Listener {
 
         // ── Name Tag ──
         if (slot == SLOT_NAME_TAG) {
+            if (!event.getClick().isShiftClick()) return;
             saveCurrentPage();
             ClickType click = event.getClick();
 
-            if (click.isLeftClick() && !click.isShiftClick()) {
+            if (click == ClickType.SHIFT_LEFT) {
                 // Rename kit
                 closing = true;
                 HandlerList.unregisterAll(this);
@@ -366,8 +376,6 @@ public class AnimaKitsEditor implements Listener {
                     "<gradient:#AA88FF:#6600FF><bold>✔ Kit name applied as prefix to all items!</bold></gradient>"));
 
             } else if (click == ClickType.SHIFT_RIGHT) {
-                // Shift+Middle isn't directly exposed as a ClickType in older Bukkit;
-                // we check SHIFT_RIGHT as fallback for shift+middle in some clients
                 applyKitNameToAllItems(true);
                 player.sendMessage(MM.deserialize(
                     "<gradient:#FF88CC:#CC0077><bold>✔ Kit name applied as suffix to all items!</bold></gradient>"));
@@ -377,6 +385,7 @@ public class AnimaKitsEditor implements Listener {
 
         // ── Icon ──
         if (slot == SLOT_ICON_CHEST) {
+            if (!event.getClick().isShiftClick()) return;
             ItemStack hand = player.getInventory().getItemInMainHand();
             if (hand.getType() != Material.AIR) {
                 saveCurrentPage();
@@ -388,6 +397,7 @@ public class AnimaKitsEditor implements Listener {
 
         // ── Single Claim ──
         if (slot == SLOT_SINGLE_CLAIM) {
+            if (!event.getClick().isShiftClick()) return;
             saveCurrentPage();
             kit.setSingleClaim(!kit.isSingleClaim());
             populate();
@@ -396,6 +406,7 @@ public class AnimaKitsEditor implements Listener {
 
         // ── Lore / Book ──
         if (slot == SLOT_BOOK_QUILL) {
+            if (!event.getClick().isShiftClick()) return;
             saveCurrentPage();
             closing = true;
             HandlerList.unregisterAll(this);
@@ -413,6 +424,7 @@ public class AnimaKitsEditor implements Listener {
 
         // ── Cooldown ──
         if (slot == SLOT_COOLDOWN_CLK) {
+            if (!event.getClick().isShiftClick()) return;
             saveCurrentPage();
             closing = true;
             HandlerList.unregisterAll(this);
@@ -510,6 +522,13 @@ public class AnimaKitsEditor implements Listener {
                 "<gradient:#FF6060:#CC0000><bold>⚔ Enchant Item</bold></gradient>\n" +
                 "<gray>Type: <white>enchantment_name level</white>  (e.g. <white>sharpness 5</white>)\n" +
                 "Level 0 removes the enchantment. Type <white>//cancel</white> to abort.</gray>"));
+
+            // Helper message with clickable enchants
+            Component helper = MM.deserialize("<gradient:#4FC3F7:#1565C0><bold>[ Click to suggest enchantment ]</bold></gradient> ")
+                    .hoverEvent(net.kyori.adventure.text.event.HoverEvent.showText(MM.deserialize("<gray>Click to see common enchantments</gray>")))
+                    .clickEvent(net.kyori.adventure.text.event.ClickEvent.suggestCommand("sharpness unbreaking efficiency mending silk_touch fortune protection power infinity knockback looting fire_aspect"));
+            player.sendMessage(helper);
+
             new ChatInputSession(plugin, player,
                     input -> {
                         String[] parts = input.trim().split("\\s+");
@@ -716,5 +735,33 @@ public class AnimaKitsEditor implements Listener {
 
     private int parseInt(String s, int def) {
         try { return Integer.parseInt(s); } catch (NumberFormatException e) { return def; }
+    }
+
+    private ItemStack addEnchantLore(ItemStack item) {
+        ItemMeta meta = item.getItemMeta();
+        if (meta == null) return item;
+        List<Component> lore = new ArrayList<>(meta.lore() != null ? meta.lore() : List.of());
+
+        // Only add if not already present
+        boolean hasEnchantHeader = false;
+        for (Component c : lore) {
+            if (net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText().serialize(c).contains("Enchantments")) {
+                hasEnchantHeader = true;
+                break;
+            }
+        }
+
+        if (!hasEnchantHeader && !item.getEnchantments().isEmpty()) {
+            lore.add(Component.empty());
+            lore.add(MM.deserialize("<gray>Enchantments:</gray>"));
+            for (Map.Entry<Enchantment, Integer> entry : item.getEnchantments().entrySet()) {
+                String name = entry.getKey().getKey().getKey().replace('_', ' ');
+                name = name.substring(0, 1).toUpperCase() + name.substring(1);
+                lore.add(MM.deserialize("<aqua> • " + name + " " + entry.getValue() + "</aqua>"));
+            }
+        }
+        meta.lore(lore);
+        item.setItemMeta(meta);
+        return item;
     }
 }
