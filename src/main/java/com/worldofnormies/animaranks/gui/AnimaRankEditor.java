@@ -1,9 +1,10 @@
-package com.worldofnormies.animakits.rank.gui;
+package com.worldofnormies.animaranks.gui;
 
 import com.worldofnormies.animakits.AnimaKitsPlugin;
 import com.worldofnormies.animakits.gui.ChatInputSession;
 import com.worldofnormies.animakits.gui.GuiItem;
-import com.worldofnormies.animakits.rank.Rank;
+import com.worldofnormies.animakits.util.TimeUtil;
+import com.worldofnormies.animaranks.Rank;
 import com.worldofnormies.animakits.util.ColorUtil;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
@@ -131,7 +132,7 @@ public class AnimaRankEditor implements Listener {
                 List.of(
                         MM.deserialize("<gray>Enabled: " + (rank.isRankable() ? "<green>Yes</green>" : "<red>No</red>") + "</gray>"),
                         MM.deserialize("<gray>Price: <gold>$" + rank.getRankupPrice() + "</gold></gray>"),
-                        MM.deserialize("<gray>Playtime: <aqua>" + plugin.getRankManager().formatPlaytime(rank.getRankupPlaytime()) + "</aqua></gray>"),
+                        MM.deserialize("<gray>Playtime: <aqua>" + TimeUtil.formatDuration(rank.getRankupPlaytime()) + "</aqua></gray>"),
                         Component.empty(),
                         MM.deserialize("<yellow>⬡ Left-Click</yellow><gray> to toggle.</gray>"),
                         MM.deserialize("<yellow>⬡ Right-Click</yellow><gray> to set price.</gray>"),
@@ -144,7 +145,7 @@ public class AnimaRankEditor implements Listener {
                 List.of(
                         MM.deserialize("<gray>Enabled: " + (rank.isBuyable() ? "<green>Yes</green>" : "<red>No</red>") + "</gray>"),
                         MM.deserialize("<gray>Price: <gold>$" + rank.getBuyPrice() + "</gold></gray>"),
-                        MM.deserialize("<gray>Duration: <white>" + (rank.getBuyDuration() < 0 ? "Permanent" : plugin.getRankManager().formatPlaytime(rank.getBuyDuration())) + "</white></gray>"),
+                        MM.deserialize("<gray>Duration: <white>" + TimeUtil.formatDuration(rank.getBuyDuration()) + "</white></gray>"),
                         Component.empty(),
                         MM.deserialize("<yellow>⬡ Left-Click</yellow><gray> to toggle.</gray>"),
                         MM.deserialize("<yellow>⬡ Right-Click</yellow><gray> to set price.</gray>"),
@@ -256,8 +257,9 @@ public class AnimaRankEditor implements Listener {
                 });
             } else if (click == ClickType.MIDDLE) {
                 startChatInput("Enter required playtime (e.g. 1d12h30m):", input -> {
-                    try { rank.setRankupPlaytime(com.worldofnormies.animakits.rank.commands.AnimaRankCommand.parseDuration(input)); }
-                    catch (Exception e) { player.sendMessage(MM.deserialize("<red>Invalid duration.</red>")); }
+                    long dur = TimeUtil.parseDuration(input);
+                    if (dur != -2) rank.setRankupPlaytime(dur);
+                    else player.sendMessage(MM.deserialize("<red>Invalid duration.</red>"));
                     open();
                 });
             }
@@ -278,8 +280,9 @@ public class AnimaRankEditor implements Listener {
                 });
             } else if (click == ClickType.MIDDLE) {
                 startChatInput("Enter duration (e.g. 30d, or -1 for permanent):", input -> {
-                    try { rank.setBuyDuration(com.worldofnormies.animakits.rank.commands.AnimaRankCommand.parseDuration(input)); }
-                    catch (Exception e) { player.sendMessage(MM.deserialize("<red>Invalid duration.</red>")); }
+                    long dur = TimeUtil.parseDuration(input);
+                    if (dur != -2) rank.setBuyDuration(dur);
+                    else player.sendMessage(MM.deserialize("<red>Invalid duration.</red>"));
                     open();
                 });
             }

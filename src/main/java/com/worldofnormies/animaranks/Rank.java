@@ -1,4 +1,4 @@
-package com.worldofnormies.animakits.rank;
+package com.worldofnormies.animaranks;
 
 import org.bukkit.Material;
 
@@ -20,6 +20,7 @@ public class Rank {
     private String colorName;         // MiniMessage color applied to player name
     private String chatColor;         // MiniMessage color applied to player chat text
     private Material iconMaterial;    // Material used for GUI icon
+    private String kitId;             // Attached kit ID (plain name)
 
     // Rankup settings
     private boolean rankable;         // can players rank up TO this rank from one rank below?
@@ -43,6 +44,7 @@ public class Rank {
         this.colorName   = "";
         this.chatColor   = "";
         this.iconMaterial = Material.STONE;
+        this.kitId       = "";
         this.rankable    = false;
         this.rankupPlaytime = 0;
         this.rankupPrice = 0;
@@ -71,6 +73,8 @@ public class Rank {
     public void   setChatColor(String c)       { this.chatColor = c == null ? "" : c; }
     public Material getIconMaterial()          { return iconMaterial; }
     public void   setIconMaterial(Material m)  { this.iconMaterial = m == null ? Material.STONE : m; }
+    public String getKitId()                   { return kitId; }
+    public void   setKitId(String k)           { this.kitId = k == null ? "" : k; }
 
     // ── Rankup ─────────────────────────────────────────────────────
 

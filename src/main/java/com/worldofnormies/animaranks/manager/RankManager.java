@@ -1,8 +1,8 @@
-package com.worldofnormies.animakits.rank.manager;
+package com.worldofnormies.animaranks.manager;
 
 import com.worldofnormies.animakits.AnimaKitsPlugin;
-import com.worldofnormies.animakits.rank.Rank;
-import com.worldofnormies.animakits.rank.gui.AnimaRanksMainGUI;
+import com.worldofnormies.animaranks.Rank;
+import com.worldofnormies.animaranks.gui.AnimaRanksMainGUI;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
@@ -88,6 +88,7 @@ public class RankManager {
                 try { rank.setIconMaterial(Material.valueOf(matName.toUpperCase())); }
                 catch (IllegalArgumentException ignored) {}
             }
+            rank.setKitId(rs.getString("kit-id", ""));
 
             // Rankup
             rank.setRankable(rs.getBoolean("rankable", false));
@@ -122,6 +123,7 @@ public class RankManager {
             ranksConfig.set(p + ".color-name",    rank.getColorName());
             ranksConfig.set(p + ".chat-color",    rank.getChatColor());
             ranksConfig.set(p + ".icon-material", rank.getIconMaterial().name());
+            ranksConfig.set(p + ".kit-id",        rank.getKitId());
             ranksConfig.set(p + ".rankable",      rank.isRankable());
             ranksConfig.set(p + ".rankup-playtime", rank.getRankupPlaytime());
             ranksConfig.set(p + ".rankup-price",  rank.getRankupPrice());
@@ -230,8 +232,22 @@ public class RankManager {
         savePlayerRanks();
         // Apply/remove permissions for online player
         Player p = Bukkit.getPlayer(uuid);
-        if (p != null) applyRankPermissions(p, rankId);
+        if (p != null) {
+            applyRankPermissions(p, rankId);
+            updatePlayerDisplayName(p);
+        }
         refreshBrowsers();
+    }
+
+    private void updatePlayerDisplayName(Player player) {
+        Rank rank = getPlayerRank(player.getUniqueId());
+        if (rank == null) return;
+
+        String nameColor = rank.getColorName().isBlank() ? "" : com.worldofnormies.animakits.util.ColorUtil.colorize(rank.getColorName());
+        String displayName = nameColor + player.getName() + org.bukkit.ChatColor.RESET;
+
+        player.setDisplayName(displayName);
+        player.setPlayerListName(displayName);
     }
 
     public void removePlayerRank(UUID uuid) {
@@ -355,19 +371,4 @@ public class RankManager {
         openBrowsers.values().forEach(AnimaRanksMainGUI::refresh);
     }
 
-    // ══════════════════════════════════════════════════════════════
-    //  HELPERS
-    // ══════════════════════════════════════════════════════════════
-
-    public static String formatPlaytime(long seconds) {
-        if (seconds <= 0) return "0s";
-        long d = seconds / 86400, h = (seconds % 86400) / 3600,
-             m = (seconds % 3600) / 60, s = seconds % 60;
-        StringBuilder sb = new StringBuilder();
-        if (d > 0) sb.append(d).append("d ");
-        if (h > 0) sb.append(h).append("h ");
-        if (m > 0) sb.append(m).append("m ");
-        if (s > 0 || sb.isEmpty()) sb.append(s).append("s");
-        return sb.toString().trim();
-    }
 }

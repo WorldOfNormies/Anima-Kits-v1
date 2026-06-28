@@ -1,4 +1,4 @@
-package com.worldofnormies.animakits.rank;
+package com.worldofnormies.animaranks;
 
 import com.worldofnormies.animakits.AnimaKitsPlugin;
 import net.kyori.adventure.text.minimessage.MiniMessage;
@@ -31,6 +31,19 @@ public class RankListener implements Listener {
     public void onJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
         plugin.getRankManager().onPlayerJoin(player);
+        updatePlayerDisplayName(player);
+    }
+
+    private void updatePlayerDisplayName(Player player) {
+        var rm = plugin.getRankManager();
+        var rank = rm.getPlayerRank(player.getUniqueId());
+        if (rank == null) return;
+
+        String nameColor = rank.getColorName().isBlank() ? "" : com.worldofnormies.animakits.util.ColorUtil.colorize(rank.getColorName());
+        String displayName = nameColor + player.getName() + org.bukkit.ChatColor.RESET;
+
+        player.setDisplayName(displayName);
+        player.setPlayerListName(displayName);
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
@@ -61,11 +74,16 @@ public class RankListener implements Listener {
         String nameColor = rank.getColorName().isBlank() ? "" : com.worldofnormies.animakits.util.ColorUtil.colorize(rank.getColorName());
         String chatColor = rank.getChatColor().isBlank() ? "" : com.worldofnormies.animakits.util.ColorUtil.colorize(rank.getChatColor());
 
+        // Ensure display name is up to date
+        String coloredName = nameColor + player.getName() + org.bukkit.ChatColor.RESET;
+
         // We use Reset after prefix and suffix to prevent color bleeding.
-        // We use Reset before nameColor to ensure it's clean.
-        // %1$s is the player name, %2$s is the message.
-        String format = prefix + org.bukkit.ChatColor.RESET + nameColor + "%1$s" + org.bukkit.ChatColor.RESET + suffix
+        // %1$s is the player name (already colored if set via setFormat, but we specify it here for clarity)
+        // %2$s is the message.
+        String format = prefix + org.bukkit.ChatColor.RESET + coloredName + org.bukkit.ChatColor.RESET + suffix
                 + org.bukkit.ChatColor.GRAY + ": " + org.bukkit.ChatColor.RESET + chatColor + "%2$s";
+
+        // Some plugins might override the name, so we force our format
         event.setFormat(format);
     }
 }

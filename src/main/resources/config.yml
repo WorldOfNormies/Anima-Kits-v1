@@ -51,6 +51,42 @@ messages:
     <newline>
 
   # ─────────────────────────────────────────────────────────────
+  #  ECONOMY
+  # ─────────────────────────────────────────────────────────────
+
+  eco-paid: >-
+    <newline>
+    <gradient:#FFCC00:#FFFF00><bold>  λ  Payment Sent</bold></gradient>
+    <newline>
+    <dark_gray>  ┃</dark_gray> <gray>Sent:</gray> <white><bold>{amount} {type}</bold></white>
+    <newline>
+    <dark_gray>  ┃</dark_gray> <gray>To:</gray> <white><bold>{target}</bold></white>
+    <newline>
+
+  eco-received: >-
+    <newline>
+    <gradient:#FFCC00:#FFFF00><bold>  λ  Payment Received</bold></gradient>
+    <newline>
+    <dark_gray>  ┃</dark_gray> <gray>Amount:</gray> <white><bold>{amount} {type}</bold></white>
+    <newline>
+    <dark_gray>  ┃</dark_gray> <gray>From:</gray> <white><bold>{sender}</bold></white>
+    <newline>
+
+  eco-withdrawn: >-
+    <newline>
+    <gradient:#FFCC00:#FFFF00><bold>  λ  Withdrawn</bold></gradient>
+    <newline>
+    <dark_gray>  ┃</dark_gray> <gray>You withdrew</gray> <white><bold>{amount} {type}</bold></white> <gray>into an item.</gray>
+    <newline>
+
+  eco-claimed: >-
+    <newline>
+    <gradient:#FFCC00:#FFFF00><bold>  λ  Item Claimed</bold></gradient>
+    <newline>
+    <dark_gray>  ┃</dark_gray> <gray>You claimed</gray> <white><bold>{amount} {type}</bold></white> <gray>from the item.</gray>
+    <newline>
+
+  # ─────────────────────────────────────────────────────────────
   #  KIT MANAGEMENT
   # ─────────────────────────────────────────────────────────────
 

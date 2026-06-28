@@ -6,8 +6,11 @@ import com.worldofnormies.animakits.listener.PlayerJoinListener;
 import com.worldofnormies.animakits.manager.KitManager;
 import com.worldofnormies.animakits.manager.PermissionManager;
 import com.worldofnormies.animakits.manager.PlayerManager;
-import com.worldofnormies.animakits.rank.RankListener;
-import com.worldofnormies.animakits.rank.manager.RankManager;
+import com.worldofnormies.animaranks.RankListener;
+import com.worldofnormies.animaranks.manager.RankManager;
+import com.worldofnormies.animaeconomy.EconomyManager;
+import com.worldofnormies.animaeconomy.EconomyListener;
+import com.worldofnormies.animakits.scoreboard.ScoreboardManager;
 import com.worldofnormies.animakits.util.MessageUtil;
 import net.kyori.adventure.platform.bukkit.BukkitAudiences;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -22,6 +25,8 @@ public final class AnimaKitsPlugin extends JavaPlugin {
     private PermissionManager permissionManager;
     private PlayerManager playerManager;
     private RankManager rankManager;
+    private EconomyManager economyManager;
+    private ScoreboardManager scoreboardManager;
 
     @Override
     public void onEnable() {
@@ -34,11 +39,15 @@ public final class AnimaKitsPlugin extends JavaPlugin {
         this.permissionManager = new PermissionManager(this);
         this.playerManager     = new PlayerManager(this);
         this.rankManager       = new RankManager(this);
+        this.economyManager    = new EconomyManager(this);
+        this.scoreboardManager = new ScoreboardManager(this);
 
         kitManager.loadKits();
         permissionManager.load();
         playerManager.load();
         rankManager.load();
+        economyManager.load();
+        scoreboardManager.init();
 
         MessageUtil.init(this);
 
@@ -55,6 +64,7 @@ public final class AnimaKitsPlugin extends JavaPlugin {
         // Listeners
         getServer().getPluginManager().registerEvents(new PlayerJoinListener(this), this);
         getServer().getPluginManager().registerEvents(new RankListener(this), this);
+        getServer().getPluginManager().registerEvents(new EconomyListener(this), this);
 
         getLogger().info("AnimaKits enabled! Created by World Of Normies.");
     }
@@ -64,6 +74,9 @@ public final class AnimaKitsPlugin extends JavaPlugin {
         // Save playtime for all online players before shutdown
         if (rankManager != null) {
             getServer().getOnlinePlayers().forEach(p -> rankManager.onPlayerQuit(p));
+        }
+        if (economyManager != null) {
+            economyManager.save();
         }
         if (this.adventure != null) {
             this.adventure.close();
@@ -79,6 +92,7 @@ public final class AnimaKitsPlugin extends JavaPlugin {
         permissionManager.load();
         playerManager.load();
         rankManager.load();
+        economyManager.load();
     }
 
     public BukkitAudiences adventure()              { return adventure; }
@@ -86,4 +100,6 @@ public final class AnimaKitsPlugin extends JavaPlugin {
     public PermissionManager getPermissionManager() { return permissionManager; }
     public PlayerManager getPlayerManager()         { return playerManager; }
     public RankManager getRankManager()             { return rankManager; }
+    public EconomyManager getEconomyManager()       { return economyManager; }
+    public ScoreboardManager getScoreboardManager() { return scoreboardManager; }
 }

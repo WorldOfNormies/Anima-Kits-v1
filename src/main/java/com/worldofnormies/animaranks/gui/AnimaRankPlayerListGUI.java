@@ -1,9 +1,10 @@
-package com.worldofnormies.animakits.rank.gui;
+package com.worldofnormies.animaranks.gui;
 
 import com.worldofnormies.animakits.AnimaKitsPlugin;
 import com.worldofnormies.animakits.gui.ChatInputSession;
 import com.worldofnormies.animakits.gui.GuiItem;
-import com.worldofnormies.animakits.rank.Rank;
+import com.worldofnormies.animakits.util.TimeUtil;
+import com.worldofnormies.animaranks.Rank;
 import com.worldofnormies.animakits.util.ColorUtil;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
@@ -98,7 +99,7 @@ public class AnimaRankPlayerListGUI implements Listener {
                 meta.displayName(MM.deserialize("<gradient:#FF00FF:#800080><bold>" + name + "</bold></gradient>"));
                 List<Component> lore = new ArrayList<>();
                 lore.add(MM.deserialize("<gray>UUID: " + uuid + "</gray>"));
-                lore.add(MM.deserialize("<gray>Playtime: <aqua>" + plugin.getRankManager().formatPlaytime(plugin.getRankManager().getPlaytime(uuid)) + "</aqua></gray>"));
+                lore.add(MM.deserialize("<gray>Playtime: <aqua>" + TimeUtil.formatDuration(plugin.getRankManager().getPlaytime(uuid)) + "</aqua></gray>"));
                 lore.add(Component.empty());
                 lore.add(MM.deserialize("<red>⬡ Left-Click</red><gray> to remove rank.</gray>"));
                 lore.add(MM.deserialize("<yellow>⬡ Right-Click</yellow><gray> to promote to specific rank.</gray>"));
