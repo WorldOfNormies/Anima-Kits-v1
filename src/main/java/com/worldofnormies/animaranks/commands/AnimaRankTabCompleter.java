@@ -1,7 +1,7 @@
-package com.worldofnormies.animakits.rank.commands;
+package com.worldofnormies.animaranks.commands;
 
 import com.worldofnormies.animakits.AnimaKitsPlugin;
-import com.worldofnormies.animakits.rank.Rank;
+import com.worldofnormies.animaranks.Rank;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;

@@ -1,9 +1,10 @@
-package com.worldofnormies.animakits.rank.gui;
+package com.worldofnormies.animaranks.gui;
 
 import com.worldofnormies.animakits.AnimaKitsPlugin;
 import com.worldofnormies.animakits.gui.GuiItem;
-import com.worldofnormies.animakits.rank.Rank;
-import com.worldofnormies.animakits.rank.manager.RankManager;
+import com.worldofnormies.animakits.util.TimeUtil;
+import com.worldofnormies.animaranks.Rank;
+import com.worldofnormies.animaranks.manager.RankManager;
 import com.worldofnormies.animakits.util.ColorUtil;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
@@ -139,7 +140,7 @@ public class AnimaRanksMainGUI implements Listener {
                 lore.add(Component.empty());
                 lore.add(MM.deserialize("<dark_gray>Rankable:  </dark_gray>" + (rank.isRankable() ? "<green>Yes</green>" : "<red>No</red>")));
                 if (rank.isRankable()) {
-                    lore.add(MM.deserialize("<dark_gray>Playtime:  </dark_gray><aqua>" + RankManager.formatPlaytime(rank.getRankupPlaytime()) + "</aqua>"));
+                    lore.add(MM.deserialize("<dark_gray>Playtime:  </dark_gray><aqua>" + TimeUtil.formatDuration(rank.getRankupPlaytime()) + "</aqua>"));
                     lore.add(MM.deserialize("<dark_gray>Price:     </dark_gray><gold>$" + rank.getRankupPrice() + "</gold>"));
                 }
                 lore.add(MM.deserialize("<dark_gray>Buyable:   </dark_gray>" + (rank.isBuyable() ? "<green>Yes ($" + rank.getBuyPrice() + ")</green>" : "<red>No</red>")));

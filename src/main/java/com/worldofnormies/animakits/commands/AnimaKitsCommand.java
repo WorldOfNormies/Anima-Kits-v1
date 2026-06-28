@@ -6,8 +6,10 @@ import com.worldofnormies.animakits.gui.AnimaKitsMainGUI;
 import com.worldofnormies.animakits.kit.Kit;
 import com.worldofnormies.animakits.manager.PermissionManager;
 import com.worldofnormies.animakits.util.MessageUtil;
+import com.worldofnormies.animakits.util.TimeUtil;
 import com.worldofnormies.animaitemedit.ItemEditCommand;
-import com.worldofnormies.animakits.rank.commands.AnimaRankCommand;
+import com.worldofnormies.animaranks.commands.AnimaRankCommand;
+import com.worldofnormies.animaeconomy.AnimaEconomyCommand;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
@@ -59,11 +61,13 @@ public class AnimaKitsCommand implements CommandExecutor {
     private final AnimaKitsPlugin plugin;
     private final ItemEditCommand itemEditCommand;
     private final AnimaRankCommand rankCommand;
+    private final AnimaEconomyCommand economyCommand;
 
     public AnimaKitsCommand(AnimaKitsPlugin plugin) {
         this.plugin = plugin;
         this.itemEditCommand = new ItemEditCommand(plugin);
         this.rankCommand     = new AnimaRankCommand(plugin);
+        this.economyCommand  = new AnimaEconomyCommand(plugin);
     }
 
     @Override
@@ -78,9 +82,19 @@ public class AnimaKitsCommand implements CommandExecutor {
             return itemEditCommand.onCommand(sender, command, label, args);
         }
 
-        // /anima rank [...] 
+        // /anima rank [...]
         if (args[0].equalsIgnoreCase("rank") || args[0].equalsIgnoreCase("ranks")) {
             return rankCommand.onCommand(sender, command, label, args);
+        }
+
+        // /anima eco [...]
+        if (args[0].equalsIgnoreCase("eco") || args[0].equalsIgnoreCase("economy")) {
+            return economyCommand.onCommand(sender, command, label, args);
+        }
+
+        // /anima toggle scoreboard
+        if (args[0].equalsIgnoreCase("toggle") && args.length >= 2 && args[1].equalsIgnoreCase("scoreboard")) {
+            return handleToggleScoreboard(sender);
         }
 
         if (!args[0].equalsIgnoreCase("kits")) {
@@ -415,8 +429,8 @@ public class AnimaKitsCommand implements CommandExecutor {
         if (!VALID_PERMS.contains(perm)) { MessageUtil.sendMsg(sender, "perm-invalid", Map.of("perm", perm)); return true; }
         List<Player> targets = resolveTargets(sender, args[4]);
         if (targets == null) return true;
-        long durationSecs = parseDuration(args[5]);
-        String durStr = durationSecs == -1 ? "Permanent" : formatDuration(durationSecs);
+        long durationSecs = TimeUtil.parseDuration(args[5]);
+        String durStr = TimeUtil.formatDuration(durationSecs);
         if (targets.size() == 1) {
             plugin.getPermissionManager().grant(targets.get(0).getUniqueId(), perm, durationSecs);
             MessageUtil.sendMsg(sender, "perm-granted", Map.of("perm", perm, "player", targets.get(0).getName(), "duration", durStr));
@@ -484,8 +498,8 @@ public class AnimaKitsCommand implements CommandExecutor {
         if (kit == null) return true;
         boolean grant = Boolean.parseBoolean(args[boolIdx]);
         String kitName = kit.getPlainName(), permNode = PermissionManager.CLAIM_PREFIX + kitName;
-        long durationSecs = (durationArg != null) ? parseDuration(durationArg) : -1L;
-        String durStr = durationSecs == -1 ? "Permanent" : formatDuration(durationSecs);
+        long durationSecs = (durationArg != null) ? TimeUtil.parseDuration(durationArg) : -1L;
+        String durStr = TimeUtil.formatDuration(durationSecs);
         boolean isSelector = args[3].startsWith("@");
         for (Player target : targets) {
             if (grant) plugin.getPermissionManager().grantClaimPermission(target.getUniqueId(), kitName, durationSecs);
@@ -520,8 +534,8 @@ public class AnimaKitsCommand implements CommandExecutor {
         if (kit == null) return true;
         boolean grant = Boolean.parseBoolean(args[boolIdx]);
         String kitName = kit.getPlainName(), permNode = "anima.kits.claimfree." + kitName;
-        long durationSecs = (durationArg != null) ? parseDuration(durationArg) : -1L;
-        String durStr = durationSecs == -1 ? "Permanent" : formatDuration(durationSecs);
+        long durationSecs = (durationArg != null) ? TimeUtil.parseDuration(durationArg) : -1L;
+        String durStr = TimeUtil.formatDuration(durationSecs);
         boolean isSelector = args[3].startsWith("@");
         for (Player target : targets) {
             if (grant) plugin.getPermissionManager().grant(target.getUniqueId(), permNode, durationSecs);
@@ -568,16 +582,30 @@ public class AnimaKitsCommand implements CommandExecutor {
         if (args.length < 3) { new com.worldofnormies.animakits.gui.AnimaClaimMainGUI(plugin, player).open(); return true; }
         Kit kit = requireKit(sender, joinArgs(args, 2));
         if (kit == null) return true;
+
+        UUID uuid = player.getUniqueId();
+        var playerRank = plugin.getRankManager().getPlayerRank(uuid);
+
         String claimPerm = "anima.kits.claim." + kit.getPlainName();
         boolean hasBukkitPerm = player.hasPermission(claimPerm) || player.hasPermission("anima.kits.claim.*") || player.hasPermission("anima.kits.*");
-        boolean hasStoredPerm = plugin.getPermissionManager().hasClaimPermission(player.getUniqueId(), kit.getPlainName());
-        if (!hasBukkitPerm && !hasStoredPerm) { MessageUtil.sendMsg(sender, "no-permission"); return true; }
-        UUID uuid = player.getUniqueId();
+        boolean hasStoredPerm = plugin.getPermissionManager().hasClaimPermission(uuid, kit.getPlainName());
+
+        // Check if kit is attached to player's rank
+        boolean hasRankPerm = playerRank != null && kit.getPlainName().equalsIgnoreCase(playerRank.getKitId());
+
+        if (!hasBukkitPerm && !hasStoredPerm && !hasRankPerm) { MessageUtil.sendMsg(sender, "no-permission"); return true; }
+
         if (kit.isSingleClaim() && plugin.getPlayerManager().hasClaimed(uuid, kit.getId())) { MessageUtil.err(sender, "You have already claimed this kit once!"); return true; }
         long cooldown = plugin.getPlayerManager().getRemainingCooldown(uuid, kit.getId());
         if (cooldown > 0) {
             boolean hasClaimFree = player.hasPermission("anima.kits.claimfree." + kit.getPlainName()) || player.hasPermission("anima.kits.claimfree.*") || plugin.getPermissionManager().hasClaimFreePermission(uuid, kit.getPlainName());
-            if (!hasClaimFree) { MessageUtil.err(sender, "You must wait " + cooldown + " more seconds before claiming this kit again."); return true; }
+
+            // Check if kit is attached to player's rank
+            if (playerRank != null && kit.getPlainName().equalsIgnoreCase(playerRank.getKitId())) {
+                hasClaimFree = true;
+            }
+
+            if (!hasClaimFree) { MessageUtil.err(sender, "You must wait " + TimeUtil.formatDuration(cooldown) + " more before claiming this kit again."); return true; }
         }
         giveKit(player, kit, 1);
         plugin.getPlayerManager().markClaimed(uuid, kit.getId());
@@ -597,7 +625,7 @@ public class AnimaKitsCommand implements CommandExecutor {
             if (sender instanceof Player p) if (!hasPerm) hasPerm = plugin.getPermissionManager().hasClaimPermission(p.getUniqueId(), kit.getPlainName());
             if (!hasPerm) continue;
             String info = " <gray>• </gray>" + kit.getRawName() + " <gray>(ID: " + kit.getPlainName() + ")</gray>";
-            if (kit.getCooldown() > 0) info += " <aqua>[" + kit.getCooldown() + "s CD]</aqua>";
+            if (kit.getCooldown() > 0) info += " <aqua>[" + TimeUtil.formatDuration(kit.getCooldown()) + " CD]</aqua>";
             if (kit.isSingleClaim()) info += " <red>[Once]</red>";
             MessageUtil.send(sender, MM.deserialize(info));
         }
@@ -611,12 +639,19 @@ public class AnimaKitsCommand implements CommandExecutor {
         String kitName = joinArgsRange(args, 2, args.length - 1);
         Kit kit = requireKit(sender, kitName);
         if (kit == null) return true;
-        long time = parseDuration(timeArg);
+        long time = TimeUtil.parseDuration(timeArg);
         if (time == -2) { MessageUtil.sendMsg(sender, "cooldown-invalid", Map.of("input", timeArg)); return true; }
         if (time == -1) time = 0;
         kit.setCooldown(time);
         plugin.getKitManager().saveKits();
-        MessageUtil.sendMsg(sender, "cooldown-set", Map.of("kit", kit.getPlainName(), "time", time == 0 ? "None" : formatDuration(time)));
+        MessageUtil.sendMsg(sender, "cooldown-set", Map.of("kit", kit.getPlainName(), "time", TimeUtil.formatDuration(time)));
+        return true;
+    }
+
+    private boolean handleToggleScoreboard(CommandSender sender) {
+        if (!requirePlayer(sender)) return true;
+        plugin.getScoreboardManager().toggleScoreboard((Player) sender);
+        MessageUtil.send(sender, MM.deserialize("<gradient:#54DAF4:#545EB6><bold>Scoreboard toggled!</bold></gradient>"));
         return true;
     }
 
@@ -695,25 +730,6 @@ public class AnimaKitsCommand implements CommandExecutor {
         catch (NumberFormatException e) { MessageUtil.err(sender, "Amount must be a positive integer."); return -1; }
     }
 
-    private long parseDuration(String raw) {
-        if (raw == null || raw.isBlank()) return -2;
-        String trimmed = raw.trim();
-        if (trimmed.equals("-1")) return -1;
-        try { return Long.parseLong(trimmed); } catch (NumberFormatException ignored) {}
-        java.util.regex.Matcher m = java.util.regex.Pattern.compile("(?:(\\d+)d)?(?:(\\d+)h)?(?:(\\d+)m)?(?:(\\d+)s)?", java.util.regex.Pattern.CASE_INSENSITIVE).matcher(trimmed);
-        if (!m.matches()) return -2;
-        long days = m.group(1) != null ? Long.parseLong(m.group(1)) : 0, hours = m.group(2) != null ? Long.parseLong(m.group(2)) : 0, minutes = m.group(3) != null ? Long.parseLong(m.group(3)) : 0, seconds = m.group(4) != null ? Long.parseLong(m.group(4)) : 0;
-        long total = days * 86400L + hours * 3600L + minutes * 60L + seconds;
-        return total > 0 ? total : -2;
-    }
-
-    private String formatDuration(long seconds) {
-        if (seconds <= 0) return "None"; if (seconds == -1) return "Permanent";
-        long d = seconds / 86400, h = (seconds % 86400) / 3600, m = (seconds % 3600) / 60, s = seconds % 60;
-        StringBuilder sb = new StringBuilder();
-        if (d > 0) sb.append(d).append("d "); if (h > 0) sb.append(h).append("h "); if (m > 0) sb.append(m).append("m "); if (s > 0) sb.append(s).append("s");
-        return sb.toString().trim();
-    }
 
     private void giveKit(Player player, Kit kit, int times) {
         for (int t = 0; t < times; t++) {

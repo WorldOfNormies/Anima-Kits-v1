@@ -1,9 +1,10 @@
-package com.worldofnormies.animakits.rank.commands;
+package com.worldofnormies.animaranks.commands;
 
 import com.worldofnormies.animakits.AnimaKitsPlugin;
-import com.worldofnormies.animakits.rank.Rank;
-import com.worldofnormies.animakits.rank.gui.AnimaRanksMainGUI;
-import com.worldofnormies.animakits.rank.manager.RankManager;
+import com.worldofnormies.animakits.util.TimeUtil;
+import com.worldofnormies.animaranks.Rank;
+import com.worldofnormies.animaranks.gui.AnimaRanksMainGUI;
+import com.worldofnormies.animaranks.manager.RankManager;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
@@ -69,6 +70,7 @@ public class AnimaRankCommand {
             case "rankup"       -> handleRankup(sender, args);
             case "isbuyable"    -> handleIsBuyable(sender, args);
             case "permissions"  -> handlePermissions(sender, args);
+            case "setkit"       -> handleSetKit(sender, args);
             default             -> handleRankNameSub(sender, args);
         };
     }
@@ -215,11 +217,11 @@ public class AnimaRankCommand {
         if (!plugin.getRankManager().rankExists(rankId)) return err(sender, "No rank found: <white>" + rankId + "</white>");
         long duration = -1;
         if (args.length >= 7) {
-            try { duration = parseDuration(args[6]); }
-            catch (IllegalArgumentException e) { return err(sender, "Invalid duration: <white>" + args[6] + "</white>"); }
+            duration = TimeUtil.parseDuration(args[6]);
+            if (duration == -2) return err(sender, "Invalid duration: <white>" + args[6] + "</white>");
         }
         plugin.getRankManager().setPlayerRank(target.getUniqueId(), rankId, duration);
-        String durStr = duration < 0 ? "Permanent" : RankManager.formatPlaytime(duration);
+        String durStr = TimeUtil.formatDuration(duration);
         send(sender, "<newline><gradient:#54DAF4:#545EB6><bold>  ✓  Rank Assigned</bold></gradient>" +
             "<newline><dark_gray>  ┃</dark_gray> <gray>Player: <white><bold>" + target.getName() + "</bold></white></gray>" +
             "<newline><dark_gray>  ┃</dark_gray> <gray>Rank:   <yellow><bold>" + rankId + "</bold></yellow></gray>" +
@@ -295,8 +297,11 @@ public class AnimaRankCommand {
         boolean val = Boolean.parseBoolean(args[3]);
         long playtime;
         double price;
-        try { playtime = parseDuration(args[4]); price = Double.parseDouble(args[5]); }
-        catch (Exception e) { return err(sender, "Usage: /anima rank isrankable <id> <true|false> <playtime e.g. 1h30m> <price>"); }
+        playtime = TimeUtil.parseDuration(args[4]);
+        if (playtime == -2) return err(sender, "Invalid playtime: <white>" + args[4] + "</white>");
+        try { price = Double.parseDouble(args[5]); }
+        catch (Exception e) { return err(sender, "Invalid price: <white>" + args[5] + "</white>"); }
+
         rank.setRankable(val);
         rank.setRankupPlaytime(playtime);
         rank.setRankupPrice(price);
@@ -304,7 +309,7 @@ public class AnimaRankCommand {
         send(sender, "<newline><gradient:#54DAF4:#545EB6><bold>  ✓  Rankable Updated</bold></gradient>" +
             "<newline><dark_gray>  ┃</dark_gray> <gray>Rank:     <yellow>" + id + "</yellow></gray>" +
             "<newline><dark_gray>  ┃</dark_gray> <gray>Rankable: <white>" + val + "</white></gray>" +
-            "<newline><dark_gray>  ┃</dark_gray> <gray>Playtime: <aqua>" + RankManager.formatPlaytime(playtime) + "</aqua></gray>" +
+            "<newline><dark_gray>  ┃</dark_gray> <gray>Playtime: <aqua>" + TimeUtil.formatDuration(playtime) + "</aqua></gray>" +
             "<newline><dark_gray>  ┃</dark_gray> <gray>Price:    <gold>$" + price + "</gold></gray><newline>");
         return true;
     }
@@ -334,8 +339,8 @@ public class AnimaRankCommand {
 
         long pt = plugin.getRankManager().getPlaytime(uuid);
         if (pt < target.getRankupPlaytime()) {
-            return err(sender, "You need <aqua>" + RankManager.formatPlaytime(target.getRankupPlaytime())
-                + "</aqua> playtime. You have <aqua>" + RankManager.formatPlaytime(pt) + "</aqua>.");
+            return err(sender, "You need <aqua>" + TimeUtil.formatDuration(target.getRankupPlaytime())
+                + "</aqua> playtime. You have <aqua>" + TimeUtil.formatDuration(pt) + "</aqua>.");
         }
 
         // Economy check placeholder – integrate with Vault if present
@@ -363,13 +368,17 @@ public class AnimaRankCommand {
         boolean val = Boolean.parseBoolean(args[3]);
         double price;
         long duration;
-        try { price = Double.parseDouble(args[4]); duration = parseDuration(args[5]); }
-        catch (Exception e) { return err(sender, "Invalid price or duration. Duration: 1d2h30m or -1 for permanent."); }
+        try { price = Double.parseDouble(args[4]); }
+        catch (Exception e) { return err(sender, "Invalid price: <white>" + args[4] + "</white>"); }
+
+        duration = TimeUtil.parseDuration(args[5]);
+        if (duration == -2) return err(sender, "Invalid duration: <white>" + args[5] + "</white>");
+
         rank.setBuyable(val);
         rank.setBuyPrice(price);
         rank.setBuyDuration(duration);
         plugin.getRankManager().saveRanks();
-        String durStr = duration < 0 ? "Permanent" : RankManager.formatPlaytime(duration);
+        String durStr = TimeUtil.formatDuration(duration);
         send(sender, "<newline><gradient:#54DAF4:#545EB6><bold>  ✓  Buyable Updated</bold></gradient>" +
             "<newline><dark_gray>  ┃</dark_gray> <gray>Rank:     <yellow>" + id + "</yellow></gray>" +
             "<newline><dark_gray>  ┃</dark_gray> <gray>Buyable:  <white>" + val + "</white></gray>" +
@@ -381,6 +390,30 @@ public class AnimaRankCommand {
     // ══════════════════════════════════════════════════════════════
     //  /anima rank permissions <rankId> <node> <true|false>
     // ══════════════════════════════════════════════════════════════
+
+    private boolean handleSetKit(CommandSender sender, String[] args) {
+        if (!sender.hasPermission("anima.ranks.set") && !sender.hasPermission("anima.ranks.*")) return noPerm(sender);
+        if (args.length < 4) return usage(sender, "/anima rank setkit <rankId> <kitId|none>");
+
+        String rankId = args[2].toLowerCase();
+        Rank rank = plugin.getRankManager().getRank(rankId);
+        if (rank == null) return err(sender, "No rank found: <white>" + rankId + "</white>");
+
+        String kitId = args[3].toLowerCase();
+        if (kitId.equals("none") || kitId.equals("clear")) {
+            rank.setKitId("");
+            plugin.getRankManager().saveRanks();
+            return ok(sender, "Cleared kit for rank <yellow>" + rankId + "</yellow>.");
+        }
+
+        if (!plugin.getKitManager().kitExists(kitId)) {
+            return err(sender, "No kit found: <white>" + kitId + "</white>");
+        }
+
+        rank.setKitId(kitId);
+        plugin.getRankManager().saveRanks();
+        return ok(sender, "Rank <yellow>" + rankId + "</yellow> now has kit <white>" + kitId + "</white>.");
+    }
 
     private boolean handlePermissions(CommandSender sender, String[] args) {
         if (!sender.hasPermission("anima.ranks.permissions") && !sender.hasPermission("anima.ranks.*")) return noPerm(sender);
@@ -434,7 +467,7 @@ public class AnimaRankCommand {
                 if (rankId.equalsIgnoreCase(r)) {
                     long pt = plugin.getRankManager().getPlaytime(p.getUniqueId());
                     sender.sendMessage(MM.deserialize(
-                        "<dark_gray>  ┃ </dark_gray><white>" + p.getName() + "</white> <dark_gray>· Playtime: <aqua>" + RankManager.formatPlaytime(pt) + "</aqua></dark_gray>"));
+                        "<dark_gray>  ┃ </dark_gray><white>" + p.getName() + "</white> <dark_gray>· Playtime: <aqua>" + TimeUtil.formatDuration(pt) + "</aqua></dark_gray>"));
                     count++;
                 }
             }
@@ -461,36 +494,9 @@ public class AnimaRankCommand {
         if (!rank.getSuffix().isBlank())    sender.sendMessage(MM.deserialize("<dark_gray>  ┃ Suffix:     </dark_gray>" + rank.getSuffix() + "<reset>"));
         if (!rank.getChatColor().isBlank()) sender.sendMessage(MM.deserialize("<dark_gray>  ┃ Chat Color: </dark_gray>" + rank.getChatColor() + "Preview<reset>"));
         if (!rank.getColorName().isBlank()) sender.sendMessage(MM.deserialize("<dark_gray>  ┃ Name Color: </dark_gray>" + rank.getColorName() + "Preview<reset>"));
-        sender.sendMessage(MM.deserialize("<dark_gray>  ┃ Rankable:   </dark_gray>" + (rank.isRankable() ? "<green>Yes</green> <dark_gray>· playtime: <aqua>" + RankManager.formatPlaytime(rank.getRankupPlaytime()) + "</aqua> price: <gold>$" + rank.getRankupPrice() + "</gold></dark_gray>" : "<red>No</red>")));
-        sender.sendMessage(MM.deserialize("<dark_gray>  ┃ Buyable:    </dark_gray>" + (rank.isBuyable() ? "<green>Yes</green> <dark_gray>· price: <gold>$" + rank.getBuyPrice() + "</gold> duration: <white>" + (rank.getBuyDuration() < 0 ? "Permanent" : RankManager.formatPlaytime(rank.getBuyDuration())) + "</white></dark_gray>" : "<red>No</red>")));
+        sender.sendMessage(MM.deserialize("<dark_gray>  ┃ Rankable:   </dark_gray>" + (rank.isRankable() ? "<green>Yes</green> <dark_gray>· playtime: <aqua>" + TimeUtil.formatDuration(rank.getRankupPlaytime()) + "</aqua> price: <gold>$" + rank.getRankupPrice() + "</gold></dark_gray>" : "<red>No</red>")));
+        sender.sendMessage(MM.deserialize("<dark_gray>  ┃ Buyable:    </dark_gray>" + (rank.isBuyable() ? "<green>Yes</green> <dark_gray>· price: <gold>$" + rank.getBuyPrice() + "</gold> duration: <white>" + TimeUtil.formatDuration(rank.getBuyDuration()) + "</white></dark_gray>" : "<red>No</red>")));
         sender.sendMessage(MM.deserialize("<dark_gray>  ┃ Permissions: </dark_gray><white>" + rank.getPermissions().size() + " nodes</white>"));
-    }
-
-    /**
-     * Parses duration strings like "1d2h30m", "3600", "30s", "-1" (permanent).
-     */
-    public static long parseDuration(String input) {
-        if (input == null) throw new IllegalArgumentException("null");
-        if (input.equals("-1")) return -1;
-        // Pure number = seconds
-        try { return Long.parseLong(input); } catch (NumberFormatException ignored) {}
-        long total = 0;
-        java.util.regex.Matcher m = java.util.regex.Pattern
-                .compile("(\\d+)([dhms])").matcher(input.toLowerCase());
-        boolean found = false;
-        while (m.find()) {
-            found = true;
-            long num = Long.parseLong(m.group(1));
-            total += switch (m.group(2)) {
-                case "d" -> num * 86400;
-                case "h" -> num * 3600;
-                case "m" -> num * 60;
-                case "s" -> num;
-                default  -> 0;
-            };
-        }
-        if (!found) throw new IllegalArgumentException("Bad duration: " + input);
-        return total;
     }
 
     private String joinArgs(String[] args, int from) {

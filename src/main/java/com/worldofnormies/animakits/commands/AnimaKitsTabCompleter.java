@@ -3,7 +3,7 @@ package com.worldofnormies.animakits.commands;
 import com.worldofnormies.animakits.AnimaKitsPlugin;
 import com.worldofnormies.animakits.manager.KitManager;
 import com.worldofnormies.animaitemedit.ItemEditTabCompleter;
-import com.worldofnormies.animakits.rank.commands.AnimaRankTabCompleter;
+import com.worldofnormies.animaranks.commands.AnimaRankTabCompleter;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
