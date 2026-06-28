@@ -36,44 +36,84 @@ public class PermissionManager {
 
     private final AnimaKitsPlugin plugin;
     private final File file;
+    private final File playerFolder;
     private FileConfiguration config;
+    private final File commandsFile;
+    private FileConfiguration commandsConfig;
 
     /** playerUUID → permNode → expiryEpochSecond (-1 = permanent) */
     private final Map<UUID, Map<String, Long>> data = new HashMap<>();
 
     public PermissionManager(AnimaKitsPlugin plugin) {
         this.plugin = plugin;
-        this.file = new File(plugin.getDataFolder(), "permissions.yml");
+        File folder = new File(plugin.getDataFolder(), "permissions");
+        if (!folder.exists()) folder.mkdirs();
+        this.file = new File(folder, "permissions.yml");
+        this.playerFolder = new File(folder, "players");
+        if (!this.playerFolder.exists()) this.playerFolder.mkdirs();
+        this.commandsFile = new File(folder, "commands.yml");
     }
 
     public void load() {
         data.clear();
-        if (!file.exists()) return;
-        config = YamlConfiguration.loadConfiguration(file);
-        for (String uuidStr : config.getKeys(false)) {
-            try {
-                UUID uuid = UUID.fromString(uuidStr);
+
+        // Load global permissions
+        if (file.exists()) {
+            config = YamlConfiguration.loadConfiguration(file);
+            var globalSection = config.getConfigurationSection(GLOBAL_KEY.toString());
+            if (globalSection != null) {
                 Map<String, Long> perms = new HashMap<>();
-                var section = config.getConfigurationSection(uuidStr);
-                if (section != null) {
-                    for (String perm : section.getKeys(false)) {
-                        perms.put(perm, section.getLong(perm));
-                    }
+                for (String perm : globalSection.getKeys(false)) {
+                    perms.put(perm, globalSection.getLong(perm));
                 }
-                data.put(uuid, perms);
-            } catch (IllegalArgumentException ignored) {}
+                data.put(GLOBAL_KEY, perms);
+            }
         }
+
+        // Load command permissions
+        if (!commandsFile.exists()) {
+            plugin.saveResource("permissions/commands.yml", false);
+        }
+        commandsConfig = YamlConfiguration.loadConfiguration(commandsFile);
+    }
+
+    public void loadPlayer(UUID uuid) {
+        File pFile = new File(playerFolder, uuid.toString() + ".yml");
+        if (!pFile.exists()) return;
+
+        FileConfiguration pConfig = YamlConfiguration.loadConfiguration(pFile);
+        Map<String, Long> perms = new HashMap<>();
+        for (String perm : pConfig.getKeys(false)) {
+            perms.put(perm, pConfig.getLong(perm));
+        }
+        data.put(uuid, perms);
     }
 
     private void save() {
+        // Save global permissions
         config = new YamlConfiguration();
-        for (var entry : data.entrySet()) {
-            for (var permEntry : entry.getValue().entrySet()) {
-                config.set(entry.getKey() + "." + permEntry.getKey(), permEntry.getValue());
+        Map<String, Long> globals = data.get(GLOBAL_KEY);
+        if (globals != null) {
+            for (var entry : globals.entrySet()) {
+                config.set(GLOBAL_KEY.toString() + "." + entry.getKey(), entry.getValue());
             }
         }
         try { config.save(file); } catch (IOException e) {
             plugin.getLogger().severe("Could not save permissions.yml: " + e.getMessage());
+        }
+    }
+
+    public void savePlayer(UUID uuid) {
+        Map<String, Long> perms = data.get(uuid);
+        if (perms == null || perms.isEmpty()) return;
+
+        File pFile = new File(playerFolder, uuid.toString() + ".yml");
+        FileConfiguration pConfig = new YamlConfiguration();
+        for (var entry : perms.entrySet()) {
+            pConfig.set(entry.getKey(), entry.getValue());
+        }
+        try { pConfig.save(pFile); } catch (IOException e) {
+            plugin.getLogger().severe("Could not save player permissions for " + uuid + ": " + e.getMessage());
         }
     }
 
@@ -84,14 +124,16 @@ public class PermissionManager {
     public void grant(UUID player, String perm, long durationSeconds) {
         long expiry = durationSeconds == -1 ? -1 : Instant.now().getEpochSecond() + durationSeconds;
         data.computeIfAbsent(player, k -> new HashMap<>()).put(perm, expiry);
-        save();
+        if (player.equals(GLOBAL_KEY)) save();
+        else savePlayer(player);
     }
 
     public boolean revoke(UUID player, String perm) {
         Map<String, Long> perms = data.get(player);
         if (perms == null || !perms.containsKey(perm)) return false;
         perms.remove(perm);
-        save();
+        if (player.equals(GLOBAL_KEY)) save();
+        else savePlayer(player);
         return true;
     }
 
@@ -164,7 +206,12 @@ public class PermissionManager {
                 changed = true;
             }
         }
-        if (changed) save();
+        if (changed) savePlayer(player);
+    }
+
+    public String getCommandPermission(String commandName) {
+        if (commandsConfig == null) return "anima.admin";
+        return commandsConfig.getString("commands." + commandName.toLowerCase() + ".permission", "anima.admin");
     }
 
     // -----------------------------------------------------------------------

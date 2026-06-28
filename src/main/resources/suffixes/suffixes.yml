@@ -1,0 +1,5 @@
+templates:
+  hero: " <gradient:#FFD700:#FFFF00>⚔ HERO ⚔</gradient>"
+  legend: " <gradient:#8A2BE2:#DA70D6>☄ LEGEND ☄</gradient>"
+  godly: " <gradient:#FF4500:#FFA500>⚡ GODLY ⚡</gradient>"
+  mythic: " <gradient:#00BFFF:#1E90FF>❂ MYTHIC ❂</gradient>"

@@ -206,14 +206,26 @@ public class ItemEditCommand {
             // ── REPAIR ─────────────────────────────────────────────────
             case "repair" -> {
                 if (!hasPerm(player, "anima.itemedit.repair")) return noPerm(player);
-                if (!ItemEditUtil.isDamageable(held)) {
-                    player.sendMessage(MM.deserialize("<red>✘ This item cannot be repaired.</red>"));
+
+                boolean repairAll = false;
+                if (args.length >= 3 && args[2].equalsIgnoreCase("all")) {
+                    repairAll = true;
+                }
+
+                com.worldofnormies.animaranks.Rank rank = plugin.getRankManager().getPlayerRank(player.getUniqueId());
+                if (repairAll && (rank == null || !rank.canRepairAll())) {
+                    player.sendMessage(MM.deserialize("<red>✘ You do not have permission to repair all items.</red>"));
                     return true;
                 }
-                // Cooldown check (skip if player has bypass or no cooldown configured)
+
+                // Cooldown check
                 if (!player.hasPermission("anima.itemedit.*") && !player.hasPermission("anima.itemedit.admin")) {
-                    long cdSeconds = plugin.getConfig().getLong(REPAIR_CD_KEY, 0);
-                    if (cdSeconds > 0 && player.hasPermission("anima.itemedit.repair.cooldown")) {
+                    int cdSeconds = rank != null ? rank.getRepairCooldown() : (int)plugin.getConfig().getLong(REPAIR_CD_KEY, 300);
+                    if (cdSeconds == -1) {
+                        player.sendMessage(MM.deserialize("<red>✘ You do not have permission to repair items.</red>"));
+                        return true;
+                    }
+                    if (cdSeconds > 0) {
                         long remaining = getRepairCooldown(player.getUniqueId());
                         if (remaining > 0) {
                             player.sendMessage(MM.deserialize(
@@ -224,8 +236,22 @@ public class ItemEditCommand {
                         setRepairCooldown(player.getUniqueId(), cdSeconds);
                     }
                 }
-                player.getInventory().setItemInMainHand(ItemEditUtil.repair(held));
-                ok(player, "Item fully repaired.");
+
+                if (repairAll) {
+                    for (ItemStack item : player.getInventory().getContents()) {
+                        if (item != null && ItemEditUtil.isDamageable(item)) {
+                            ItemEditUtil.repair(item);
+                        }
+                    }
+                    ok(player, "All items in inventory fully repaired.");
+                } else {
+                    if (!ItemEditUtil.isDamageable(held)) {
+                        player.sendMessage(MM.deserialize("<red>✘ This item cannot be repaired.</red>"));
+                        return true;
+                    }
+                    player.getInventory().setItemInMainHand(ItemEditUtil.repair(held));
+                    ok(player, "Item fully repaired.");
+                }
             }
 
             default -> sendUsage(player);

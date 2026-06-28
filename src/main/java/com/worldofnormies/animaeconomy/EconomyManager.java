@@ -22,12 +22,14 @@ public class EconomyManager {
 
     public EconomyManager(AnimaKitsPlugin plugin) {
         this.plugin = plugin;
-        this.file = new File(plugin.getDataFolder(), "economy.yml");
+        File folder = new File(plugin.getDataFolder(), "economy");
+        if (!folder.exists()) folder.mkdirs();
+        this.file = new File(folder, "economy.yml");
     }
 
     public void load() {
         if (!file.exists()) {
-            plugin.saveResource("economy.yml", false);
+            // plugin.saveResource("economy.yml", false); // This expects it in the root of the jar
         }
         config = YamlConfiguration.loadConfiguration(file);
 

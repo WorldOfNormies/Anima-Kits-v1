@@ -10,6 +10,12 @@ import com.worldofnormies.animakits.util.TimeUtil;
 import com.worldofnormies.animaitemedit.ItemEditCommand;
 import com.worldofnormies.animaranks.commands.AnimaRankCommand;
 import com.worldofnormies.animaeconomy.AnimaEconomyCommand;
+import com.worldofnormies.animakits.home.Home;
+import com.worldofnormies.animakits.home.gui.AnimaHomeGUI;
+import com.worldofnormies.animakits.rtp.gui.AnimaRtpGUI;
+import com.worldofnormies.animakits.shop.gui.AnimaShopGUI;
+import com.worldofnormies.animakits.perk.GlowPerk;
+import com.worldofnormies.animakits.util.ColorUtil;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
@@ -72,6 +78,52 @@ public class AnimaKitsCommand implements CommandExecutor {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        String name = command.getName().toLowerCase();
+
+        // Handle "?" usage helper
+        if (args.length > 0 && args[args.length - 1].equals("?")) {
+            String sub = args[0].toLowerCase();
+            showUsageHelper(sender, sub);
+            return true;
+        }
+
+        if (!name.equals("anima")) {
+            String[] newArgs = new String[args.length + 1];
+            newArgs[0] = switch (name) {
+                case "kits" -> "kits";
+                case "itemedit" -> "itemedit";
+                case "ranks" -> "rank";
+                case "echo" -> "eco";
+                case "feed" -> "feed";
+                case "repair" -> "itemedit"; // maps to /anima itemedit repair
+                case "ender" -> "echest";
+                case "home" -> "homes";
+                case "astore" -> "shop";
+                case "claims" -> "kits"; // maps to /anima kits claim
+                case "permissions" -> "permission"; // might need custom handling
+                case "rtp" -> "rtp";
+                default -> name;
+            };
+
+            // Custom handling for specific shortcuts
+            if (name.equals("rtp")) {
+                return handleRtp(sender, args);
+            } else if (name.equals("repair")) {
+                newArgs = new String[args.length + 2];
+                newArgs[0] = "itemedit";
+                newArgs[1] = "repair";
+                System.arraycopy(args, 0, newArgs, 2, args.length);
+            } else if (name.equals("claims")) {
+                newArgs = new String[args.length + 2];
+                newArgs[0] = "kits";
+                newArgs[1] = "claim";
+                System.arraycopy(args, 0, newArgs, 2, args.length);
+            } else {
+                System.arraycopy(args, 0, newArgs, 1, args.length);
+            }
+            return onCommand(sender, command, "anima", newArgs);
+        }
+
         if (args.length == 0) {
             showMainUsage(sender);
             return true;
@@ -92,9 +144,44 @@ public class AnimaKitsCommand implements CommandExecutor {
             return economyCommand.onCommand(sender, command, label, args);
         }
 
+        // /anima homes [...]
+        if (args[0].equalsIgnoreCase("homes") || args[0].equalsIgnoreCase("home")) {
+            return handleHomes(sender, args);
+        }
+
+        // /anima rtp
+        if (args[0].equalsIgnoreCase("rtp")) {
+            return handleRtp(sender, args);
+        }
+
+        // /anima echest
+        if (args[0].equalsIgnoreCase("echest")) {
+            return handleEChest(sender);
+        }
+
+        // /anima shop
+        if (args[0].equalsIgnoreCase("shop")) {
+            return handleShop(sender);
+        }
+
+        // /anima glow
+        if (args[0].equalsIgnoreCase("glow")) {
+            return handleGlow(sender, args);
+        }
+
+        // /anima suffix
+        if (args[0].equalsIgnoreCase("suffix")) {
+            return handleSuffix(sender, args);
+        }
+
         // /anima toggle scoreboard
         if (args[0].equalsIgnoreCase("toggle") && args.length >= 2 && args[1].equalsIgnoreCase("scoreboard")) {
             return handleToggleScoreboard(sender);
+        }
+
+        // /anima feed
+        if (args[0].equalsIgnoreCase("feed")) {
+            return handleFeed(sender);
         }
 
         if (!args[0].equalsIgnoreCase("kits")) {
@@ -117,7 +204,7 @@ public class AnimaKitsCommand implements CommandExecutor {
             case "give"          -> handleGive(sender, args);
             case "giveall"       -> handleGiveAll(sender, args);
             case "reload"        -> handleReload(sender);
-            case "help"          -> handleHelp(sender);
+            case "help"          -> handleHelp(sender, args);
             case "permission"    -> handlePermission(sender, args);
             case "list"          -> handleList(sender);
             case "setcooldown"   -> handleSetCooldown(sender, args);
@@ -364,46 +451,51 @@ public class AnimaKitsCommand implements CommandExecutor {
         return true;
     }
 
-    private boolean handleHelp(CommandSender sender) {
+    private boolean handleHelp(CommandSender sender, String[] args) {
         if (!requirePerm(sender, "anima.kits.use")) return true;
+        int page = 1;
+        if (args.length >= 3) {
+            try { page = Integer.parseInt(args[2]); } catch (NumberFormatException ignored) {}
+        }
+
         if (sender.hasPermission("anima.kits.add") || sender.hasPermission("anima.kits.*")) {
-            MessageUtil.send(sender, MM.deserialize("""
-                    <gradient:#54DAF4:#545EB6><bold>━━━━━━━ AnimaKits Admin Help ━━━━━━━</bold></gradient>
-                    <yellow>/anima kits</yellow>                              <gray>Open administrative kit builder layout</gray>
-                    <yellow>/anima kits add <name></yellow>              <gray>Create a new kit from scratch</gray>
-                    <yellow>/anima kits delete <kit></yellow>            <gray>Delete a kit configuration</gray>
-                    <yellow>/anima kits rename <kit> <new></yellow>      <gray>Rename an existing kit</gray>
-                    <yellow>/anima kits claim</yellow>                       <gray>Open Claim Kits GUI</gray>
-                    <yellow>/anima kits claim <kit></yellow>                 <gray>Directly claim a specific kit</gray>
-                    <yellow>/anima kits lore add <kit> <text></yellow>   <gray>Add a lore line to a kit</gray>
-                    <yellow>/anima kits lore edit <kit> <#> <text></yellow> <gray>Edit an existing lore line</gray>
-                    <yellow>/anima kits lore remove <kit> <#></yellow>  <gray>Remove a lore line</gray>
-                    <yellow>/anima kits clonekit <kit> <new></yellow>   <gray>Clone an existing kit setup</gray>
-                    <yellow>/anima kits give <player> <kit> <n></yellow> <gray>Give kit to player(s)</gray>
-                    <yellow>/anima kits giveall <kit> <n></yellow>      <gray>Give kit to all online</gray>
-                    <yellow>/anima kits setcooldown <kit> <secs></yellow><gray>Set cooldown timer</gray>
-                    <yellow>/anima kits singleclaim <kit> <t|f></yellow> <gray>Toggle single-claim</gray>
-                    <yellow>/anima kits permission ...</yellow>         <gray>Manage timed permission flags</gray>
-                    <yellow>/anima kits reload</yellow>                 <gray>Reload plugin configuration</gray>
-                    <gradient:#54DAF4:#545EB6><bold>━━━━ Item Edit Commands ━━━━</bold></gradient>
-                    <yellow>/anima itemedit prefix <set|remove|edit> [value]</yellow>
-                    <yellow>/anima itemedit suffix <set|remove|edit> [value]</yellow>
-                    <yellow>/anima itemedit rename <set|remove|edit> [name]</yellow>
-                    <yellow>/anima itemedit lore <add|remove|edit|clear> [line] [text]</yellow>
-                    <yellow>/anima itemedit enchant <add|remove|edit> <enchant> [level]</yellow>
-                    <yellow>/anima itemedit unbreakable <true|false></yellow>
-                    <yellow>/anima itemedit gloweffect <true|false></yellow>
-                    <yellow>/anima itemedit repair</yellow>
-                    <gradient:#54DAF4:#545EB6><bold>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</bold></gradient>
-                    """));
+            if (page == 1) {
+                MessageUtil.send(sender, MM.deserialize("""
+                        <gradient:#54DAF4:#545EB6><bold>━━━━━━━ Anima Admin Help (1/2) ━━━━━━━</bold></gradient>
+                        <yellow>/kits</yellow> <gray>· Open kit builder</gray>
+                        <yellow>/kits add <name></yellow> <gray>· Create kit</gray>
+                        <yellow>/kits delete <kit></yellow> <gray>· Delete kit</gray>
+                        <yellow>/kits rename <kit> <new></yellow> <gray>· Rename kit</gray>
+                        <yellow>/claims [kit]</yellow> <gray>· Claim kits</gray>
+                        <yellow>/ranks</yellow> <gray>· Rank management</gray>
+                        <yellow>/permissions</yellow> <gray>· Permission management</gray>
+                        <yellow>/anima reload</yellow> <gray>· Reload plugin</gray>
+                        <gray>Type /anima help 2 for more...</gray>
+                        """));
+            } else {
+                MessageUtil.send(sender, MM.deserialize("""
+                        <gradient:#54DAF4:#545EB6><bold>━━━━━━━ Anima Admin Help (2/2) ━━━━━━━</bold></gradient>
+                        <yellow>/itemedit <prefix|suffix|rename|lore|enchant|unbreakable|gloweffect|repair></yellow>
+                        <yellow>/echo <balance|pay|withdraw|admin></yellow>
+                        <yellow>/rtp</yellow> <gray>· Random teleport</gray>
+                        <yellow>/home [set]</yellow> <gray>· Home management</gray>
+                        <yellow>/ender</yellow> <gray>· Open e-chest</gray>
+                        <yellow>/astore</yellow> <gray>· Open shop</gray>
+                        <yellow>/glow</yellow> <gray>· Toggle glow</gray>
+                        <yellow>/feed</yellow> <gray>· Feed yourself</gray>
+                        """));
+            }
         } else {
             MessageUtil.send(sender, MM.deserialize("""
-                    <gradient:#54DAF4:#545EB6><bold>━━━━━━━ AnimaKits Help ━━━━━━━</bold></gradient>
-                    <yellow>/anima kits</yellow>              <gray>Open the graphical kit selector browser</gray>
-                    <yellow>/anima kits claim</yellow>        <gray>Open the graphical kit claim browser</gray>
-                    <yellow>/anima kits claim <kit></yellow>  <gray>Claim items from a specific authorized kit</gray>
-                    <yellow>/anima kits list</yellow>         <gray>List names of all currently available kits</gray>
-                    <yellow>/anima kits help</yellow>         <gray>Show this support guidelines overview</gray>
+                    <gradient:#54DAF4:#545EB6><bold>━━━━━━━ Anima Player Help ━━━━━━━</bold></gradient>
+                    <yellow>/kits</yellow> <gray>· Open kit browser</gray>
+                    <yellow>/claims [kit]</yellow> <gray>· Claim items</gray>
+                    <yellow>/rtp</yellow> <gray>· Random teleport</gray>
+                    <yellow>/home [set]</yellow> <gray>· Home management</gray>
+                    <yellow>/ender</yellow> <gray>· Open e-chest</gray>
+                    <yellow>/astore</yellow> <gray>· Open shop</gray>
+                    <yellow>/glow</yellow> <gray>· Toggle glow</gray>
+                    <yellow>/feed</yellow> <gray>· Feed yourself</gray>
                     <gradient:#54DAF4:#545EB6><bold>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</bold></gradient>
                     """));
         }
@@ -655,6 +747,111 @@ public class AnimaKitsCommand implements CommandExecutor {
         return true;
     }
 
+    private boolean handleHomes(CommandSender sender, String[] args) {
+        if (!requirePlayer(sender)) return true;
+        Player player = (Player) sender;
+        if (!requirePerm(sender, plugin.getPermissionManager().getCommandPermission("homes"))) return true;
+
+        if (args.length == 1) {
+            new AnimaHomeGUI(plugin, player).open(player);
+            return true;
+        }
+
+        String sub = args[1].toLowerCase();
+        if (sub.equals("set")) {
+            if (args.length < 3) { usage(sender, "/anima homes set <name>"); return true; }
+            String name = args[2];
+            if (plugin.getHomeManager().addHome(player.getUniqueId(), new Home(name, player.getLocation()))) {
+                player.sendMessage(ColorUtil.colorize("&aHome '&f" + name + "&a' set!"));
+            } else {
+                player.sendMessage(ColorUtil.colorize("&cYou have reached your home limit of &f" + plugin.getHomeManager().getHomeLimit(player.getUniqueId()) + "&c!"));
+            }
+            return true;
+        }
+
+        new AnimaHomeGUI(plugin, player).open(player);
+        return true;
+    }
+
+    private boolean handleRtp(CommandSender sender, String[] args) {
+        if (args.length >= 2 && args[1].equalsIgnoreCase("admin")) {
+            if (!requirePerm(sender, "anima.admin")) return true;
+            if (args.length < 5) {
+                usage(sender, "/anima rtp admin <world> <radius> <cooldown>");
+                return true;
+            }
+            String world = args[2];
+            try {
+                int radius = Integer.parseInt(args[3]);
+                int cooldown = Integer.parseInt(args[4]);
+                plugin.getRtpManager().setWorldSettings(world, radius, cooldown);
+                sender.sendMessage(ColorUtil.colorize("&aRTP settings for &f" + world + " &aupdated!"));
+            } catch (NumberFormatException e) {
+                MessageUtil.err(sender, "Radius and cooldown must be numbers.");
+            }
+            return true;
+        }
+
+        if (!requirePlayer(sender)) return true;
+        if (!requirePerm(sender, plugin.getPermissionManager().getCommandPermission("rtp"))) return true;
+        new AnimaRtpGUI(plugin).open((Player) sender);
+        return true;
+    }
+
+    private boolean handleEChest(CommandSender sender) {
+        if (!requirePlayer(sender)) return true;
+        if (!requirePerm(sender, plugin.getPermissionManager().getCommandPermission("echest"))) return true;
+        plugin.getEChestManager().openEChest((Player) sender);
+        return true;
+    }
+
+    private boolean handleShop(CommandSender sender) {
+        if (!requirePlayer(sender)) return true;
+        if (!requirePerm(sender, plugin.getPermissionManager().getCommandPermission("shop"))) return true;
+        new AnimaShopGUI(plugin).open((Player) sender);
+        return true;
+    }
+
+    private boolean handleGlow(CommandSender sender, String[] args) {
+        if (!requirePlayer(sender)) return true;
+        if (!requirePerm(sender, plugin.getPermissionManager().getCommandPermission("glow"))) return true;
+        GlowPerk.toggleGlow(plugin, (Player) sender);
+        return true;
+    }
+
+    private boolean handleFeed(CommandSender sender) {
+        if (!requirePlayer(sender)) return true;
+        Player player = (Player) sender;
+        if (!requirePerm(sender, plugin.getPermissionManager().getCommandPermission("feed"))) return true;
+
+        // Rank-based cooldown for feed (Default 300s)
+        UUID uuid = player.getUniqueId();
+        long cooldown = plugin.getPlayerManager().getRemainingCooldown(uuid, UUID.nameUUIDFromBytes("feed".getBytes()));
+        if (cooldown > 0) {
+            MessageUtil.err(player, "You must wait " + TimeUtil.formatDuration(cooldown) + " before feeding again.");
+            return true;
+        }
+
+        player.setFoodLevel(20);
+        player.setSaturation(20);
+        player.sendMessage(ColorUtil.colorize("&aYou have been fed!"));
+        plugin.getPlayerManager().setCooldown(uuid, UUID.nameUUIDFromBytes("feed".getBytes()), 300); // Fixed for now, can be rank-based
+        return true;
+    }
+
+    private boolean handleSuffix(CommandSender sender, String[] args) {
+        if (args.length < 4 || !args[1].equalsIgnoreCase("create")) {
+            usage(sender, "/anima suffix create <id> <suffix>");
+            return true;
+        }
+        if (!requirePerm(sender, "anima.admin")) return true;
+        String id = args[2];
+        String suffix = joinArgs(args, 3);
+        plugin.getSuffixManager().addTemplate(id, suffix);
+        sender.sendMessage(ColorUtil.colorize("&aTemplate '&f" + id + "&a' created!"));
+        return true;
+    }
+
     private boolean handleSingleClaim(CommandSender sender, String[] args) {
         if (!requirePerm(sender, "anima.kits.singleclaim")) return true;
         if (args.length < 4) { usage(sender, "/anima kits singleclaim <kit> <true|false>"); return true; }
@@ -688,6 +885,15 @@ public class AnimaKitsCommand implements CommandExecutor {
     }
 
     private void usage(CommandSender sender, String usage) { MessageUtil.sendMsg(sender, "usage-error", Map.of("usage", usage)); }
+
+    private void showUsageHelper(CommandSender sender, String sub) {
+        switch (sub) {
+            case "kits", "claim", "claims" -> MessageUtil.send(sender, MM.deserialize("<gradient:#54DAF4:#545EB6><bold>Guide:</bold></gradient> Use <yellow>/kits</yellow> to browse kits or <yellow>/claims [kit]</yellow> to claim."));
+            case "rtp" -> MessageUtil.send(sender, MM.deserialize("<gradient:#54DAF4:#545EB6><bold>Guide:</bold></gradient> Use <yellow>/rtp</yellow> to open world selection."));
+            case "home", "homes" -> MessageUtil.send(sender, MM.deserialize("<gradient:#54DAF4:#545EB6><bold>Guide:</bold></gradient> Use <yellow>/home set [name]</yellow> to set a home or <yellow>/home</yellow> to list them."));
+            default -> MessageUtil.send(sender, MM.deserialize("<gradient:#54DAF4:#545EB6><bold>Guide:</bold></gradient> Type <yellow>/anima help</yellow> for all commands."));
+        }
+    }
 
     private void showMainUsage(CommandSender sender) {
         if (sender.hasPermission("anima.kits.add") || sender.hasPermission("anima.kits.*")) {

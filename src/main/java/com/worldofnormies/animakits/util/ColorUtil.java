@@ -101,4 +101,11 @@ public final class ColorUtil {
     public static String gradient(String text, String startHex, String endHex) {
         return "<gradient:#" + startHex + ":#" + endHex + ">" + text + "</gradient>";
     }
+
+    public static String parseToMiniMessage(String input) {
+        // This is a rough approximation, MiniMessage doesn't have a direct "serialize to MM"
+        // for legacy strings without complex logic. We'll just return the input
+        // and assume it might already be MM-compatible or legacy.
+        return input;
+    }
 }

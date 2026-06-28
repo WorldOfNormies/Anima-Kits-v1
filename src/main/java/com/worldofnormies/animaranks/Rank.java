@@ -27,8 +27,16 @@ public class Rank {
     private long    rankupPlaytime;   // required playtime in seconds for rankup
     private double  rankupPrice;      // price in economy for rankup
 
+    // Perk settings
+    private int     homeLimit;        // max homes for this rank
+    private int     repairCooldown;   // seconds, 0 = no cooldown
+    private boolean canRepairAll;     // can use /repair all
+    private int     rtpCooldown;      // seconds, cooldown for /rtp
+    private int     echestRows;       // number of echest rows (1-6)
+
     // Buyable settings
     private boolean buyable;          // can players buy this rank?
+    private boolean buyableWithAnimaz; // true = Animaz (Â), false = Ani (λ)
     private double  buyPrice;         // cost to buy
     private long    buyDuration;      // seconds, -1 = permanent
 
@@ -48,7 +56,13 @@ public class Rank {
         this.rankable    = false;
         this.rankupPlaytime = 0;
         this.rankupPrice = 0;
+        this.homeLimit   = 2;
+        this.repairCooldown = 0;
+        this.canRepairAll = false;
+        this.rtpCooldown = 300;
+        this.echestRows  = 1;
         this.buyable     = false;
+        this.buyableWithAnimaz = false;
         this.buyPrice    = 0;
         this.buyDuration = -1;
     }
@@ -85,10 +99,25 @@ public class Rank {
     public double  getRankupPrice()            { return rankupPrice; }
     public void    setRankupPrice(double p)    { this.rankupPrice = p; }
 
+    // ── Perks ──────────────────────────────────────────────────────
+
+    public int     getHomeLimit()              { return homeLimit; }
+    public void    setHomeLimit(int l)         { this.homeLimit = l; }
+    public int     getRepairCooldown()         { return repairCooldown; }
+    public void    setRepairCooldown(int c)    { this.repairCooldown = c; }
+    public boolean canRepairAll()              { return canRepairAll; }
+    public void    setCanRepairAll(boolean b)  { this.canRepairAll = b; }
+    public int     getRtpCooldown()            { return rtpCooldown; }
+    public void    setRtpCooldown(int c)       { this.rtpCooldown = c; }
+    public int     getEchestRows()             { return echestRows; }
+    public void    setEchestRows(int r)        { this.echestRows = r; }
+
     // ── Buyable ────────────────────────────────────────────────────
 
     public boolean isBuyable()                 { return buyable; }
     public void    setBuyable(boolean b)       { this.buyable = b; }
+    public boolean isBuyableWithAnimaz()       { return buyableWithAnimaz; }
+    public void    setBuyableWithAnimaz(boolean b) { this.buyableWithAnimaz = b; }
     public double  getBuyPrice()               { return buyPrice; }
     public void    setBuyPrice(double p)       { this.buyPrice = p; }
     public long    getBuyDuration()            { return buyDuration; }

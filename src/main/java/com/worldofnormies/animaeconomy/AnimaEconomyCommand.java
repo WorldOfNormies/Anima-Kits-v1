@@ -36,11 +36,63 @@ public class AnimaEconomyCommand implements CommandExecutor {
             case "balance", "bal" -> handleBalance(sender, args);
             case "setbalance", "setbal" -> handleSetBalance(sender, args);
             case "addbalance", "addbal" -> handleAddBalance(sender, args);
+            case "admin" -> handleAdmin(sender, args);
             default -> {
                 showUsage(sender);
                 yield true;
             }
         };
+    }
+
+    private boolean handleAdmin(CommandSender sender, String[] args) {
+        if (!sender.hasPermission("anima.eco.admin")) {
+            MessageUtil.sendMsg(sender, "no-permission");
+            return true;
+        }
+        if (args.length < 3) {
+            MessageUtil.err(sender, "Usage: /anima eco admin <pay|withdraw> ...");
+            return true;
+        }
+        String sub = args[2].toLowerCase();
+        if (sub.equals("pay")) {
+            // Re-route to handleAddBalance basically
+            if (args.length < 6) {
+                MessageUtil.err(sender, "Usage: /anima eco admin pay <player> <type> <amount>");
+                return true;
+            }
+            String[] shiftedArgs = new String[args.length - 1];
+            shiftedArgs[0] = args[0];
+            shiftedArgs[1] = "addbalance";
+            System.arraycopy(args, 3, shiftedArgs, 2, args.length - 3);
+            return handleAddBalance(sender, shiftedArgs);
+        } else if (sub.equals("withdraw")) {
+            if (args.length < 6) {
+                MessageUtil.err(sender, "Usage: /anima eco admin withdraw <player> <type> <amount>");
+                return true;
+            }
+            Player target = Bukkit.getPlayer(args[3]);
+            if (target == null) {
+                MessageUtil.err(sender, "Player not found.");
+                return true;
+            }
+            String type = args[4].toLowerCase();
+            if (!isValidType(type)) {
+                MessageUtil.err(sender, "Invalid type.");
+                return true;
+            }
+            long amount;
+            try { amount = Long.parseLong(args[5]); } catch (NumberFormatException e) {
+                MessageUtil.err(sender, "Invalid amount.");
+                return true;
+            }
+            if (plugin.getEconomyManager().withdraw(target.getUniqueId(), type, amount)) {
+                MessageUtil.send(sender, MM.deserialize("<green>Withdrew " + amount + " " + type + " from " + target.getName() + ".</green>"));
+            } else {
+                MessageUtil.err(sender, "Player does not have enough balance.");
+            }
+            return true;
+        }
+        return true;
     }
 
     private boolean handlePay(CommandSender sender, String[] args) {
@@ -76,8 +128,9 @@ public class AnimaEconomyCommand implements CommandExecutor {
 
         if (plugin.getEconomyManager().withdraw(player.getUniqueId(), type, amount)) {
             plugin.getEconomyManager().addBalance(target.getUniqueId(), type, amount);
-            MessageUtil.sendMsg(player, "eco-paid", Map.of("amount", String.valueOf(amount), "type", type, "target", target.getName()));
-            MessageUtil.sendMsg(target, "eco-received", Map.of("amount", String.valueOf(amount), "type", type, "sender", player.getName()));
+            String symbol = type.equalsIgnoreCase("animaz") || type.equalsIgnoreCase("coins") ? "Â" : (type.equalsIgnoreCase("xp") ? "XP" : "λ");
+            player.sendMessage(MM.deserialize("<gradient:#54DAF4:#545EB6>✓ Sent </gradient> <white>" + amount + " " + symbol + "</white> <gray>to</gray> <white>" + target.getName() + "</white>"));
+            target.sendMessage(MM.deserialize("<gradient:#54DAF4:#545EB6>✓ Received </gradient> <white>" + amount + " " + symbol + "</white> <gray>from</gray> <white>" + player.getName() + "</white>"));
         } else {
             MessageUtil.err(player, "You don't have enough balance.");
         }
@@ -117,7 +170,8 @@ public class AnimaEconomyCommand implements CommandExecutor {
                     player.getWorld().dropItemNaturally(player.getLocation(), left);
                 }
             }
-            MessageUtil.sendMsg(player, "eco-withdrawn", Map.of("amount", String.valueOf(amount), "type", type));
+            String symbol = type.equalsIgnoreCase("animaz") || type.equalsIgnoreCase("coins") ? "Â" : (type.equalsIgnoreCase("xp") ? "XP" : "λ");
+            player.sendMessage(MM.deserialize("<gradient:#54DAF4:#545EB6>✓ Withdrawn </gradient> <white>" + amount + " " + symbol + "</white>"));
         } else {
             MessageUtil.err(player, "You don't have enough balance.");
         }
