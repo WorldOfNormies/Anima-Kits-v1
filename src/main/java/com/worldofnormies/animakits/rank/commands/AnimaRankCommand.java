@@ -183,7 +183,7 @@ public class AnimaRankCommand {
    		 switch (field) {
         			case "colorname" -> {
             			// Show rank name with the color applied
-           			example = " <dark_gray>[ <reset>" + value + rank.getName() + "<dark_gray> ]</dark_gray>";
+				example = " <dark_gray>[ <reset>" + value + rank.getId() + "<dark_gray> ]</dark_gray>";
         			}
         			case "chatcolor" -> {
            			// Show example chat message with the color

@@ -43,12 +43,10 @@ public class RankListener implements Listener {
      * Applies rank prefix, suffix, and chat color to chat messages.
      * Uses legacy AsyncPlayerChatEvent – works on all Paper/Spigot 1.21.
      *
-     * Format: [prefix] PlayerName[suffix]: chatcolor message
+     * Format: [prefix] PlayerName [suffix]: chatcolor message
      *
-     * Note: For full MiniMessage chat support (gradients in chat), a dedicated
-     * chat plugin or Paper's Adventure chat events are recommended.
-     * This applies the rank's chat color and prefix/suffix as legacy color codes
-     * via ColorUtil for broad compatibility.
+     * Note: Uses ColorUtil.colorize() which translates MiniMessage (including gradients)
+     * into legacy Bukkit/Bungee hex codes that Spigot's AsyncPlayerChatEvent format understands.
      */
     @SuppressWarnings("deprecation")
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
@@ -63,9 +61,11 @@ public class RankListener implements Listener {
         String nameColor = rank.getColorName().isBlank() ? "" : com.worldofnormies.animakits.util.ColorUtil.colorize(rank.getColorName());
         String chatColor = rank.getChatColor().isBlank() ? "" : com.worldofnormies.animakits.util.ColorUtil.colorize(rank.getChatColor());
 
-        // Build format: <prefix><namecolor>name</reset><suffix>: <chatcolor>message
-        String format = prefix + nameColor + "%s" + org.bukkit.ChatColor.RESET + suffix
-                + org.bukkit.ChatColor.GRAY + ": " + chatColor + "%s";
+        // We use Reset after prefix and suffix to prevent color bleeding.
+        // We use Reset before nameColor to ensure it's clean.
+        // %1$s is the player name, %2$s is the message.
+        String format = prefix + org.bukkit.ChatColor.RESET + nameColor + "%1$s" + org.bukkit.ChatColor.RESET + suffix
+                + org.bukkit.ChatColor.GRAY + ": " + org.bukkit.ChatColor.RESET + chatColor + "%2$s";
         event.setFormat(format);
     }
 }

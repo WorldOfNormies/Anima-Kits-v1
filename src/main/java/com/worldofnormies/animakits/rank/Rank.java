@@ -1,5 +1,7 @@
 package com.worldofnormies.animakits.rank;
 
+import org.bukkit.Material;
+
 import java.util.*;
 
 /**
@@ -17,6 +19,7 @@ public class Rank {
     private String suffix;            // MiniMessage suffix shown after player name
     private String colorName;         // MiniMessage color applied to player name
     private String chatColor;         // MiniMessage color applied to player chat text
+    private Material iconMaterial;    // Material used for GUI icon
 
     // Rankup settings
     private boolean rankable;         // can players rank up TO this rank from one rank below?
@@ -39,6 +42,7 @@ public class Rank {
         this.suffix      = "";
         this.colorName   = "";
         this.chatColor   = "";
+        this.iconMaterial = Material.STONE;
         this.rankable    = false;
         this.rankupPlaytime = 0;
         this.rankupPrice = 0;
@@ -65,6 +69,8 @@ public class Rank {
     public void   setColorName(String c)       { this.colorName = c == null ? "" : c; }
     public String getChatColor()               { return chatColor; }
     public void   setChatColor(String c)       { this.chatColor = c == null ? "" : c; }
+    public Material getIconMaterial()          { return iconMaterial; }
+    public void   setIconMaterial(Material m)  { this.iconMaterial = m == null ? Material.STONE : m; }
 
     // ── Rankup ─────────────────────────────────────────────────────
 
