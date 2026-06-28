@@ -3,6 +3,7 @@ package com.worldofnormies.animakits.commands;
 import com.worldofnormies.animakits.AnimaKitsPlugin;
 import com.worldofnormies.animakits.manager.KitManager;
 import com.worldofnormies.animaitemedit.ItemEditTabCompleter;
+import com.worldofnormies.animakits.rank.commands.AnimaRankTabCompleter;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -20,7 +21,7 @@ import java.util.List;
  */
 public class AnimaKitsTabCompleter implements TabCompleter {
 
-    private static final List<String> ROOT_SUBS = List.of("kits", "kit", "itemedit");
+    private static final List<String> ROOT_SUBS = List.of("kits", "kit", "itemedit", "rank", "ranks");
     private static final List<String> SUB1       = List.of("kits", "kit");
 
     private static final List<String> ADMIN_SUB2 = List.of(
@@ -48,9 +49,11 @@ public class AnimaKitsTabCompleter implements TabCompleter {
             "anima.kits.list", "anima.kits.setcooldown", "anima.kits.singleclaim");
 
     private final AnimaKitsPlugin plugin;
+    private final AnimaRankTabCompleter rankTabCompleter;
 
     public AnimaKitsTabCompleter(AnimaKitsPlugin plugin) {
         this.plugin = plugin;
+        this.rankTabCompleter = new AnimaRankTabCompleter(plugin);
     }
 
     @Override
@@ -62,6 +65,11 @@ public class AnimaKitsTabCompleter implements TabCompleter {
         // Route itemedit completions to ItemEditTabCompleter
         if (args[0].equalsIgnoreCase("itemedit")) {
             return ItemEditTabCompleter.complete(sender, args);
+        }
+
+        // Route rank completions to AnimaRankTabCompleter
+        if (args[0].equalsIgnoreCase("rank") || args[0].equalsIgnoreCase("ranks")) {
+            return rankTabCompleter.complete(sender, args);
         }
 
         if (args.length == 2 && SUB1.contains(args[0].toLowerCase())) {

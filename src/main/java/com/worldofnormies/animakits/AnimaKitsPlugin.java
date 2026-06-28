@@ -6,6 +6,8 @@ import com.worldofnormies.animakits.listener.PlayerJoinListener;
 import com.worldofnormies.animakits.manager.KitManager;
 import com.worldofnormies.animakits.manager.PermissionManager;
 import com.worldofnormies.animakits.manager.PlayerManager;
+import com.worldofnormies.animakits.rank.RankListener;
+import com.worldofnormies.animakits.rank.manager.RankManager;
 import com.worldofnormies.animakits.util.MessageUtil;
 import net.kyori.adventure.platform.bukkit.BukkitAudiences;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -19,25 +21,25 @@ public final class AnimaKitsPlugin extends JavaPlugin {
     private KitManager kitManager;
     private PermissionManager permissionManager;
     private PlayerManager playerManager;
+    private RankManager rankManager;
 
     @Override
     public void onEnable() {
-        // Save default config
         saveDefaultConfig();
 
-        // Adventure audiences (for hex/gradient colour support on Spigot)
         this.adventure = BukkitAudiences.create(this);
 
         // Managers
-        this.kitManager = new KitManager(this);
+        this.kitManager        = new KitManager(this);
         this.permissionManager = new PermissionManager(this);
-        this.playerManager = new PlayerManager(this);
+        this.playerManager     = new PlayerManager(this);
+        this.rankManager       = new RankManager(this);
 
         kitManager.loadKits();
         permissionManager.load();
         playerManager.load();
+        rankManager.load();
 
-        // Utilities
         MessageUtil.init(this);
 
         // Commands
@@ -52,12 +54,17 @@ public final class AnimaKitsPlugin extends JavaPlugin {
 
         // Listeners
         getServer().getPluginManager().registerEvents(new PlayerJoinListener(this), this);
+        getServer().getPluginManager().registerEvents(new RankListener(this), this);
 
         getLogger().info("AnimaKits enabled! Created by World Of Normies.");
     }
 
     @Override
     public void onDisable() {
+        // Save playtime for all online players before shutdown
+        if (rankManager != null) {
+            getServer().getOnlinePlayers().forEach(p -> rankManager.onPlayerQuit(p));
+        }
         if (this.adventure != null) {
             this.adventure.close();
             this.adventure = null;
@@ -65,17 +72,18 @@ public final class AnimaKitsPlugin extends JavaPlugin {
         getLogger().info("AnimaKits disabled.");
     }
 
-    /** Reload config + kit data. */
     public void reload() {
         reloadConfig();
         MessageUtil.reload(this);
         kitManager.loadKits();
         permissionManager.load();
         playerManager.load();
+        rankManager.load();
     }
 
-    public BukkitAudiences adventure() { return adventure; }
-    public KitManager getKitManager() { return kitManager; }
+    public BukkitAudiences adventure()              { return adventure; }
+    public KitManager getKitManager()               { return kitManager; }
     public PermissionManager getPermissionManager() { return permissionManager; }
-    public PlayerManager getPlayerManager() { return playerManager; }
+    public PlayerManager getPlayerManager()         { return playerManager; }
+    public RankManager getRankManager()             { return rankManager; }
 }

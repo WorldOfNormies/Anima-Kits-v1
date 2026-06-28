@@ -2,7 +2,7 @@ name: AnimaKits
 version: '${version}'
 main: com.worldofnormies.animakits.AnimaKitsPlugin
 api-version: '1.21'
-description: "A powerful, feature-rich kit management plugin with gradient support, multi-page GUIs, and Bedrock compatibility."
+description: "A powerful, feature-rich kit, item-edit, and rank management plugin with gradient support, multi-page GUIs, and Bedrock compatibility."
 authors:
   - "World Of Normies"
 website: "https://github.com/worldofnormies/AnimaKits"
@@ -10,17 +10,21 @@ softdepend:
   - floodgate
   - Geyser-Spigot
   - PlaceholderAPI
+  - Vault
 
 commands:
   anima:
     description: "Main AnimaKits command"
-    usage: "/anima kits [subcommand]"
+    usage: "/anima <kits|itemedit|rank> [subcommand]"
     aliases: [ ak, animakits ]
 
 permissions:
-  # --- Admin Master Node ---
+
+  # ════════════════════════════════════════════════════════════════
+  #  KITS – Admin Master
+  # ════════════════════════════════════════════════════════════════
   anima.kits.*:
-    description: "Grants access to ALL AnimaKits commands and features."
+    description: "Grants access to ALL AnimaKits kit commands and features."
     default: op
     children:
       anima.kits.add: true
@@ -40,97 +44,180 @@ permissions:
       anima.kits.permission.claimfree: true
       anima.kits.setcooldown: true
       anima.kits.singleclaim: true
+      anima.kits.onjoinnew: true
 
-  # --- Default Player Access Nodes ---
+  # ── Default Player Kit Nodes ──────────────────────────────────
   anima.kits.use:
     description: "Allows opening the visual kit claim browser menus."
     default: true
-
   anima.kits.claim:
     description: "Allows running the direct kit claim command syntax."
     default: true
-
   anima.kits.claim.*:
     description: "Allows claiming any existing kit by default."
     default: true
-
   anima.kits.list:
     description: "Allows viewing text list of available authorized kits."
     default: true
-
   anima.kits.help:
     description: "Allows viewing the basic player help instructions overview."
     default: true
 
-  # --- Restricted Admin Action Nodes ---
+  # ── Restricted Admin Kit Nodes ────────────────────────────────
   anima.kits.add:
     description: "Create a brand new kit framework."
     default: op
-
   anima.kits.delete:
     description: "Permanently delete an existing kit structure."
     default: op
-
   anima.kits.rename:
     description: "Modify an existing kit's profile display identity."
     default: op
-
   anima.kits.lore.add:
     description: "Append a fresh line of text lore to a kit."
     default: op
-
   anima.kits.lore.edit:
     description: "Modify a single line of index lore on a kit."
     default: op
-
   anima.kits.lore.remove:
     description: "Strip a line of index lore away from a kit."
     default: op
-
   anima.kits.clonekit:
     description: "Duplicate a kit directly to a new template."
     default: op
-
   anima.kits.give:
     description: "Force drop a specific kit onto a single player."
     default: op
-
   anima.kits.giveall:
     description: "Force distribute a kit to every active online connection."
     default: op
-
   anima.kits.reload:
     description: "Reload all internal config parameters dynamically."
     default: op
-
   anima.kits.permission.add:
     description: "Grant temporary or absolute generic nodes to profiles."
     default: op
-
   anima.kits.permission.remove:
     description: "Revoke nodes from profiles manually."
     default: op
-
   anima.kits.permission.show:
     description: "Inspect active kit nodes applied onto a player profile."
     default: op
-
   anima.kits.permission.claim:
     description: "Grant or revoke temporary or absolute specific kit claim access nodes."
     default: op
-
   anima.kits.permission.claimfree:
     description: "Grant or revoke temporary or absolute kit cooldown bypass nodes."
     default: op
-
   anima.kits.setcooldown:
     description: "Set an absolute cooldown window time limit on kits."
     default: op
-
   anima.kits.singleclaim:
     description: "Toggle one-time-only claim limitations on kits."
     default: op
-
   anima.kits.onjoinnew:
     description: "Set or clear the starter kit given to new players on first join."
     default: op
+
+  # ════════════════════════════════════════════════════════════════
+  #  ITEM EDIT – Admin wildcard
+  # ════════════════════════════════════════════════════════════════
+  anima.itemedit.*:
+    description: "Grants access to ALL /anima itemedit commands (admin)."
+    default: op
+    children:
+      anima.itemedit.admin: true
+      anima.itemedit.enchant: true
+      anima.itemedit.glow: true
+      anima.itemedit.unbreakable: true
+      anima.itemedit.lore: true
+      anima.itemedit.rename: true
+      anima.itemedit.prefix: true
+      anima.itemedit.suffix: true
+      anima.itemedit.repair: true
+
+  anima.itemedit.admin:
+    description: "Admin alias – grants all itemedit permissions and bypasses repair cooldown."
+    default: op
+
+  # ── Admin-only item edit nodes ────────────────────────────────
+  anima.itemedit.enchant:
+    description: "Add, edit, or remove enchantments on held item (including unsafe levels)."
+    default: op
+  anima.itemedit.glow:
+    description: "Apply or remove the glow (hidden enchant) effect on held item."
+    default: op
+  anima.itemedit.unbreakable:
+    description: "Toggle the unbreakable flag on held item."
+    default: op
+  anima.itemedit.lore:
+    description: "Add, edit, remove, or clear lore lines on held item."
+    default: op
+
+  # ── Player-accessible item edit nodes ────────────────────────
+  anima.itemedit.rename:
+    description: "Rename (full MiniMessage name) on the player's held item."
+    default: false
+  anima.itemedit.prefix:
+    description: "Set or remove a prefix on the player's held item name."
+    default: false
+  anima.itemedit.suffix:
+    description: "Set or remove a suffix on the player's held item name."
+    default: false
+  anima.itemedit.repair:
+    description: "Repair the player's held item via command."
+    default: false
+  anima.itemedit.repair.cooldown:
+    description: "Subject to the repair cooldown defined in config (itemedit.repair-cooldown). Grant this to players who should be rate-limited. Admins with anima.itemedit.* bypass the cooldown automatically."
+    default: false
+
+  # ════════════════════════════════════════════════════════════════
+  #  RANKS – Admin Master
+  # ════════════════════════════════════════════════════════════════
+  anima.ranks.*:
+    description: "Grants access to ALL /anima rank admin commands."
+    default: op
+    children:
+      anima.ranks.admin: true
+      anima.ranks.add: true
+      anima.ranks.delete: true
+      anima.ranks.set: true
+      anima.ranks.list: true
+      anima.ranks.assign: true
+      anima.ranks.promote: true
+      anima.ranks.permissions: true
+
+  anima.ranks.admin:
+    description: "Admin alias for all rank management."
+    default: op
+
+  # ── Admin rank nodes ──────────────────────────────────────────
+  anima.ranks.add:
+    description: "Create a new rank."
+    default: op
+  anima.ranks.delete:
+    description: "Delete an existing rank."
+    default: op
+  anima.ranks.set:
+    description: "Set rank properties (prefix, suffix, colorname, chatcolor, isrankable, isbuyable)."
+    default: op
+  anima.ranks.assign:
+    description: "Assign or remove a rank from a player (/anima rank set add|remove)."
+    default: op
+  anima.ranks.promote:
+    description: "Promote or demote a player to a specific rank directly."
+    default: op
+  anima.ranks.permissions:
+    description: "Manage permission nodes attached to a rank."
+    default: op
+
+  # ── Player rank nodes ─────────────────────────────────────────
+  anima.ranks.list:
+    description: "View the rank list and rank details."
+    default: true
+  anima.ranks.rankup:
+    description: "Allow a player to rank up via /anima rank rankup if requirements are met."
+    default: true
+  anima.ranks.gui:
+    description: "Open the /anima ranks GUI as a player (read-only view)."
+    default: true

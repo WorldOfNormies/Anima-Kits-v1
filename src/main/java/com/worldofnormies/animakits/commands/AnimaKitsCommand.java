@@ -7,6 +7,7 @@ import com.worldofnormies.animakits.kit.Kit;
 import com.worldofnormies.animakits.manager.PermissionManager;
 import com.worldofnormies.animakits.util.MessageUtil;
 import com.worldofnormies.animaitemedit.ItemEditCommand;
+import com.worldofnormies.animakits.rank.commands.AnimaRankCommand;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
@@ -57,10 +58,12 @@ public class AnimaKitsCommand implements CommandExecutor {
 
     private final AnimaKitsPlugin plugin;
     private final ItemEditCommand itemEditCommand;
+    private final AnimaRankCommand rankCommand;
 
     public AnimaKitsCommand(AnimaKitsPlugin plugin) {
         this.plugin = plugin;
         this.itemEditCommand = new ItemEditCommand(plugin);
+        this.rankCommand     = new AnimaRankCommand(plugin);
     }
 
     @Override
@@ -73,6 +76,11 @@ public class AnimaKitsCommand implements CommandExecutor {
         // /anima itemedit <sub> ...
         if (args[0].equalsIgnoreCase("itemedit")) {
             return itemEditCommand.onCommand(sender, command, label, args);
+        }
+
+        // /anima rank [...] 
+        if (args[0].equalsIgnoreCase("rank") || args[0].equalsIgnoreCase("ranks")) {
+            return rankCommand.onCommand(sender, command, label, args);
         }
 
         if (!args[0].equalsIgnoreCase("kits")) {
