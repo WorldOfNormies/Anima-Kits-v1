@@ -156,27 +156,53 @@ public class AnimaRankCommand {
             case "add"       -> handleSetAdd(sender, args);
             case "remove"    -> handleSetRemove(sender, args);
             default          -> usage(sender, "/anima rank set <prefix|suffix|colorname|chatcolor|add|remove> ...");
-        };
-    }
+        	};
+	}
 
-    /** /anima rank set prefix <id> <value...> */
-    private boolean handleSetCosmetic(CommandSender sender, String[] args, String field) {
-        // args: [anima, rank, set, prefix, <id>, <value...>]
-        if (args.length < 5) return usage(sender, "/anima rank set " + field + " <rankId> <value>");
-        String id = args[3].toLowerCase();
-        Rank rank = plugin.getRankManager().getRank(id);
-        if (rank == null) return err(sender, "No rank found: <white>" + id + "</white>");
-        String value = joinArgs(args, 4);
-        switch (field) {
-            case "prefix"    -> rank.setPrefix(value);
-            case "suffix"    -> rank.setSuffix(value);
-            case "colorname" -> rank.setColorName(value);
-            case "chatcolor" -> rank.setChatColor(value);
-        }
-        plugin.getRankManager().saveRanks();
-        ok(sender, "Rank <yellow>" + id + "</yellow> " + field + " set to: " + value + "<reset>");
-        return true;
-    }
+    	/** /anima rank set prefix <id> <value...> */
+	private boolean handleSetCosmetic(CommandSender sender, String[] args, String field) {
+   	// args: [anima, rank, set, prefix, <id>, <value...>]
+  		if (args.length < 5) return usage(sender, "/anima rank set " + field + " <rankId> <value>");
+    		String id = args[3].toLowerCase();
+    		Rank rank = plugin.getRankManager().getRank(id);
+    		if (rank == null) return err(sender, "No rank found: <white>" + id + "</white>");
+    		String value = joinArgs(args, 4);
+    
+   	switch (field) 
+		{
+		case "prefix"    -> rank.setPrefix(value);
+        		case "suffix"    -> rank.setSuffix(value);
+      		case "colorname" -> rank.setColorName(value);
+      		case "chatcolor" -> rank.setChatColor(value);
+    		}
+    
+    	plugin.getRankManager().saveRanks();
+    
+   	// Create visual example showing the actual color/text
+   	String example = "";
+   		 switch (field) {
+        			case "colorname" -> {
+            			// Show rank name with the color applied
+           			example = " <dark_gray>[ <reset>" + value + rank.getName() + "<dark_gray> ]</dark_gray>";
+        			}
+        			case "chatcolor" -> {
+           			// Show example chat message with the color
+           			example = " <dark_gray>[ <reset>" + value + "Player Message Example<dark_gray> ]</dark_gray>";
+      			}
+        		case "prefix" -> {
+            		// Show the prefix as it will appear
+            		example = " <dark_gray>[ <reset>" + value + "<dark_gray> ]</dark_gray>";
+        		}
+        			case "suffix" -> {
+            			// Show the suffix as it will appear
+            			example = " <dark_gray>[ <reset>" + value + "<dark_gray> ]</dark_gray>";
+        			}
+	}
+    
+    		ok(sender, "Rank <yellow>" + id + "</yellow> " + field + " updated:" + example);
+    		return true;
+	}
+
 
     /** /anima rank set add <player> <rankId> <duration|-1> */
     private boolean handleSetAdd(CommandSender sender, String[] args) {

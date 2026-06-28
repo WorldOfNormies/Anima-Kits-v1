@@ -82,7 +82,7 @@ public class ItemEditCommand {
                     if (args.length < 4) return subUsage(player, "prefix set <value>");
                     String value = joinArgs(args, 3);
                     player.getInventory().setItemInMainHand(ItemEditUtil.setPrefix(held, value));
-                    player.sendMessage(MM.deserialize("<gradient:#54DAF4:#545EB6>✓ Prefix set: </gradient>" + value + "<reset>"));
+                    player.sendMessage(MM.deserialize("<gradient:#54DAF4:#545EB6>✓ Prefix set: </gradient>" + value));
                 } else {
                     return subUsage(player, "prefix <set|remove> [value]");
                 }
@@ -100,7 +100,7 @@ public class ItemEditCommand {
                     if (args.length < 4) return subUsage(player, "suffix set <value>");
                     String value = joinArgs(args, 3);
                     player.getInventory().setItemInMainHand(ItemEditUtil.setSuffix(held, value));
-                    player.sendMessage(MM.deserialize("<gradient:#54DAF4:#545EB6>✓ Suffix set: </gradient>" + value + "<reset>"));
+                    player.sendMessage(MM.deserialize("<gradient:#54DAF4:#545EB6>✓ Suffix set: </gradient>" + value));
                 } else {
                     return subUsage(player, "suffix <set|remove> [value]");
                 }
@@ -118,7 +118,7 @@ public class ItemEditCommand {
                     if (args.length < 4) return subUsage(player, "rename set <name>");
                     String name = joinArgs(args, 3);
                     player.getInventory().setItemInMainHand(ItemEditUtil.setName(held, name));
-                    player.sendMessage(MM.deserialize("<gradient:#54DAF4:#545EB6>✓ Name set: </gradient>" + name + "<reset>"));
+                    player.sendMessage(MM.deserialize("<gradient:#54DAF4:#545EB6>✓ Name set: </gradient>" + name));
                 } else {
                     return subUsage(player, "rename <set|remove> [name]");
                 }
