@@ -32,6 +32,7 @@ public class Rank {
     private int     repairCooldown;   // seconds, 0 = no cooldown
     private boolean canRepairAll;     // can use /repair all
     private int     rtpCooldown;      // seconds, cooldown for /rtp
+    private int     feedCooldown;     // seconds, cooldown for /feed
     private int     echestRows;       // number of echest rows (1-6)
 
     // Buyable settings
@@ -60,6 +61,7 @@ public class Rank {
         this.repairCooldown = 0;
         this.canRepairAll = false;
         this.rtpCooldown = 300;
+        this.feedCooldown = 300;
         this.echestRows  = 1;
         this.buyable     = false;
         this.buyableWithAnimaz = false;
@@ -109,6 +111,8 @@ public class Rank {
     public void    setCanRepairAll(boolean b)  { this.canRepairAll = b; }
     public int     getRtpCooldown()            { return rtpCooldown; }
     public void    setRtpCooldown(int c)       { this.rtpCooldown = c; }
+    public int     getFeedCooldown()           { return feedCooldown; }
+    public void    setFeedCooldown(int c)      { this.feedCooldown = c; }
     public int     getEchestRows()             { return echestRows; }
     public void    setEchestRows(int r)        { this.echestRows = r; }
 

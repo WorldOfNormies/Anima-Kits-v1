@@ -73,18 +73,18 @@ public class EconomyManager {
 
     public long getBalance(UUID uuid, String type) {
         return switch (type.toLowerCase()) {
-            case "money", "ani" -> moneyBalances.getOrDefault(uuid, 0L);
-            case "coins", "animaz" -> coinBalances.getOrDefault(uuid, 0L);
-            case "xp", "experience" -> xpBalances.getOrDefault(uuid, 0L);
+            case "money", "ani", "moneyBalances" -> moneyBalances.getOrDefault(uuid, 0L);
+            case "coins", "animaz", "coinBalances" -> coinBalances.getOrDefault(uuid, 0L);
+            case "xp", "experience", "xpBalances" -> xpBalances.getOrDefault(uuid, 0L);
             default -> 0L;
         };
     }
 
     public void setBalance(UUID uuid, String type, long amount) {
         switch (type.toLowerCase()) {
-            case "money", "ani" -> moneyBalances.put(uuid, Math.max(0, amount));
-            case "coins", "animaz" -> coinBalances.put(uuid, Math.max(0, amount));
-            case "xp", "experience" -> xpBalances.put(uuid, Math.max(0, amount));
+            case "money", "ani", "moneyBalances" -> moneyBalances.put(uuid, Math.max(0, amount));
+            case "coins", "animaz", "coinBalances" -> coinBalances.put(uuid, Math.max(0, amount));
+            case "xp", "experience", "xpBalances" -> xpBalances.put(uuid, Math.max(0, amount));
         }
     }
 

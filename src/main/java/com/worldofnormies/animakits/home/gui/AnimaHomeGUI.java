@@ -60,6 +60,7 @@ public class AnimaHomeGUI {
             lore.add(ColorUtil.colorize("&7X: &f" + (int)home.getX() + " &7Y: &f" + (int)home.getY() + " &7Z: &f" + (int)home.getZ()));
             lore.add("");
             lore.add(ColorUtil.colorize("&aLeft-Click to teleport"));
+            lore.add(ColorUtil.colorize("&6Middle-Click to rename"));
             lore.add(ColorUtil.colorize("&cRight-Click to delete"));
             meta.setLore(lore);
             item.setItemMeta(meta);
@@ -67,7 +68,7 @@ public class AnimaHomeGUI {
         }
     }
 
-    public void handleAction(Player player, ItemStack item, boolean leftClick, boolean rightClick) {
+    public void handleAction(Player player, ItemStack item, boolean leftClick, boolean rightClick, boolean middleClick) {
         if (item == null || item.getType() == Material.AIR || item.getType() == Material.BLACK_STAINED_GLASS_PANE) return;
 
         ItemMeta meta = item.getItemMeta();
@@ -87,6 +88,17 @@ public class AnimaHomeGUI {
                 player.sendMessage(ColorUtil.colorize("&cRemoved home: &f" + homeName));
                 populate();
             }
+        } else if (middleClick) {
+            player.closeInventory();
+            player.sendMessage(ColorUtil.colorize("&eType the new name for home '&f" + homeName + "&e' in chat:"));
+            new com.worldofnormies.animakits.gui.ChatInputSession(plugin, player, (input) -> {
+                Home oldHome = plugin.getHomeManager().getHome(playerUuid, homeName);
+                if (oldHome != null) {
+                    plugin.getHomeManager().removeHome(playerUuid, homeName);
+                    plugin.getHomeManager().addHome(playerUuid, new Home(input, oldHome.getLocation()));
+                    player.sendMessage(ColorUtil.colorize("&aHome renamed to '&f" + input + "&a'!"));
+                }
+            }, () -> {}).await();
         }
     }
 }

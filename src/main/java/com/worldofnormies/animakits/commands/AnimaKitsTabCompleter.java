@@ -58,28 +58,70 @@ public class AnimaKitsTabCompleter implements TabCompleter {
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
+        String name = command.getName().toLowerCase();
+        String[] finalArgs = args;
+
+        if (!name.equals("anima")) {
+            if (name.equals("rtp")) return Collections.emptyList(); // No completion for /rtp
+            if (name.equals("repair")) {
+                String[] newArgs = new String[args.length + 2];
+                newArgs[0] = "itemedit";
+                newArgs[1] = "repair";
+                System.arraycopy(args, 0, newArgs, 2, args.length);
+                finalArgs = newArgs;
+            } else if (name.equals("claims")) {
+                String[] newArgs = new String[args.length + 2];
+                newArgs[0] = "kits";
+                newArgs[1] = "claim";
+                System.arraycopy(args, 0, newArgs, 2, args.length);
+                finalArgs = newArgs;
+            } else {
+                String[] newArgs = new String[args.length + 1];
+                newArgs[0] = switch (name) {
+                    case "kits" -> "kits";
+                    case "itemedit" -> "itemedit";
+                    case "ranks" -> "rank";
+                    case "echo" -> "eco";
+                    case "feed" -> "feed";
+                    case "ender" -> "echest";
+                    case "home" -> "homes";
+                    case "astore" -> "shop";
+                    case "permissions" -> "permission";
+                    default -> name;
+                };
+                System.arraycopy(args, 0, newArgs, 1, args.length);
+                finalArgs = newArgs;
+            }
+        }
+
+        return handleAnimaTab(sender, finalArgs);
+    }
+
+    private List<String> handleAnimaTab(CommandSender sender, String[] args) {
         if (args.length == 1) {
             return filter(args[0], ROOT_SUBS);
         }
 
+        String first = args[0].toLowerCase();
+
         // Route itemedit completions to ItemEditTabCompleter
-        if (args[0].equalsIgnoreCase("itemedit")) {
+        if (first.equals("itemedit")) {
             return ItemEditTabCompleter.complete(sender, args);
         }
 
         // Route rank completions to AnimaRankTabCompleter
-        if (args[0].equalsIgnoreCase("rank") || args[0].equalsIgnoreCase("ranks")) {
+        if (first.equals("rank") || first.equals("ranks")) {
             return rankTabCompleter.complete(sender, args);
         }
 
-        if (args.length == 2 && SUB1.contains(args[0].toLowerCase())) {
+        if (args.length == 2 && (first.equals("kits") || first.equals("kit"))) {
             if (sender.hasPermission("anima.kits.add") || sender.hasPermission("anima.kits.*")) {
                 return filter(args[1], ADMIN_SUB2);
             }
             return filter(args[1], PLAYER_SUB2);
         }
 
-        if (args.length > 2 && SUB1.contains(args[0].toLowerCase())) {
+        if (args.length > 2 && (first.equals("kits") || first.equals("kit"))) {
             String sub2 = args[1].toLowerCase();
             return switch (sub2) {
                 case "claim"        -> handleClaimTab(sender, args);

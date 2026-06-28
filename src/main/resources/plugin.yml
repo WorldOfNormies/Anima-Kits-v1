@@ -53,6 +53,9 @@ commands:
   rtp:
     description: "Random teleport (Shortcut)"
     permission: anima.rtp.use
+  scoreboard:
+    description: "Toggle scoreboard (Shortcut)"
+    permission: anima.admin
 
 permissions:
 

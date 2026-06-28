@@ -79,7 +79,45 @@ public class AnimaKitsCommand implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         String name = command.getName().toLowerCase();
+        String[] finalArgs = args;
 
+        if (!name.equals("anima")) {
+            if (name.equals("rtp")) return handleRtp(sender, args);
+            if (name.equals("repair")) {
+                String[] newArgs = new String[args.length + 2];
+                newArgs[0] = "itemedit";
+                newArgs[1] = "repair";
+                System.arraycopy(args, 0, newArgs, 2, args.length);
+                finalArgs = newArgs;
+            } else if (name.equals("claims")) {
+                String[] newArgs = new String[args.length + 2];
+                newArgs[0] = "kits";
+                newArgs[1] = "claim";
+                System.arraycopy(args, 0, newArgs, 2, args.length);
+                finalArgs = newArgs;
+            } else {
+                String[] newArgs = new String[args.length + 1];
+                newArgs[0] = switch (name) {
+                    case "kits" -> "kits";
+                    case "itemedit" -> "itemedit";
+                    case "ranks" -> "rank";
+                    case "echo" -> "eco";
+                    case "feed" -> "feed";
+                    case "ender" -> "echest";
+                    case "home" -> "homes";
+                    case "astore" -> "shop";
+                    case "permissions" -> "permission";
+                    default -> name;
+                };
+                System.arraycopy(args, 0, newArgs, 1, args.length);
+                finalArgs = newArgs;
+            }
+        }
+
+        return handleAnimaCore(sender, command, label, finalArgs);
+    }
+
+    private boolean handleAnimaCore(CommandSender sender, Command command, String label, String[] args) {
         // Handle "?" usage helper
         if (args.length > 0 && args[args.length - 1].equals("?")) {
             String sub = args[0].toLowerCase();
@@ -87,104 +125,69 @@ public class AnimaKitsCommand implements CommandExecutor {
             return true;
         }
 
-        if (!name.equals("anima")) {
-            String[] newArgs = new String[args.length + 1];
-            newArgs[0] = switch (name) {
-                case "kits" -> "kits";
-                case "itemedit" -> "itemedit";
-                case "ranks" -> "rank";
-                case "echo" -> "eco";
-                case "feed" -> "feed";
-                case "repair" -> "itemedit"; // maps to /anima itemedit repair
-                case "ender" -> "echest";
-                case "home" -> "homes";
-                case "astore" -> "shop";
-                case "claims" -> "kits"; // maps to /anima kits claim
-                case "permissions" -> "permission"; // might need custom handling
-                case "rtp" -> "rtp";
-                default -> name;
-            };
-
-            // Custom handling for specific shortcuts
-            if (name.equals("rtp")) {
-                return handleRtp(sender, args);
-            } else if (name.equals("repair")) {
-                newArgs = new String[args.length + 2];
-                newArgs[0] = "itemedit";
-                newArgs[1] = "repair";
-                System.arraycopy(args, 0, newArgs, 2, args.length);
-            } else if (name.equals("claims")) {
-                newArgs = new String[args.length + 2];
-                newArgs[0] = "kits";
-                newArgs[1] = "claim";
-                System.arraycopy(args, 0, newArgs, 2, args.length);
-            } else {
-                System.arraycopy(args, 0, newArgs, 1, args.length);
-            }
-            return onCommand(sender, command, "anima", newArgs);
-        }
-
         if (args.length == 0) {
             showMainUsage(sender);
             return true;
         }
 
+        String first = args[0].toLowerCase();
+
         // /anima itemedit <sub> ...
-        if (args[0].equalsIgnoreCase("itemedit")) {
+        if (first.equals("itemedit")) {
             return itemEditCommand.onCommand(sender, command, label, args);
         }
 
         // /anima rank [...]
-        if (args[0].equalsIgnoreCase("rank") || args[0].equalsIgnoreCase("ranks")) {
+        if (first.equals("rank") || first.equals("ranks")) {
             return rankCommand.onCommand(sender, command, label, args);
         }
 
         // /anima eco [...]
-        if (args[0].equalsIgnoreCase("eco") || args[0].equalsIgnoreCase("economy")) {
+        if (first.equals("eco") || first.equals("economy")) {
             return economyCommand.onCommand(sender, command, label, args);
         }
 
         // /anima homes [...]
-        if (args[0].equalsIgnoreCase("homes") || args[0].equalsIgnoreCase("home")) {
+        if (first.equals("homes") || first.equals("home")) {
             return handleHomes(sender, args);
         }
 
         // /anima rtp
-        if (args[0].equalsIgnoreCase("rtp")) {
+        if (first.equals("rtp")) {
             return handleRtp(sender, args);
         }
 
         // /anima echest
-        if (args[0].equalsIgnoreCase("echest")) {
+        if (first.equals("echest")) {
             return handleEChest(sender);
         }
 
         // /anima shop
-        if (args[0].equalsIgnoreCase("shop")) {
+        if (first.equals("shop")) {
             return handleShop(sender);
         }
 
         // /anima glow
-        if (args[0].equalsIgnoreCase("glow")) {
+        if (first.equals("glow")) {
             return handleGlow(sender, args);
         }
 
         // /anima suffix
-        if (args[0].equalsIgnoreCase("suffix")) {
+        if (first.equals("suffix")) {
             return handleSuffix(sender, args);
         }
 
-        // /anima toggle scoreboard
-        if (args[0].equalsIgnoreCase("toggle") && args.length >= 2 && args[1].equalsIgnoreCase("scoreboard")) {
+        // /anima toggle scoreboard or /anima scoreboard
+        if (first.equals("scoreboard") || (first.equals("toggle") && args.length >= 2 && args[1].equalsIgnoreCase("scoreboard"))) {
             return handleToggleScoreboard(sender);
         }
 
         // /anima feed
-        if (args[0].equalsIgnoreCase("feed")) {
+        if (first.equals("feed")) {
             return handleFeed(sender);
         }
 
-        if (!args[0].equalsIgnoreCase("kits")) {
+        if (!first.equals("kits")) {
             showMainUsage(sender);
             return true;
         }
@@ -835,7 +838,11 @@ public class AnimaKitsCommand implements CommandExecutor {
         player.setFoodLevel(20);
         player.setSaturation(20);
         player.sendMessage(ColorUtil.colorize("&aYou have been fed!"));
-        plugin.getPlayerManager().setCooldown(uuid, UUID.nameUUIDFromBytes("feed".getBytes()), 300); // Fixed for now, can be rank-based
+
+        com.worldofnormies.animaranks.Rank rank = plugin.getRankManager().getPlayerRank(uuid);
+        int cd = rank != null ? rank.getFeedCooldown() : 300;
+
+        plugin.getPlayerManager().setCooldown(uuid, UUID.nameUUIDFromBytes("feed".getBytes()), cd);
         return true;
     }
 

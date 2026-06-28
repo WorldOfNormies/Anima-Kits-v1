@@ -70,7 +70,9 @@ public class RankManager {
 
     private void loadRanks() {
         ranks.clear();
-        if (!ranksFile.exists()) return;
+        if (!ranksFile.exists()) {
+            plugin.saveResource("ranks/ranks.yml", false);
+        }
         ranksConfig = YamlConfiguration.loadConfiguration(ranksFile);
         ConfigurationSection sec = ranksConfig.getConfigurationSection("ranks");
         if (sec == null) return;
@@ -102,6 +104,7 @@ public class RankManager {
             rank.setRepairCooldown(rs.getInt("repair-cooldown", 0));
             rank.setCanRepairAll(rs.getBoolean("can-repair-all", false));
             rank.setRtpCooldown(rs.getInt("rtp-cooldown", 300));
+            rank.setFeedCooldown(rs.getInt("feed-cooldown", 300));
             rank.setEchestRows(rs.getInt("echest-rows", 1));
 
             // Buyable
@@ -141,6 +144,7 @@ public class RankManager {
             ranksConfig.set(p + ".repair-cooldown", rank.getRepairCooldown());
             ranksConfig.set(p + ".can-repair-all", rank.canRepairAll());
             ranksConfig.set(p + ".rtp-cooldown",  rank.getRtpCooldown());
+            ranksConfig.set(p + ".feed-cooldown", rank.getFeedCooldown());
             ranksConfig.set(p + ".echest-rows",   rank.getEchestRows());
             ranksConfig.set(p + ".buyable",       rank.isBuyable());
             ranksConfig.set(p + ".buyable-with-animaz", rank.isBuyableWithAnimaz());

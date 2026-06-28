@@ -1,14 +1,12 @@
 package com.worldofnormies.animakits.rtp.gui;
 
 import com.worldofnormies.animakits.AnimaKitsPlugin;
+import com.worldofnormies.animakits.gui.AnimaInventoryHolder;
 import com.worldofnormies.animakits.util.ColorUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.Listener;
-import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -16,16 +14,15 @@ import org.bukkit.inventory.meta.ItemMeta;
 import java.util.ArrayList;
 import java.util.List;
 
-public class AnimaRtpGUI implements Listener {
+public class AnimaRtpGUI {
 
     private final AnimaKitsPlugin plugin;
     private final Inventory inventory;
 
     public AnimaRtpGUI(AnimaKitsPlugin plugin) {
         this.plugin = plugin;
-        this.inventory = Bukkit.createInventory(null, 27, ColorUtil.parse("<gradient:#3060FF:#FFFFFF:#FF3030><bold>⋆Ἲ⸸ [ RANDOM TELEPORT ] ⸸Ἳ⋆</bold></gradient>"));
+        this.inventory = Bukkit.createInventory(new AnimaInventoryHolder("rtp", null), 27, ColorUtil.parse("<gradient:#3060FF:#FFFFFF:#FF3030><bold>⋆Ἲ⸸ [ RANDOM TELEPORT ] ⸸Ἳ⋆</bold></gradient>"));
         populate();
-        plugin.getServer().getPluginManager().registerEvents(this, plugin);
     }
 
     public void open(Player player) {
@@ -54,13 +51,7 @@ public class AnimaRtpGUI implements Listener {
         return item;
     }
 
-    @EventHandler
-    public void onClick(InventoryClickEvent event) {
-        if (!event.getInventory().equals(inventory)) return;
-        event.setCancelled(true);
-        if (!(event.getWhoClicked() instanceof Player player)) return;
-
-        ItemStack item = event.getCurrentItem();
+    public void handleAction(Player player, ItemStack item) {
         if (item == null || item.getType() == Material.AIR) return;
 
         World world = null;

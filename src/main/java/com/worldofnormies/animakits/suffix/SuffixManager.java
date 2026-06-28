@@ -24,7 +24,7 @@ public class SuffixManager {
 
     public void load() {
         if (!file.exists()) {
-            try { file.createNewFile(); } catch (IOException ignored) {}
+            plugin.saveResource("suffixes/suffixes.yml", false);
         }
         config = YamlConfiguration.loadConfiguration(file);
         templates.clear();

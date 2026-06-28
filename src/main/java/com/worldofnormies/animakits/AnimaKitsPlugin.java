@@ -75,7 +75,7 @@ public final class AnimaKitsPlugin extends JavaPlugin {
             cmd.setTabCompleter(tabCompleter);
         }
 
-        String[] shortcuts = {"kits", "itemedit", "ranks", "echo", "feed", "repair", "ender", "home", "astore", "claims", "permissions", "rtp"};
+        String[] shortcuts = {"kits", "itemedit", "ranks", "echo", "feed", "repair", "ender", "home", "astore", "claims", "permissions", "rtp", "scoreboard"};
         for (String s : shortcuts) {
             var sc = getCommand(s);
             if (sc != null) {
@@ -89,6 +89,7 @@ public final class AnimaKitsPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new RankListener(this), this);
         getServer().getPluginManager().registerEvents(new EconomyListener(this), this);
         getServer().getPluginManager().registerEvents(new EChestListener(this), this);
+        getServer().getPluginManager().registerEvents(new com.worldofnormies.animakits.listener.MenuListener(this), this);
 
         getLogger().info("AnimaKits enabled! Created by World Of Normies.");
     }
