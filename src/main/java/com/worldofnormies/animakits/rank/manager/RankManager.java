@@ -4,6 +4,7 @@ import com.worldofnormies.animakits.AnimaKitsPlugin;
 import com.worldofnormies.animakits.rank.Rank;
 import com.worldofnormies.animakits.rank.gui.AnimaRanksMainGUI;
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -82,6 +83,11 @@ public class RankManager {
             rank.setSuffix(rs.getString("suffix", ""));
             rank.setColorName(rs.getString("color-name", ""));
             rank.setChatColor(rs.getString("chat-color", ""));
+            String matName = rs.getString("icon-material", "");
+            if (!matName.isBlank()) {
+                try { rank.setIconMaterial(Material.valueOf(matName.toUpperCase())); }
+                catch (IllegalArgumentException ignored) {}
+            }
 
             // Rankup
             rank.setRankable(rs.getBoolean("rankable", false));
@@ -115,6 +121,7 @@ public class RankManager {
             ranksConfig.set(p + ".suffix",        rank.getSuffix());
             ranksConfig.set(p + ".color-name",    rank.getColorName());
             ranksConfig.set(p + ".chat-color",    rank.getChatColor());
+            ranksConfig.set(p + ".icon-material", rank.getIconMaterial().name());
             ranksConfig.set(p + ".rankable",      rank.isRankable());
             ranksConfig.set(p + ".rankup-playtime", rank.getRankupPlaytime());
             ranksConfig.set(p + ".rankup-price",  rank.getRankupPrice());
@@ -202,6 +209,15 @@ public class RankManager {
     public String getPlayerRankId(UUID uuid) { return playerRanks.getOrDefault(uuid, ""); }
 
     public Rank getPlayerRank(UUID uuid) { return getRank(getPlayerRankId(uuid)); }
+
+    /** Returns a list of player UUIDs assigned to a specific rank. */
+    public List<UUID> getPlayersWithRank(String rankId) {
+        String target = rankId.toLowerCase();
+        return playerRanks.entrySet().stream()
+                .filter(e -> e.getValue().equalsIgnoreCase(target))
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toList());
+    }
 
     /**
      * Assigns a rank to a player.
