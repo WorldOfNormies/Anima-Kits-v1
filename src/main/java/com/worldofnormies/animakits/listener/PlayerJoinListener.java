@@ -36,6 +36,10 @@ public class PlayerJoinListener implements Listener {
     public void onPlayerJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
 
+        // Load per-player permissions
+        plugin.getPermissionManager().loadPlayer(player.getUniqueId());
+        plugin.getHomeManager().loadPlayer(player.getUniqueId());
+
         // 1. Apply global permissions (covers @a grants made while player was offline/new)
         plugin.getPermissionManager().applyGlobalsToPlayer(player.getUniqueId());
 

@@ -53,8 +53,10 @@ public class RankManager {
 
     public RankManager(AnimaKitsPlugin plugin) {
         this.plugin      = plugin;
-        this.ranksFile   = new File(plugin.getDataFolder(), "ranks.yml");
-        this.playerRankFile = new File(plugin.getDataFolder(), "player-ranks.yml");
+        File folder = new File(plugin.getDataFolder(), "ranks");
+        if (!folder.exists()) folder.mkdirs();
+        this.ranksFile   = new File(folder, "ranks.yml");
+        this.playerRankFile = new File(folder, "player-ranks.yml");
     }
 
     // ══════════════════════════════════════════════════════════════
@@ -95,8 +97,16 @@ public class RankManager {
             rank.setRankupPlaytime(rs.getLong("rankup-playtime", 0));
             rank.setRankupPrice(rs.getDouble("rankup-price", 0));
 
+            // Perks
+            rank.setHomeLimit(rs.getInt("home-limit", 2));
+            rank.setRepairCooldown(rs.getInt("repair-cooldown", 0));
+            rank.setCanRepairAll(rs.getBoolean("can-repair-all", false));
+            rank.setRtpCooldown(rs.getInt("rtp-cooldown", 300));
+            rank.setEchestRows(rs.getInt("echest-rows", 1));
+
             // Buyable
             rank.setBuyable(rs.getBoolean("buyable", false));
+            rank.setBuyableWithAnimaz(rs.getBoolean("buyable-with-animaz", false));
             rank.setBuyPrice(rs.getDouble("buy-price", 0));
             rank.setBuyDuration(rs.getLong("buy-duration", -1));
 
@@ -127,7 +137,13 @@ public class RankManager {
             ranksConfig.set(p + ".rankable",      rank.isRankable());
             ranksConfig.set(p + ".rankup-playtime", rank.getRankupPlaytime());
             ranksConfig.set(p + ".rankup-price",  rank.getRankupPrice());
+            ranksConfig.set(p + ".home-limit",    rank.getHomeLimit());
+            ranksConfig.set(p + ".repair-cooldown", rank.getRepairCooldown());
+            ranksConfig.set(p + ".can-repair-all", rank.canRepairAll());
+            ranksConfig.set(p + ".rtp-cooldown",  rank.getRtpCooldown());
+            ranksConfig.set(p + ".echest-rows",   rank.getEchestRows());
             ranksConfig.set(p + ".buyable",       rank.isBuyable());
+            ranksConfig.set(p + ".buyable-with-animaz", rank.isBuyableWithAnimaz());
             ranksConfig.set(p + ".buy-price",     rank.getBuyPrice());
             ranksConfig.set(p + ".buy-duration",  rank.getBuyDuration());
             for (Map.Entry<String, Boolean> e : rank.getPermissions().entrySet()) {

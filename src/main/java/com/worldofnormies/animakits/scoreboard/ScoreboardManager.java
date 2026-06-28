@@ -76,6 +76,9 @@ public class ScoreboardManager {
         long money = plugin.getEconomyManager().getBalance(player.getUniqueId(), "money");
         lines.add(ColorUtil.parse("<gray>Money: </gray><yellow>λ " + money + "</yellow>"));
 
+        long coins = plugin.getEconomyManager().getBalance(player.getUniqueId(), "coins");
+        lines.add(ColorUtil.parse("<gray>Animaz: </gray><gold>Â " + coins + "</gold>"));
+
         lines.add(Component.empty());
         lines.add(ColorUtil.parse("<gray>Pos: </gray><white>" + player.getLocation().getBlockX() + ", " + player.getLocation().getBlockY() + ", " + player.getLocation().getBlockZ() + "</white>"));
         lines.add(ColorUtil.parse("<gray>Deaths: </gray><red>" + player.getStatistic(Statistic.DEATHS) + "</red>"));

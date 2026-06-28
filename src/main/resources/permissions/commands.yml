@@ -1,0 +1,28 @@
+commands:
+  anima:
+    permission: "anima.admin"
+    description: "Main Anima command"
+  kits:
+    permission: "anima.kits.use"
+    description: "Access kits"
+  ranks:
+    permission: "anima.ranks.gui"
+    description: "Access ranks"
+  itemedit:
+    permission: "anima.itemedit.use"
+    description: "Edit items"
+  homes:
+    permission: "anima.homes.use"
+    description: "Manage homes"
+  rtp:
+    permission: "anima.rtp.use"
+    description: "Random teleport"
+  echest:
+    permission: "anima.echest.use"
+    description: "Open ender chest"
+  shop:
+    permission: "anima.shop.use"
+    description: "Open Anima shop"
+  glow:
+    permission: "anima.glow.use"
+    description: "Toggle glow effect"

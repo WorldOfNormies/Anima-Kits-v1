@@ -33,7 +33,9 @@ public class KitManager {
 
     public KitManager(AnimaKitsPlugin plugin) {
         this.plugin = plugin;
-        this.kitsFile = new File(plugin.getDataFolder(), "kits.yml");
+        File folder = new File(plugin.getDataFolder(), "kits");
+        if (!folder.exists()) folder.mkdirs();
+        this.kitsFile = new File(folder, "kits.yml");
     }
 
     // ── Persistence ────────────────────────────────────────────────

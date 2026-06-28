@@ -17,6 +17,42 @@ commands:
     description: "Main AnimaKits command"
     usage: "/anima <kits|itemedit|rank> [subcommand]"
     aliases: [ ak, animakits ]
+  kits:
+    description: "Access kits (Shortcut)"
+    permission: anima.kits.use
+  itemedit:
+    description: "Edit items (Shortcut)"
+    permission: anima.itemedit.use
+  ranks:
+    description: "Access ranks (Shortcut)"
+    permission: anima.ranks.gui
+  echo:
+    description: "Economy commands (Shortcut)"
+    permission: anima.eco.use
+  feed:
+    description: "Feed yourself (Shortcut)"
+    permission: anima.feed.use
+  repair:
+    description: "Repair items (Shortcut)"
+    permission: anima.itemedit.repair
+  ender:
+    description: "Open ender chest (Shortcut)"
+    permission: anima.echest.use
+  home:
+    description: "Manage homes (Shortcut)"
+    permission: anima.homes.use
+  astore:
+    description: "Open Anima store (Shortcut)"
+    permission: anima.shop.use
+  claims:
+    description: "Claim kits (Shortcut)"
+    permission: anima.kits.claim
+  permissions:
+    description: "Manage permissions (Shortcut)"
+    permission: anima.admin
+  rtp:
+    description: "Random teleport (Shortcut)"
+    permission: anima.rtp.use
 
 permissions:
 

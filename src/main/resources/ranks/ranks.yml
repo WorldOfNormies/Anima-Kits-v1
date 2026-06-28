@@ -1,0 +1,207 @@
+ranks:
+  anima:
+    display-name: "ANIMA \uE001"
+    hierarchy: 0
+    prefix: "<gradient:#FF0000:#FF7F00:#FFFF00:#00FF00:#0000FF:#4B0082:#8B00FF>[ANIMA]</gradient> "
+    home-limit: 1000
+    repair-cooldown: 0
+    can-repair-all: true
+    rtp-cooldown: 0
+    echest-rows: 6
+    permissions:
+      "*": true
+  owner:
+    display-name: "OWNER \uE002"
+    hierarchy: 1
+    prefix: "<gradient:#FF0000:#8B0000>[OWNER]</gradient> "
+    home-limit: 1000
+    repair-cooldown: 0
+    can-repair-all: true
+    rtp-cooldown: 0
+    echest-rows: 6
+  developer:
+    display-name: "DEVELOPER \uE003"
+    hierarchy: 2
+    prefix: "<gradient:#4F4F4F:#2F2F2F>[DEV]</gradient> "
+    home-limit: 1000
+    repair-cooldown: 0
+    can-repair-all: true
+    rtp-cooldown: 0
+    echest-rows: 6
+  head_admin:
+    display-name: "HEAD ADMIN \uE004"
+    hierarchy: 3
+    prefix: "<gradient:#00008B:#0000FF>[H-ADMIN]</gradient> "
+    home-limit: 50
+    repair-cooldown: 0
+    can-repair-all: true
+    rtp-cooldown: 0
+    echest-rows: 6
+  admin:
+    display-name: "ADMIN \uE005"
+    hierarchy: 4
+    prefix: "<gradient:#ADD8E6:#32CD32>[ADMIN]</gradient> "
+    home-limit: 30
+    repair-cooldown: 10
+    can-repair-all: true
+    rtp-cooldown: 0
+    echest-rows: 6
+  jr_staff:
+    display-name: "JR STAFF \uE006"
+    hierarchy: 5
+    prefix: "<gradient:#32CD32:#FFFF00>[JR-STAFF]</gradient> "
+    home-limit: 15
+    repair-cooldown: 60
+    can-repair-all: false
+    rtp-cooldown: 30
+    echest-rows: 5
+  builder:
+    display-name: "BUILDER \uE007"
+    hierarchy: 6
+    prefix: "<gradient:#800080:#ADD8E6>[BUILDER]</gradient> "
+    home-limit: 20
+    repair-cooldown: 0
+    can-repair-all: true
+    rtp-cooldown: 30
+    echest-rows: 5
+  youtube:
+    display-name: "YOUTUBE \uE008"
+    hierarchy: 7
+    prefix: "<color:#FF0000>[MEDIA]</color><color:#FFFFFF></color> "
+    home-limit: 15
+    repair-cooldown: 300
+    can-repair-all: true
+    rtp-cooldown: 60
+    echest-rows: 5
+  mvp:
+    display-name: "MVP \uE009"
+    hierarchy: 8
+    prefix: "<gradient:#FF0000:#FFA500>[MVP]</gradient> "
+    home-limit: 20
+    repair-cooldown: 600
+    can-repair-all: true
+    rtp-cooldown: 120
+    echest-rows: 4
+    buyable: true
+    buyable-with-animaz: true
+    buy-price: 5000
+    buy-duration: -1
+  vip_plus:
+    display-name: "VIP PLUS \uE00A"
+    hierarchy: 9
+    prefix: "<gradient:#FFD700:#FFFF00>[VIP+]</gradient> "
+    home-limit: 12
+    repair-cooldown: 900
+    can-repair-all: false
+    rtp-cooldown: 180
+    echest-rows: 4
+    buyable: true
+    buyable-with-animaz: true
+    buy-price: 2500
+    buy-duration: -1
+  vip:
+    display-name: "VIP \uE00B"
+    hierarchy: 10
+    prefix: "<gradient:#FFFF00:#FFFFFF>[VIP]</gradient> "
+    home-limit: 8
+    repair-cooldown: 1800
+    can-repair-all: false
+    rtp-cooldown: 240
+    echest-rows: 3
+    buyable: true
+    buyable-with-animaz: true
+    buy-price: 1000
+    buy-duration: -1
+  aeternus:
+    display-name: "AETERNUS \uE00D"
+    hierarchy: 11
+    prefix: "[AETERNUS] "
+    home-limit: 15
+    repair-cooldown: 300
+    can-repair-all: true
+    rtp-cooldown: 300
+    echest-rows: 5
+    rankable: true
+    rankup-playtime: 15552000 # 6 months
+    rankup-price: 1000000
+  animus:
+    display-name: "ANIMUS \uE00E"
+    hierarchy: 12
+    prefix: "[ANIMUS] "
+    home-limit: 12
+    repair-cooldown: 900
+    can-repair-all: true
+    rtp-cooldown: 300
+    echest-rows: 4
+    rankable: true
+    rankup-playtime: 7776000
+    rankup-price: 500000
+  numen:
+    display-name: "NUMEN \uE00F"
+    hierarchy: 13
+    prefix: "[NUMEN] "
+    home-limit: 10
+    repair-cooldown: 1800
+    can-repair-all: true
+    rtp-cooldown: 300
+    echest-rows: 3
+    rankable: true
+    rankup-playtime: 2592000
+    rankup-price: 250000
+  phasma:
+    display-name: "PHASMA \uE010"
+    hierarchy: 14
+    prefix: "[PHASMA] "
+    home-limit: 8
+    repair-cooldown: 1800
+    can-repair-all: false
+    rtp-cooldown: 300
+    echest-rows: 2
+    rankable: true
+    rankup-playtime: 1209600
+    rankup-price: 100000
+  umbra:
+    display-name: "UMBRA \uE011"
+    hierarchy: 15
+    prefix: "[UMBRA] "
+    home-limit: 6
+    repair-cooldown: 3600
+    can-repair-all: false
+    rtp-cooldown: 300
+    echest-rows: 2
+    rankable: true
+    rankup-playtime: 604800
+    rankup-price: 50000
+  manes:
+    display-name: "MANES \uE012"
+    hierarchy: 16
+    prefix: "[MANES] "
+    home-limit: 5
+    repair-cooldown: 7200
+    can-repair-all: false
+    rtp-cooldown: 300
+    echest-rows: 1
+    rankable: true
+    rankup-playtime: 86400
+    rankup-price: 20000
+  spirans:
+    display-name: "SPIRANS \uE013"
+    hierarchy: 17
+    prefix: "[SPIRANS] "
+    home-limit: 4
+    repair-cooldown: 14400
+    can-repair-all: false
+    rtp-cooldown: 300
+    echest-rows: 1
+    rankable: true
+    rankup-playtime: 3600
+    rankup-price: 10000
+  novicius:
+    display-name: "NOVICIUS \uE00C"
+    hierarchy: 18
+    prefix: "<gradient:#D3D3D3:#FFFFFF>[NOVICE]</gradient> "
+    home-limit: 2
+    repair-cooldown: -1
+    can-repair-all: false
+    rtp-cooldown: 300
+    echest-rows: 1
